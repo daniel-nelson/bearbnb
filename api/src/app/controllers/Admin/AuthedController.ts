@@ -33,7 +33,7 @@ export default class AdminAuthedController extends ApplicationController {
         'The current authentication scheme is only for early development. Replace with a production grade authentication scheme.'
       )
 
-    const token = (this.req.header('Authorization') ?? '').split(' ').at(-1)!
+    const token = (this.headers['authorization'] ?? '').split(' ').at(-1)!
 
     const decrypted = Encrypt.decrypt(token, {
       algorithm: 'aes-256-gcm',

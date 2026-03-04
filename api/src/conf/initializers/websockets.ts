@@ -5,14 +5,17 @@ import { Redis } from 'ioredis'
 // import User from '@models/User.js'
 
 export default (psy: PsychicApp) => {
+  if (AppEnv.serviceRole !== 'ws' && !AppEnv.isTest) return
+
   psy.plugin(async () => {
     await PsychicAppWebsockets.init(psy, initializeWebsockets)
   })
 }
 
 function initializeWebsockets(wsApp: PsychicAppWebsockets) {
-  wsApp.set('websockets', {
-    connection: AppEnv.isProduction
+  wsApp.set(
+    'connection',
+    AppEnv.isProduction
       ? new Redis({
           host: AppEnv.string('WS_REDIS_HOST'),
           port: AppEnv.integer('WS_REDIS_PORT', { optional: true }) || 6379,
@@ -26,9 +29,12 @@ function initializeWebsockets(wsApp: PsychicAppWebsockets) {
           port: AppEnv.integer('WS_REDIS_PORT', { optional: true }) || 6379,
           username: AppEnv.string('WS_REDIS_USERNAME', { optional: true }),
           password: AppEnv.string('WS_REDIS_PASSWORD', { optional: true }),
-          // tls:  {},
           maxRetriesPerRequest: null,
         }),
+  )
+
+  wsApp.set('socketio', {
+    // socketio server options here
   })
 
   // ******

@@ -25,6 +25,6 @@ const config = typescriptEslint.config(
       // use PsychicApp.log or PsychicApp.logWithLevel instead of console.log, console.warn, etc...
       'no-console': 'error',
     },
-  }
+  },
 )
 export default config

@@ -26,6 +26,7 @@
     "paths": {
       "@conf/*": ["./src/conf/*"],
       "@controllers/*": ["./src/app/controllers/*"],
+      "@middleware/*": ["./src/middleware/*"],
       "@models/*": ["./src/app/models/*"],
       "@serializers/*": ["./src/app/serializers/*"],
       "@services/*": ["./src/app/services/*"],
