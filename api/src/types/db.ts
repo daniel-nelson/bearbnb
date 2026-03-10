@@ -68,6 +68,15 @@ import {
  */
 import type { ColumnType } from 'kysely'
 
+export type ApplianceTypesEnum = 'dishwasher' | 'microwave' | 'oven' | 'stove'
+
+export const ApplianceTypesEnumValues = [
+  'dishwasher',
+  'microwave',
+  'oven',
+  'stove',
+] as const
+
 export type ArrayType<T> =
   ArrayTypeImpl<T> extends (infer U)[] ? U[] : ArrayTypeImpl<T>
 
@@ -181,6 +190,7 @@ export interface Places {
 }
 
 export interface Rooms {
+  appliances: Generated<ArrayType<ApplianceTypesEnum>>
   bathOrShowerStyle: BathOrShowerStylesEnum | null
   bedTypes: Generated<ArrayType<BedTypesEnum>>
   createdAt: Timestamp
