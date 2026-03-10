@@ -1,9 +1,12 @@
-import Room from '@models/Room.js'
-import User from '@models/User.js'
 import Place from '@models/Place.js'
-import createRoom from '@spec/factories/RoomFactory.js'
-import createUser from '@spec/factories/UserFactory.js'
+import Room from '@models/Room.js'
+import Kitchen from '@models/Room/Kitchen.js'
+import User from '@models/User.js'
+import createHost from '@spec/factories/HostFactory.js'
+import createHostPlace from '@spec/factories/HostPlaceFactory.js'
 import createPlace from '@spec/factories/PlaceFactory.js'
+import createKitchen from '@spec/factories/Room/KitchenFactory.js'
+import createUser from '@spec/factories/UserFactory.js'
 import { RequestBody, session, SpecRequestType } from '@spec/unit/helpers/authentication.js'
 
 describe('V1/Host/Places/RoomsController', () => {
@@ -13,7 +16,9 @@ describe('V1/Host/Places/RoomsController', () => {
 
   beforeEach(async () => {
     user = await createUser()
-    place = await createPlace({ user })
+    const host = await createHost({ user })
+    place = await createPlace()
+    await createHostPlace({ host, place })
     request = await session(user)
   })
 
@@ -25,7 +30,7 @@ describe('V1/Host/Places/RoomsController', () => {
     }
 
     it('returns the index of Rooms', async () => {
-      const room = await createRoom({ place })
+      const room = await createKitchen({ place })
 
       const { body } = await index(200)
 
@@ -38,7 +43,7 @@ describe('V1/Host/Places/RoomsController', () => {
 
     context('Rooms created by another Place', () => {
       it('are omitted', async () => {
-        await createRoom()
+        await createKitchen()
 
         const { body } = await index(200)
 
@@ -56,7 +61,7 @@ describe('V1/Host/Places/RoomsController', () => {
     }
 
     it('returns the specified Room', async () => {
-      const room = await createRoom({ place })
+      const room = await createKitchen({ place })
 
       const { body } = await show(room, 200)
 
@@ -71,7 +76,7 @@ describe('V1/Host/Places/RoomsController', () => {
 
     context('Room created by another Place', () => {
       it('is not found', async () => {
-        const otherPlaceRoom = await createRoom()
+        const otherPlaceRoom = await createKitchen()
 
         await show(otherPlaceRoom, 404)
       })
@@ -91,17 +96,19 @@ describe('V1/Host/Places/RoomsController', () => {
 
     it('creates a Room for this Place', async () => {
       const { body } = await create({
-        position: 1,
+        type: 'Kitchen',
+        appliances: ['oven', 'stove'],
       }, 201)
 
       const room = await place.associationQuery('rooms').firstOrFail()
-      expect(room.position).toEqual(1)
+      expect(room.type).toEqual('Kitchen')
+      expect((room as Kitchen).appliances).toEqual(['oven', 'stove'])
 
       expect(body).toEqual(
         expect.objectContaining({
           id: room.id,
-          type: room.type,
-          position: room.position,
+          type: 'Kitchen',
+          appliances: ['oven', 'stove'],
         }),
       )
     })
@@ -121,27 +128,26 @@ describe('V1/Host/Places/RoomsController', () => {
     }
 
     it('updates the Room', async () => {
-      const room = await createRoom({ place })
+      const room = await createKitchen({ place, appliances: ['microwave'] })
 
       await update(room, {
-        position: 2,
+        appliances: ['dishwasher'],
       }, 204)
 
       await room.reload()
-      expect(room.position).toEqual(2)
+      expect(room.appliances).toEqual(['dishwasher'])
     })
 
     context('a Room created by another Place', () => {
       it('is not updated', async () => {
-        const room = await createRoom()
-        const originalPosition = room.position
+        const room = await createKitchen({ appliances: ['microwave'] })
 
         await update(room, {
-          position: 2,
+          appliances: ['dishwasher'],
         }, 404)
 
         await room.reload()
-        expect(room.position).toEqual(originalPosition)
+        expect(room.appliances).toEqual(['microwave'])
       })
     })
   })
@@ -155,7 +161,7 @@ describe('V1/Host/Places/RoomsController', () => {
     }
 
     it('deletes the Room', async () => {
-      const room = await createRoom({ place })
+      const room = await createKitchen({ place })
 
       await destroy(room, 204)
 
@@ -164,7 +170,7 @@ describe('V1/Host/Places/RoomsController', () => {
 
     context('a Room created by another Place', () => {
       it('is not deleted', async () => {
-        const room = await createRoom()
+        const room = await createKitchen()
 
         await destroy(room, 404)
 

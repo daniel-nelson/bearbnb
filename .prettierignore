@@ -25,3 +25,4 @@ package-lock.json
 api/src/app/serializers/**/*.ts
 api/src/db/migrations/*.ts
 api/spec/unit/controllers/V1/Host/PlacesController.spec.ts
+api/spec/unit/controllers/V1/Host/Places/RoomsController.spec.ts
