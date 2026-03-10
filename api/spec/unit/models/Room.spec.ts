@@ -1,5 +1,8 @@
 import createLocalizedText from '@spec/factories/LocalizedTextFactory.js'
+import createPlace from '@spec/factories/PlaceFactory.js'
+import createBedroom from '@spec/factories/Room/BedroomFactory.js'
 import createDen from '@spec/factories/Room/DenFactory.js'
+import createKitchen from '@spec/factories/Room/KitchenFactory.js'
 
 describe('Room', () => {
   it('has many LocalizedTexts', async () => {
@@ -36,5 +39,18 @@ describe('Room', () => {
     room = await room.passthrough({ locale: 'es-ES' }).load('currentLocalizedText').execute()
 
     expect(room.currentLocalizedText).toMatchDreamModel(esLocalizedText)
+  })
+
+  describe('position', () => {
+    it('is automatically set and scoped to Place', async () => {
+      const place = await createPlace()
+      const kitchen = await createKitchen({ place })
+      const otherBedroom = await createBedroom()
+      const bedroom = await createBedroom({ place })
+
+      expect(kitchen.position).toEqual(1)
+      expect(bedroom.position).toEqual(2)
+      expect(otherBedroom.position).toEqual(1)
+    })
   })
 })
