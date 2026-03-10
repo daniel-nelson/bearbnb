@@ -438,7 +438,7 @@ export const schema = {
     },
   },
   places: {
-    serializerKeys: ['default', 'summary'],
+    serializerKeys: ['default', 'forGuests', 'summary', 'summaryForGuests'],
     scopes: {
       default: [],
       named: [],
@@ -567,7 +567,7 @@ export const schema = {
     },
   },
   rooms: {
-    serializerKeys: ['default', 'summary'],
+    serializerKeys: ['default', 'forGuests', 'summary'],
     scopes: {
       default: ['dream:STI'],
       named: [],
