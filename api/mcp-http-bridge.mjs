@@ -1,7 +1,7 @@
 /**
  * MCP-HTTP Bridge (JavaScript): Connects MCP stdio protocol to your HTTP RAG API.
  *
- * Usage: node mcp-http-bridge.js
+ * Usage: node mcp-http-bridge.mjs
  *
  * Requirements:
  *   - Node.js 18+
