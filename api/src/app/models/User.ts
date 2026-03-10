@@ -1,6 +1,7 @@
+import ApplicationModel from '@models/ApplicationModel.js'
+import Guest from '@models/Guest.js'
 import { Decorators } from '@rvoh/dream'
 import { DreamColumn } from '@rvoh/dream/types'
-import ApplicationModel from '@models/ApplicationModel.js'
 
 const deco = new Decorators<typeof User>()
 
@@ -16,4 +17,12 @@ export default class User extends ApplicationModel {
 
   @deco.Encrypted()
   public phone: DreamColumn<User, 'encryptedPhone'>
+
+  @deco.AfterCreate()
+  public async createGuest(this: User) {
+    this.guest = await this.createAssociation('guest')
+  }
+
+  @deco.HasOne('Guest')
+  public guest: Guest
 }
