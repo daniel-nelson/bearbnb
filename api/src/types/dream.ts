@@ -123,6 +123,64 @@ export const schema = {
       },
     },
   },
+  hosts: {
+    serializerKeys: ['default', 'summary'],
+    scopes: {
+      default: [],
+      named: [],
+    },
+    nonJsonColumnNames: ['createdAt', 'id', 'updatedAt', 'userId'],
+    columns: {
+      createdAt: {
+        coercedType: {} as DateTime,
+        enumType: null,
+        enumArrayType: null,
+        enumValues: null,
+        dbType: 'timestamp without time zone',
+        allowNull: false,
+        isArray: false,
+      },
+      id: {
+        coercedType: {} as string,
+        enumType: null,
+        enumArrayType: null,
+        enumValues: null,
+        dbType: 'uuid',
+        allowNull: false,
+        isArray: false,
+      },
+      updatedAt: {
+        coercedType: {} as DateTime,
+        enumType: null,
+        enumArrayType: null,
+        enumValues: null,
+        dbType: 'timestamp without time zone',
+        allowNull: false,
+        isArray: false,
+      },
+      userId: {
+        coercedType: {} as string,
+        enumType: null,
+        enumArrayType: null,
+        enumValues: null,
+        dbType: 'uuid',
+        allowNull: false,
+        isArray: false,
+      },
+    },
+    virtualColumns: [],
+    associations: {
+      user: {
+        type: 'BelongsTo',
+        foreignKey: 'userId',
+        foreignKeyTypeColumn: null,
+        tables: ['users'],
+        optional: false,
+        requiredAndClauses: null,
+        passthroughAndClauses: null,
+      },
+    },
+  },
   users: {
     serializerKeys: [],
     scopes: {
@@ -194,6 +252,15 @@ export const schema = {
         requiredAndClauses: null,
         passthroughAndClauses: null,
       },
+      host: {
+        type: 'HasOne',
+        foreignKey: 'userId',
+        foreignKeyTypeColumn: null,
+        tables: ['hosts'],
+        optional: null,
+        requiredAndClauses: null,
+        passthroughAndClauses: null,
+      },
     },
   },
 } as const
@@ -204,6 +271,7 @@ export const connectionTypeConfig = {
   globalNames: {
     models: {
       Guest: 'guests',
+      Host: 'hosts',
       User: 'users',
     },
   },
