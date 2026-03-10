@@ -141,7 +141,7 @@ export const schema = {
   host_places: {
     serializerKeys: [],
     scopes: {
-      default: [],
+      default: ['dream:SoftDelete'],
       named: [],
     },
     nonJsonColumnNames: [
@@ -327,7 +327,7 @@ export const schema = {
   localized_texts: {
     serializerKeys: ['default', 'summary'],
     scopes: {
-      default: [],
+      default: ['dream:SoftDelete'],
       named: [],
     },
     nonJsonColumnNames: [
@@ -440,7 +440,7 @@ export const schema = {
   places: {
     serializerKeys: ['default', 'forGuests', 'summary', 'summaryForGuests'],
     scopes: {
-      default: [],
+      default: ['dream:SoftDelete'],
       named: [],
     },
     nonJsonColumnNames: [
@@ -569,7 +569,7 @@ export const schema = {
   rooms: {
     serializerKeys: ['default', 'forGuests', 'summary'],
     scopes: {
-      default: ['dream:STI'],
+      default: ['dream:STI', 'dream:SoftDelete'],
       named: [],
     },
     nonJsonColumnNames: [
@@ -793,7 +793,7 @@ export const schema = {
 
 export const connectionTypeConfig = {
   passthroughColumns: ['locale'],
-  allDefaultScopeNames: ['dream:STI'],
+  allDefaultScopeNames: ['dream:STI', 'dream:SoftDelete'],
   globalNames: {
     models: {
       Guest: 'guests',
