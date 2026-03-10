@@ -446,6 +446,16 @@
                       "integer",
                       "null"
                     ]
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "Bathroom",
+                      "Bedroom",
+                      "Den",
+                      "Kitchen",
+                      "LivingRoom"
+                    ]
                   }
                 }
               }
@@ -851,11 +861,23 @@
         "type": "object",
         "additionalProperties": false,
         "required": [
-          "id"
+          "id",
+          "position",
+          "type"
         ],
         "properties": {
           "id": {
             "type": "string"
+          },
+          "position": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "type": {
+            "type": "string",
+            "description": "The following values will be allowed:\n  Bathroom"
           }
         }
       },
@@ -903,11 +925,23 @@
         "type": "object",
         "additionalProperties": false,
         "required": [
-          "id"
+          "id",
+          "position",
+          "type"
         ],
         "properties": {
           "id": {
             "type": "string"
+          },
+          "position": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "type": {
+            "type": "string",
+            "description": "The following values will be allowed:\n  Bedroom"
           }
         }
       },
@@ -947,11 +981,23 @@
         "type": "object",
         "additionalProperties": false,
         "required": [
-          "id"
+          "id",
+          "position",
+          "type"
         ],
         "properties": {
           "id": {
             "type": "string"
+          },
+          "position": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "type": {
+            "type": "string",
+            "description": "The following values will be allowed:\n  Den"
           }
         }
       },
@@ -999,11 +1045,23 @@
         "type": "object",
         "additionalProperties": false,
         "required": [
-          "id"
+          "id",
+          "position",
+          "type"
         ],
         "properties": {
           "id": {
             "type": "string"
+          },
+          "position": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "type": {
+            "type": "string",
+            "description": "The following values will be allowed:\n  Kitchen"
           }
         }
       },
@@ -1043,11 +1101,23 @@
         "type": "object",
         "additionalProperties": false,
         "required": [
-          "id"
+          "id",
+          "position",
+          "type"
         ],
         "properties": {
           "id": {
             "type": "string"
+          },
+          "position": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "type": {
+            "type": "string",
+            "description": "The following values will be allowed:\n  LivingRoom"
           }
         }
       },

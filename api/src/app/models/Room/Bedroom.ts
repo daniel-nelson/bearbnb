@@ -1,12 +1,12 @@
-import { Decorators, STI } from '@rvoh/dream'
-import { DreamColumn, DreamSerializers } from '@rvoh/dream/types'
 import Room from '@models/Room.js'
+import { STI } from '@rvoh/dream'
+import { DreamColumn, DreamSerializers } from '@rvoh/dream/types'
 
-const deco = new Decorators<typeof Bedroom>()
+// const deco = new Decorators<typeof Bedroom>()
 
 @STI(Room)
 export default class Bedroom extends Room {
-  public override get serializers(): DreamSerializers<Bedroom> {
+  public get serializers(): DreamSerializers<Bedroom> {
     return {
       default: 'Room/BedroomSerializer',
       summary: 'Room/BedroomSummarySerializer',

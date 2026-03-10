@@ -446,6 +446,16 @@
                       "integer",
                       "null"
                     ]
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "Bathroom",
+                      "Bedroom",
+                      "Den",
+                      "Kitchen",
+                      "LivingRoom"
+                    ]
                   }
                 }
               }
@@ -867,11 +877,25 @@
         "type": "object",
         "additionalProperties": false,
         "required": [
-          "id"
+          "id",
+          "position",
+          "type"
         ],
         "properties": {
           "id": {
             "type": "string"
+          },
+          "position": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "Bathroom"
+            ]
           }
         }
       },
@@ -928,11 +952,25 @@
         "type": "object",
         "additionalProperties": false,
         "required": [
-          "id"
+          "id",
+          "position",
+          "type"
         ],
         "properties": {
           "id": {
             "type": "string"
+          },
+          "position": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "Bedroom"
+            ]
           }
         }
       },
@@ -974,11 +1012,25 @@
         "type": "object",
         "additionalProperties": false,
         "required": [
-          "id"
+          "id",
+          "position",
+          "type"
         ],
         "properties": {
           "id": {
             "type": "string"
+          },
+          "position": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "Den"
+            ]
           }
         }
       },
@@ -1033,11 +1085,25 @@
         "type": "object",
         "additionalProperties": false,
         "required": [
-          "id"
+          "id",
+          "position",
+          "type"
         ],
         "properties": {
           "id": {
             "type": "string"
+          },
+          "position": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "Kitchen"
+            ]
           }
         }
       },
@@ -1079,11 +1145,25 @@
         "type": "object",
         "additionalProperties": false,
         "required": [
-          "id"
+          "id",
+          "position",
+          "type"
         ],
         "properties": {
           "id": {
             "type": "string"
+          },
+          "position": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "LivingRoom"
+            ]
           }
         }
       },
