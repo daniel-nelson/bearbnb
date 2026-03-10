@@ -64,9 +64,11 @@ import {
 } from '@rvoh/dream'
 import {
   type BathOrShowerStylesEnum,
+  type BedTypesEnum,
   type PlaceStylesEnum,
   type RoomTypesEnum,
   BathOrShowerStylesEnumValues,
+  BedTypesEnumValues,
   PlaceStylesEnumValues,
   RoomTypesEnumValues,
 } from './db.js'
@@ -408,6 +410,7 @@ export const schema = {
     },
     nonJsonColumnNames: [
       'bathOrShowerStyle',
+      'bedTypes',
       'createdAt',
       'deletedAt',
       'id',
@@ -425,6 +428,15 @@ export const schema = {
         dbType: 'bath_or_shower_styles_enum',
         allowNull: true,
         isArray: false,
+      },
+      bedTypes: {
+        coercedType: {} as BedTypesEnum[],
+        enumType: {} as BedTypesEnum,
+        enumArrayType: [] as BedTypesEnum[],
+        enumValues: BedTypesEnumValues,
+        dbType: 'bed_types_enum[]',
+        allowNull: false,
+        isArray: true,
       },
       createdAt: {
         coercedType: {} as DateTime,
@@ -598,6 +610,7 @@ export const connectionTypeConfig = {
       Place: 'places',
       Room: 'rooms',
       'Room/Bathroom': 'rooms',
+      'Room/Bedroom': 'rooms',
       User: 'users',
     },
   },
