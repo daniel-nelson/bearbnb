@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.build.json",
+  "ts-node": {
+    "transpileOnly": true,
+    "esm": true
+  },
+
+  "compilerOptions": {
+    "types": ["luxon-jest-matchers", "spec/global.d.ts"]
+  },
+  "include": ["src", "spec"]
+}
