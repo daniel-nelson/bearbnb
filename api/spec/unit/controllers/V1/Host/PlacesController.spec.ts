@@ -1,9 +1,10 @@
+import Host from '@models/Host.js'
 import Place from '@models/Place.js'
 import User from '@models/User.js'
-import Host from '@models/Host.js'
+import createHost from '@spec/factories/HostFactory.js'
+import createHostPlace from '@spec/factories/HostPlaceFactory.js'
 import createPlace from '@spec/factories/PlaceFactory.js'
 import createUser from '@spec/factories/UserFactory.js'
-import createHost from '@spec/factories/HostFactory.js'
 import { RequestBody, session, SpecRequestType } from '@spec/unit/helpers/authentication.js'
 
 describe('V1/Host/PlacesController', () => {
@@ -23,7 +24,8 @@ describe('V1/Host/PlacesController', () => {
     }
 
     it('returns the index of Places', async () => {
-      const place = await createPlace({ host })
+      const place = await createPlace()
+      await createHostPlace({ host, place })
 
       const { body } = await index(200)
 
@@ -53,7 +55,8 @@ describe('V1/Host/PlacesController', () => {
     }
 
     it('returns the specified Place', async () => {
-      const place = await createPlace({ host })
+      const place = await createPlace()
+      await createHostPlace({ host, place })
 
       const { body } = await show(place, 200)
 
@@ -122,7 +125,8 @@ describe('V1/Host/PlacesController', () => {
     }
 
     it('updates the Place', async () => {
-      const place = await createPlace({ host })
+      const place = await createPlace()
+      await createHostPlace({ host, place })
 
       await update(place, {
         name: 'Updated Place name',
@@ -165,7 +169,8 @@ describe('V1/Host/PlacesController', () => {
     }
 
     it('deletes the Place', async () => {
-      const place = await createPlace({ host })
+      const place = await createPlace()
+      await createHostPlace({ host, place })
 
       await destroy(place, 204)
 
