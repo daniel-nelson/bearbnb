@@ -343,7 +343,14 @@
                     "results": {
                       "type": "array",
                       "items": {
-                        "$ref": "#/components/schemas/RoomBathroomSummary"
+                        "anyOf": [
+                          {
+                            "$ref": "#/components/schemas/RoomBathroomSummary"
+                          },
+                          {
+                            "$ref": "#/components/schemas/RoomBedroomSummary"
+                          }
+                        ]
                       }
                     }
                   }
@@ -402,7 +409,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/RoomBathroom"
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/RoomBathroom"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RoomBedroom"
+                    }
+                  ]
                 }
               }
             },
@@ -461,7 +475,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/RoomBathroom"
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/RoomBathroom"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RoomBedroom"
+                    }
+                  ]
                 }
               }
             },
@@ -719,6 +740,57 @@
         }
       },
       "RoomBathroomSummary": {
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        }
+      },
+      "RoomBedroom": {
+        "type": "object",
+        "required": [
+          "bedTypes",
+          "id",
+          "position",
+          "type"
+        ],
+        "properties": {
+          "bedTypes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "bunk",
+                "cot",
+                "king",
+                "queen",
+                "sofabed",
+                "twin"
+              ]
+            }
+          },
+          "id": {
+            "type": "string"
+          },
+          "position": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "Bedroom"
+            ]
+          }
+        }
+      },
+      "RoomBedroomSummary": {
         "type": "object",
         "required": [
           "id"
