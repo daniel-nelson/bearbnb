@@ -328,7 +328,7 @@
                     "results": {
                       "type": "array",
                       "items": {
-                        "$ref": "#/components/schemas/RoomSummary"
+                        "$ref": "#/components/schemas/RoomBathroomSummary"
                       }
                     }
                   }
@@ -384,7 +384,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Room"
+                  "$ref": "#/components/schemas/RoomBathroom"
                 }
               }
             },
@@ -440,7 +440,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Room"
+                  "$ref": "#/components/schemas/RoomBathroom"
                 }
               }
             },
@@ -649,14 +649,28 @@
           }
         }
       },
-      "Room": {
+      "RoomBathroom": {
         "type": "object",
         "required": [
+          "bathOrShowerStyle",
           "id",
           "position",
           "type"
         ],
         "properties": {
+          "bathOrShowerStyle": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "bath",
+              "bath_and_shower",
+              "none",
+              "shower",
+              null
+            ]
+          },
           "id": {
             "type": "string"
           },
@@ -669,12 +683,12 @@
           "type": {
             "type": "string",
             "enum": [
-              "Room"
+              "Bathroom"
             ]
           }
         }
       },
-      "RoomSummary": {
+      "RoomBathroomSummary": {
         "type": "object",
         "required": [
           "id"
