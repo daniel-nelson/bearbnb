@@ -1,0 +1,46 @@
+# SECURITY — pnpm supply-chain hardening for this generated app.
+#
+# Dependency build scripts (postinstall, etc.) are the primary install-time
+# attack vector for Shai-Hulud-class npm worms. pnpm 10+ BLOCKS all dependency
+# lifecycle scripts by default; that default is left in place here. This app's
+# dependency tree needs no build scripts to run: esbuild ships prebuilt binaries
+# via optionalDependencies, msgpackr-extract ships prebuilt native binaries, and
+# puppeteer's browser is installed explicitly via `npx puppeteer browsers
+# install` — so all three are pinned to `false` (blocked) below.
+#
+# Why list them explicitly instead of relying on the block-by-default? pnpm 11
+# rewrites this file on every non-interactive install, appending any unlisted
+# build-script dependency as `<pkg>: set this to true or false` — an invalid
+# placeholder you'd have to resolve by hand (pnpm/pnpm#11574). Pre-declaring the
+# build-script deps this app ships keeps `pnpm install` from mutating the file.
+# If you ADD a dependency that genuinely needs to build, add ONLY that package
+# here with `true` — every `true` entry re-opens script execution, so keep them
+# minimal. A new transitive build-script dep will still surface as a placeholder
+# on first install; set it to `false` (or `true` if it truly must build).
+# `strictDepBuilds: false` keeps the blocked-script notice a warning, not a hard
+# install error.
+strictDepBuilds: false
+
+allowBuilds:
+  esbuild: false
+  msgpackr-extract: false
+  puppeteer: false
+
+# Don't install dependency versions published in the last 3 days (4320 min). Most
+# worm-injected releases are caught and unpublished inside that window, so the
+# cooldown rides it out. 3 days sits under the typical critical-CVE patch SLA, so
+# routine security patching never has to bypass it. @rvoh/* packages are excluded
+# because Psychic ships frequent releases that generated apps should pick up
+# immediately (and they come from the trusted first-party publisher).
+minimumReleaseAge: 4320
+
+overrides:
+  path-to-regexp: '>=8.4.0'
+
+minimumReleaseAgeExclude:
+  - '@rvoh/dream'
+  - '@rvoh/dream-spec-helpers'
+  - '@rvoh/psychic'
+  - '@rvoh/psychic-spec-helpers'
+  - '@rvoh/psychic-workers'
+  - '@rvoh/psychic-websockets'
