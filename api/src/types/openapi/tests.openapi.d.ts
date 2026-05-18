@@ -216,6 +216,7 @@ export interface components {
         };
         PlaceSummary: {
             id: string;
+            name: string;
         };
         ValidationErrors: {
             /** @enum {string} */
