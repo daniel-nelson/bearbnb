@@ -349,6 +349,9 @@
                           },
                           {
                             "$ref": "#/components/schemas/RoomBedroomSummary"
+                          },
+                          {
+                            "$ref": "#/components/schemas/RoomKitchenSummary"
                           }
                         ]
                       }
@@ -415,6 +418,9 @@
                     },
                     {
                       "$ref": "#/components/schemas/RoomBedroom"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RoomKitchen"
                     }
                   ]
                 }
@@ -481,6 +487,9 @@
                     },
                     {
                       "$ref": "#/components/schemas/RoomBedroom"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RoomKitchen"
                     }
                   ]
                 }
@@ -791,6 +800,55 @@
         }
       },
       "RoomBedroomSummary": {
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        }
+      },
+      "RoomKitchen": {
+        "type": "object",
+        "required": [
+          "appliances",
+          "id",
+          "position",
+          "type"
+        ],
+        "properties": {
+          "appliances": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "dishwasher",
+                "microwave",
+                "oven",
+                "stove"
+              ]
+            }
+          },
+          "id": {
+            "type": "string"
+          },
+          "position": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "Kitchen"
+            ]
+          }
+        }
+      },
+      "RoomKitchenSummary": {
         "type": "object",
         "required": [
           "id"
