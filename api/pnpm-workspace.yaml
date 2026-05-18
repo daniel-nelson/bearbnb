@@ -1,0 +1,37 @@
+# SECURITY — pnpm supply-chain hardening for this generated app.
+#
+# Dependency build scripts (postinstall, etc.) are the primary install-time
+# attack vector for Shai-Hulud-class npm worms. pnpm 10+ BLOCKS all dependency
+# lifecycle scripts by default; that default is left in place here (note there is
+# no `allowBuilds` allowlist — this app's dependency tree needs no build scripts:
+# esbuild ships prebuilt binaries via optionalDependencies, and puppeteer's
+# browser is installed explicitly via `npx puppeteer browsers install`). If you
+# later add a dependency that genuinely needs to build, add ONLY that package to
+# an `allowBuilds:` map here — every entry re-opens script execution, so keep it
+# minimal. `strictDepBuilds: false` keeps the blocked-script notice a warning, not
+# a hard install error.
+strictDepBuilds: false
+
+# Don't install dependency versions published in the last 3 days (4320 min). Most
+# worm-injected releases are caught and unpublished inside that window, so the
+# cooldown rides it out. 3 days sits under the typical critical-CVE patch SLA, so
+# routine security patching never has to bypass it. @rvoh/* packages are excluded
+# because Psychic ships frequent releases that generated apps should pick up
+# immediately (and they come from the trusted first-party publisher).
+minimumReleaseAge: 4320
+
+overrides:
+  path-to-regexp: '>=8.4.0'
+
+minimumReleaseAgeExclude:
+  - '@rvoh/dream'
+  - '@rvoh/dream-spec-helpers'
+  - '@rvoh/psychic'
+  - '@rvoh/psychic-spec-helpers'
+  - '@rvoh/psychic-workers'
+  - '@rvoh/psychic-websockets'
+
+allowBuilds:
+  esbuild: set this to true or false
+  msgpackr-extract: set this to true or false
+  puppeteer: set this to true or false
