@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "dream-psychic-rag": {
+      "command": "node",
+      "args": ["./api/mcp-http-bridge.mjs"],
+      "env": {
+        "RAG_API_KEY": "none-needed-for-now",
+        "RAG_API_ENDPOINT": "https://rag.psychicframework.com/query"
+      }
+    }
+  }
+}
