@@ -1,0 +1,16 @@
+.DS_Store
+dist
+node_modules
+*.log
+.env*
+!.env*.example
+src/.psy/*
+.vscode
+
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
