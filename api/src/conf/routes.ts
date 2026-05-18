@@ -4,14 +4,16 @@ import { PsychicRouter } from '@rvoh/psychic'
 
 export default function routes(r: PsychicRouter) {
   r.namespace('v1', r => {
+    r.namespace('guest', r => {
+      r.resources('places', { only: ['index', 'show'] })
+    })
+
     r.namespace('host', r => {
       r.resources('localized-texts', { only: ['update', 'destroy'] })
 
       r.resources('places', r => {
         r.resources('rooms')
-
       })
-
     })
   })
 
