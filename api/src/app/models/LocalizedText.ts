@@ -1,10 +1,11 @@
-import { SoftDelete } from '@rvoh/dream'
+import { Decorators, SoftDelete } from '@rvoh/dream'
 import { DreamColumn, DreamSerializers } from '@rvoh/dream/types'
 import ApplicationModel from '@models/ApplicationModel.js'
+import Host from '@models/Host.js'
+import Place from '@models/Place.js'
+import Room from '@models/Room.js'
 
-// Uncomment when adding decorators (@deco.BelongsTo, @deco.Validates, etc.):
-// import { Decorators } from '@rvoh/dream'
-// const deco = new Decorators<typeof LocalizedText>()
+const deco = new Decorators<typeof LocalizedText>()
 
 @SoftDelete()
 export default class LocalizedText extends ApplicationModel {
@@ -28,4 +29,7 @@ export default class LocalizedText extends ApplicationModel {
   public createdAt: DreamColumn<LocalizedText, 'createdAt'>
   public updatedAt: DreamColumn<LocalizedText, 'updatedAt'>
   public deletedAt: DreamColumn<LocalizedText, 'deletedAt'>
+
+  @deco.BelongsTo(['Host', 'Place', 'Room'], { polymorphic: true, on: 'localizableId' })
+  public localizable: Host | Place | Room
 }
