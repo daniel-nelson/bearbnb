@@ -116,6 +116,29 @@ describe('V1/Guest/BookingsController', () => {
         }),
       )
     })
+
+    it('creates a Guest profile when the authenticated User was created outside Dream hooks', async () => {
+      const user = await User.create(
+        {
+          email: 'better-auth-created-user@example.com',
+        },
+        { skipHooks: true },
+      )
+      request = await session(user)
+
+      const { body } = await create(
+        {
+          placeId: place.id,
+          startsOn: CalendarDate.today().toISO(),
+          endsOn: CalendarDate.today().toISO(),
+        },
+        201,
+      )
+
+      const guest = await user.associationQuery('guest').firstOrFail()
+      const booking = await guest.associationQuery('bookings').firstOrFail()
+      expect(body).toEqual(expect.objectContaining({ id: booking.id }))
+    })
   })
 
   describe('PATCH update', () => {

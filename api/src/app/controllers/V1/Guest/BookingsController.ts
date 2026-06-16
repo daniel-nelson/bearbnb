@@ -15,10 +15,9 @@ export default class V1GuestBookingsController extends V1GuestBaseController {
   protected async loadCurrentGuest() {
     if (!this.currentUser) return this.unauthorized()
 
-    const guest = await this.currentUser.associationQuery('guest').first()
-    if (!guest) return this.forbidden()
-
-    this.currentGuest = guest
+    this.currentGuest =
+      (await this.currentUser.associationQuery('guest').first()) ||
+      (await this.currentUser.createAssociation('guest'))
   }
 
   @OpenAPI(Booking, {

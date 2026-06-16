@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 
 type LabeledValue = {
   value: string;
@@ -32,6 +32,8 @@ export default function PlaceDetailPage() {
   const params = useParams<{ id: string }>();
   const [place, setPlace] = useState<PlaceDetail | null>(null);
   const [status, setStatus] = useState("Loading place...");
+  const [bookingStatus, setBookingStatus] = useState("");
+  const [isBooking, setIsBooking] = useState(false);
 
   useEffect(() => {
     async function loadPlace() {
@@ -53,6 +55,45 @@ export default function PlaceDetailPage() {
 
     void loadPlace();
   }, [params.id]);
+
+  async function handleBooking(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!place) return;
+
+    const formData = new FormData(event.currentTarget);
+    const startsOn = String(formData.get("starts-on") ?? "");
+    const endsOn = String(formData.get("ends-on") ?? "");
+
+    setIsBooking(true);
+    setBookingStatus("");
+
+    try {
+      const response = await fetch("/api/guest/bookings", {
+        body: JSON.stringify({
+          placeId: place.id,
+          startsOn,
+          endsOn,
+        }),
+        cache: "no-store",
+        credentials: "include",
+        headers: {
+          "accept-language": "en-US",
+          "Content-Type": "application/json",
+        },
+        method: "POST",
+      });
+
+      if (response.ok) {
+        setBookingStatus(`Booked ${place.title}.`);
+      } else if (response.status === 401) {
+        setBookingStatus("Sign in before booking this place.");
+      } else {
+        setBookingStatus("We could not book this place.");
+      }
+    } finally {
+      setIsBooking(false);
+    }
+  }
 
   return (
     <main className="min-h-screen bg-[#f7f7f4] text-[#1d1d1f]">
@@ -78,32 +119,85 @@ export default function PlaceDetailPage() {
           </p>
         ) : place ? (
           <>
-            <section className="border-b border-[#deded8] py-10 lg:grid lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-10 lg:py-14">
+            <section className="border-b border-[#deded8] py-10 lg:grid lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-10 lg:py-14">
               <div>
                 <h1 className="mt-4 max-w-3xl text-4xl font-semibold leading-[1.06] tracking-normal text-[#111113] sm:text-6xl">
                   {place.title}
                 </h1>
               </div>
-              <dl className="mt-8 grid grid-cols-2 border border-[#deded8] bg-white lg:mt-0">
-                <div className="border-b border-r border-[#deded8] p-4">
-                  <dt className="text-sm font-medium text-[#707069]">Sleeps</dt>
-                  <dd className="mt-2 text-2xl font-semibold">
-                    {place.sleeps}
-                  </dd>
-                </div>
-                <div className="border-b border-[#deded8] p-4">
-                  <dt className="text-sm font-medium text-[#707069]">Style</dt>
-                  <dd className="mt-2 text-lg font-semibold">
-                    {place.displayStyle}
-                  </dd>
-                </div>
-                <div className="col-span-2 p-4">
-                  <dt className="text-sm font-medium text-[#707069]">Rooms</dt>
-                  <dd className="mt-2 text-2xl font-semibold">
-                    {place.rooms.length}
-                  </dd>
-                </div>
-              </dl>
+              <aside className="mt-8 border border-[#deded8] bg-white lg:mt-0">
+                <dl className="grid grid-cols-2 border-b border-[#deded8]">
+                  <div className="border-r border-[#deded8] p-4">
+                    <dt className="text-sm font-medium text-[#707069]">
+                      Sleeps
+                    </dt>
+                    <dd className="mt-2 text-2xl font-semibold">
+                      {place.sleeps}
+                    </dd>
+                  </div>
+                  <div className="p-4">
+                    <dt className="text-sm font-medium text-[#707069]">
+                      Rooms
+                    </dt>
+                    <dd className="mt-2 text-2xl font-semibold">
+                      {place.rooms.length}
+                    </dd>
+                  </div>
+                  <div className="col-span-2 border-t border-[#deded8] p-4">
+                    <dt className="text-sm font-medium text-[#707069]">
+                      Style
+                    </dt>
+                    <dd className="mt-2 text-lg font-semibold">
+                      {place.displayStyle}
+                    </dd>
+                  </div>
+                </dl>
+
+                <form className="space-y-4 p-4" onSubmit={handleBooking}>
+                  <div>
+                    <p className="text-sm font-medium uppercase tracking-[0.12em] text-[#707069]">
+                      Booking
+                    </p>
+                    <h2 className="mt-2 text-2xl font-semibold tracking-normal text-[#151516]">
+                      Reserve this place
+                    </h2>
+                  </div>
+                  <label className="block">
+                    <span className="text-sm font-medium text-[#4f4f4a]">
+                      Starts
+                    </span>
+                    <input
+                      className="mt-2 h-11 w-full border border-[#d9d9d2] bg-white px-3 text-base text-[#171717] outline-none transition focus:border-[#1d1d1f]"
+                      name="starts-on"
+                      required
+                      type="date"
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="text-sm font-medium text-[#4f4f4a]">
+                      Ends
+                    </span>
+                    <input
+                      className="mt-2 h-11 w-full border border-[#d9d9d2] bg-white px-3 text-base text-[#171717] outline-none transition focus:border-[#1d1d1f]"
+                      name="ends-on"
+                      required
+                      type="date"
+                    />
+                  </label>
+                  <button
+                    className="h-11 w-full bg-[#1d1d1f] px-4 text-sm font-semibold text-white transition hover:bg-[#333336] disabled:cursor-not-allowed disabled:bg-[#9a9a93]"
+                    disabled={isBooking}
+                    type="submit"
+                  >
+                    {isBooking ? "Booking..." : "Book place"}
+                  </button>
+                  {bookingStatus && (
+                    <p className="border border-[#e4e4de] bg-[#fafaf8] px-3 py-2 text-sm text-[#4f4f4a]">
+                      {bookingStatus}
+                    </p>
+                  )}
+                </form>
+              </aside>
             </section>
 
             <section className="py-10">

@@ -36,9 +36,11 @@ function proxyHeaders(request: Request) {
   const headers = new Headers();
   const contentType = request.headers.get("content-type");
   const cookie = request.headers.get("cookie");
+  const origin = request.headers.get("origin");
 
   if (contentType) headers.set("content-type", contentType);
   if (cookie) headers.set("cookie", cookie);
+  if (origin) headers.set("origin", origin);
 
   return headers;
 }
