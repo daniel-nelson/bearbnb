@@ -19,11 +19,23 @@ type ErrorResponse = {
   message?: string;
 };
 
+type PlaceSummary = {
+  id: string;
+  title: string;
+};
+
+type PlacesIndexResponse = {
+  cursor: string | null;
+  results: PlaceSummary[];
+};
+
 export default function Home() {
   const [mode, setMode] = useState<AuthMode>("signup");
   const [user, setUser] = useState<AuthUser | null>(null);
+  const [places, setPlaces] = useState<PlaceSummary[]>([]);
   const [status, setStatus] = useState("Checking your session...");
   const [error, setError] = useState("");
+  const [placesStatus, setPlacesStatus] = useState("Loading places...");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -51,6 +63,27 @@ export default function Home() {
     }
 
     void loadSession();
+  }, []);
+
+  useEffect(() => {
+    async function loadPlaces() {
+      const response = await fetch("/api/guest/places", {
+        headers: {
+          "accept-language": "en-US",
+        },
+      });
+
+      if (!response.ok) {
+        setPlacesStatus("Places are not available right now.");
+        return;
+      }
+
+      const body = (await response.json()) as PlacesIndexResponse;
+      setPlaces(body.results);
+      setPlacesStatus(body.results.length ? "" : "No places are available yet.");
+    }
+
+    void loadPlaces();
   }, []);
 
   async function handleSignup(event: FormEvent<HTMLFormElement>) {
@@ -136,7 +169,7 @@ export default function Home() {
               Guest access
             </p>
             <h1 className="text-4xl font-semibold leading-[1.04] tracking-normal text-[#111113] sm:text-6xl">
-              Find your next stay.
+              Find your next place.
             </h1>
             <p className="mt-6 max-w-xl text-lg leading-8 text-[#5f5f58]">
               Start with a simple guest account. Save your session today, then
@@ -232,6 +265,35 @@ export default function Home() {
               </>
             )}
           </section>
+        </section>
+
+        <section className="border-t border-[#deded8] py-10">
+          <div className="mb-6">
+            <div>
+              <h2 className="text-3xl font-semibold tracking-normal text-[#111113]">
+                Available places
+              </h2>
+            </div>
+          </div>
+
+          {placesStatus ? (
+            <p className="border border-[#deded8] bg-white px-4 py-5 text-sm text-[#62625c]">
+              {placesStatus}
+            </p>
+          ) : (
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {places.map((place) => (
+                <article
+                  className="border border-[#deded8] bg-white p-3 transition hover:border-[#b9b9b1] sm:p-4"
+                  key={place.id}
+                >
+                  <p className="text-lg font-semibold text-[#171719]">
+                    {place.title}
+                  </p>
+                </article>
+              ))}
+            </div>
+          )}
         </section>
       </div>
     </main>
