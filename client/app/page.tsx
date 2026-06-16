@@ -337,14 +337,15 @@ export default function Home() {
           ) : (
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {places.map((place) => (
-                <article
-                  className="border border-[#deded8] bg-white p-3 transition hover:border-[#b9b9b1] sm:p-4"
+                <Link
+                  className="block border border-[#deded8] bg-white p-3 transition hover:border-[#b9b9b1] focus-visible:border-[#1d1d1f] focus-visible:outline-none sm:p-4"
+                  href={`/places/${place.id}`}
                   key={place.id}
                 >
                   <p className="text-lg font-semibold text-[#171719]">
                     {place.title}
                   </p>
-                </article>
+                </Link>
               ))}
             </div>
           )}
