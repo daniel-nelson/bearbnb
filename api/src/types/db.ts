@@ -200,6 +200,17 @@ export interface AuthVerifications {
   value: string
 }
 
+export interface Bookings {
+  createdAt: Timestamp
+  deletedAt: Timestamp | null
+  endsOn: Timestamp
+  guestId: string
+  id: Generated<string>
+  placeId: string
+  startsOn: Timestamp
+  updatedAt: Timestamp
+}
+
 export interface Guests {
   createdAt: Timestamp
   deletedAt: Timestamp | null
@@ -276,6 +287,7 @@ export interface DB {
   auth_accounts: AuthAccounts
   auth_sessions: AuthSessions
   auth_verifications: AuthVerifications
+  bookings: Bookings
   guests: Guests
   host_places: HostPlaces
   hosts: Hosts
@@ -289,6 +301,7 @@ export class DBClass {
   auth_accounts: AuthAccounts
   auth_sessions: AuthSessions
   auth_verifications: AuthVerifications
+  bookings: Bookings
   guests: Guests
   host_places: HostPlaces
   hosts: Hosts

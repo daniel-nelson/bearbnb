@@ -58,6 +58,8 @@ us humans, he says:
 
 export const globalTypeConfig = {
   serializers: [
+    'BookingSerializer',
+    'BookingSummarySerializer',
     'GuestSerializer',
     'GuestSummarySerializer',
     'HostSerializer',
