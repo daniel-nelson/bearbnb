@@ -164,6 +164,42 @@ export const RoomTypesEnumValues = [
 
 export type Timestamp = ColumnType<DateTime | CalendarDate>
 
+export interface AuthAccounts {
+  accessToken: string | null
+  accessTokenExpiresAt: Timestamp | null
+  accountId: string
+  createdAt: Timestamp
+  id: Generated<string>
+  idToken: string | null
+  password: string | null
+  providerId: string
+  refreshToken: string | null
+  refreshTokenExpiresAt: Timestamp | null
+  scope: string | null
+  updatedAt: Timestamp
+  userId: string
+}
+
+export interface AuthSessions {
+  createdAt: Timestamp
+  expiresAt: Timestamp
+  id: Generated<string>
+  ipAddress: string | null
+  token: string
+  updatedAt: Timestamp
+  userAgent: string | null
+  userId: string
+}
+
+export interface AuthVerifications {
+  createdAt: Timestamp
+  expiresAt: Timestamp
+  id: Generated<string>
+  identifier: string
+  updatedAt: Timestamp
+  value: string
+}
+
 export interface Guests {
   createdAt: Timestamp
   deletedAt: Timestamp | null
@@ -228,12 +264,18 @@ export interface Users {
   createdAt: Timestamp
   deletedAt: Timestamp | null
   email: string
-  encryptedPhone: string
+  emailVerified: Generated<boolean>
+  encryptedPhone: string | null
   id: Generated<string>
+  image: string | null
+  name: Generated<string>
   updatedAt: Timestamp
 }
 
 export interface DB {
+  auth_accounts: AuthAccounts
+  auth_sessions: AuthSessions
+  auth_verifications: AuthVerifications
   guests: Guests
   host_places: HostPlaces
   hosts: Hosts
@@ -244,6 +286,9 @@ export interface DB {
 }
 
 export class DBClass {
+  auth_accounts: AuthAccounts
+  auth_sessions: AuthSessions
+  auth_verifications: AuthVerifications
   guests: Guests
   host_places: HostPlaces
   hosts: Hosts

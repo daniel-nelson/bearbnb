@@ -13,7 +13,10 @@ export default class User extends ApplicationModel {
   }
 
   public id: DreamColumn<User, 'id'>
+  public name: DreamColumn<User, 'name'>
   public email: DreamColumn<User, 'email'>
+  public emailVerified: DreamColumn<User, 'emailVerified'>
+  public image: DreamColumn<User, 'image'>
   public createdAt: DreamColumn<User, 'createdAt'>
   public updatedAt: DreamColumn<User, 'updatedAt'>
   public deletedAt: DreamColumn<User, 'deletedAt'>

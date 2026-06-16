@@ -1,7 +1,14 @@
 import { Env } from '@rvoh/dream'
 
 class AppEnvClass extends Env<{
-  boolean: 'CONSOLE_SERVICE' | 'CLIENT' | 'DB_NO_SSL' | 'REQUEST_LOGGING' | 'WEB_SERVICE' | 'WS_SERVICE' | 'WORKER_SERVICE'
+  boolean:
+    | 'CONSOLE_SERVICE'
+    | 'CLIENT'
+    | 'DB_NO_SSL'
+    | 'REQUEST_LOGGING'
+    | 'WEB_SERVICE'
+    | 'WS_SERVICE'
+    | 'WORKER_SERVICE'
 
   integer:
     | 'BG_JOBS_REDIS_PORT'
@@ -16,6 +23,8 @@ class AppEnvClass extends Env<{
     | 'ADMIN_APP_HOST'
     | 'APP_ENCRYPTION_KEY'
     | 'APP_NAME'
+    | 'BETTER_AUTH_SECRET'
+    | 'BETTER_AUTH_URL'
     | 'BG_JOBS_REDIS_HOST'
     | 'BG_JOBS_REDIS_PASSWORD'
     | 'BG_JOBS_REDIS_USERNAME'

@@ -59,7 +59,7 @@ export default function requestLogger(options: RequestLoggerOptions = {}): Koa.M
     else level = 'info'
 
     const logEntry: Record<string, unknown> = { message, level }
-    const headers = filterObject(ctx.headers as Record<string, unknown>, headerBlocklist)
+    const headers = filterObject(ctx.headers, headerBlocklist)
     const rawBody = (ctx.request as unknown as Record<string, unknown>).body as
       | Record<string, unknown>
       | undefined

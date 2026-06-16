@@ -3,6 +3,7 @@ import { PsychicApp } from '@rvoh/psychic'
 import { PsychicDevtools } from '@rvoh/psychic/system'
 
 import AppEnv from '@conf/AppEnv.js'
+import authKoaMiddleware from '@conf/authKoaMiddleware.js'
 import inflections from '@conf/inflections.js'
 import routesCb from '@conf/routes.js'
 import importDefault from '@conf/system/importDefault.js'
@@ -89,6 +90,8 @@ export default async (psy: PsychicApp) => {
       milliseconds: 0,
     },
   })
+
+  psy.use('before-middleware', authKoaMiddleware())
 
   psy.set('openapi', {
     outputFilepath: path.join('src', 'openapi', 'openapi.json'),

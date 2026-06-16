@@ -1,5 +1,3 @@
-import AuthedController from '../AuthedController.js'
+import MaybeAuthedController from '@controllers/MaybeAuthedController.js'
 
-export default class V1BaseController extends AuthedController {
-
-}
+export default class V1BaseController extends MaybeAuthedController {}

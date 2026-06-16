@@ -1,5 +1,4 @@
 import Place from '@models/Place.js'
-import User from '@models/User.js'
 import createLocalizedText from '@spec/factories/LocalizedTextFactory.js'
 import createPlace from '@spec/factories/PlaceFactory.js'
 import createBathroom from '@spec/factories/Room/BathroomFactory.js'
@@ -7,16 +6,16 @@ import createBedroom from '@spec/factories/Room/BedroomFactory.js'
 import createDen from '@spec/factories/Room/DenFactory.js'
 import createKitchen from '@spec/factories/Room/KitchenFactory.js'
 import createLivingRoom from '@spec/factories/Room/LivingRoomFactory.js'
-import createUser from '@spec/factories/UserFactory.js'
-import { session, SpecRequestType } from '@spec/unit/helpers/authentication.js'
+import { OpenapiSpecRequest } from '@rvoh/psychic-spec-helpers'
+import { PsychicServer } from '@rvoh/psychic'
+import { paths as OpenapiPaths } from '@src/types/openapi/tests.openapi.js'
 
 describe('V1/Guest/PlacesController', () => {
-  let request: SpecRequestType
-  let user: User
+  let request: OpenapiSpecRequest<OpenapiPaths>
 
   beforeEach(async () => {
-    user = await createUser()
-    request = await session(user)
+    request = new OpenapiSpecRequest<OpenapiPaths>()
+    await request.init(PsychicServer)
   })
 
   describe('GET index', () => {

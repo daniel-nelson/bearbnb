@@ -7,6 +7,8 @@ export default class V1HostBaseController extends V1BaseController {
 
   @BeforeAction()
   protected async loadCurrentHost() {
+    if (!this.currentUser) return this.unauthorized()
+
     const host = await this.currentUser.associationQuery('host').first()
     if (!host) return this.forbidden()
 

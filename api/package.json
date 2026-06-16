@@ -46,6 +46,7 @@
     "@rvoh/psychic-workers": "^2.3.0",
     "@socket.io/redis-adapter": "^8.3.0",
     "@socket.io/redis-emitter": "^5.1.0",
+    "better-auth": "^1.6.18",
     "bullmq": "^5.78.0",
     "commander": "^14.0.3",
     "dotenv": "^17.4.2",
