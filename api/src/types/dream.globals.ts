@@ -70,6 +70,8 @@ export const globalTypeConfig = {
     'PlaceSerializer',
     'PlaceSummaryForGuestsSerializer',
     'PlaceSummarySerializer',
+    'ReviewSerializer',
+    'ReviewSummarySerializer',
     'Room/ApplianceSerializer',
     'Room/BathOrShowerStyleSerializer',
     'Room/BathroomForGuestsSerializer',

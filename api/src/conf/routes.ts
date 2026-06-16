@@ -5,6 +5,8 @@ import { PsychicRouter } from '@rvoh/psychic'
 export default function routes(r: PsychicRouter) {
   r.namespace('v1', r => {
     r.namespace('guest', r => {
+      r.resources('reviews')
+
       r.resources('bookings')
 
       r.resources('places', { only: ['index', 'show'] })

@@ -5,6 +5,7 @@ import Booking from '@models/Booking.js'
 import Host from '@models/Host.js'
 import HostPlace from '@models/HostPlace.js'
 import LocalizedText from '@models/LocalizedText.js'
+import Review from '@models/Review.js'
 import Room from '@models/Room.js'
 
 const deco = new Decorators<typeof Place>()
@@ -43,6 +44,9 @@ export default class Place extends ApplicationModel {
 
   @deco.HasMany('Booking', { dependent: 'destroy' })
   public bookings: Booking[]
+
+  @deco.HasMany('Review', { dependent: 'destroy' })
+  public reviews: Review[]
 
   @deco.HasMany('LocalizedText', { polymorphic: true, on: 'localizableId', dependent: 'destroy' })
   public localizedTexts: LocalizedText[]
