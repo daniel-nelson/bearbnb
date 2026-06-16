@@ -33,6 +33,8 @@ export default function Home() {
   const [mode, setMode] = useState<AuthMode>("signup");
   const [user, setUser] = useState<AuthUser | null>(null);
   const [places, setPlaces] = useState<PlaceSummary[]>([]);
+  const [searchInput, setSearchInput] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [status, setStatus] = useState("Checking your session...");
   const [error, setError] = useState("");
   const [placesStatus, setPlacesStatus] = useState("Loading places...");
@@ -67,7 +69,12 @@ export default function Home() {
 
   useEffect(() => {
     async function loadPlaces() {
-      const response = await fetch("/api/guest/places", {
+      setPlacesStatus("Loading places...");
+
+      const url = new URL("/api/guest/places", window.location.origin);
+      if (searchQuery) url.searchParams.set("q", searchQuery);
+
+      const response = await fetch(url, {
         headers: {
           "accept-language": "en-US",
         },
@@ -80,11 +87,17 @@ export default function Home() {
 
       const body = (await response.json()) as PlacesIndexResponse;
       setPlaces(body.results);
-      setPlacesStatus(body.results.length ? "" : "No places are available yet.");
+      setPlacesStatus(
+        body.results.length
+          ? ""
+          : searchQuery
+            ? "No places match that search."
+            : "No places are available yet.",
+      );
     }
 
     void loadPlaces();
-  }, []);
+  }, [searchQuery]);
 
   async function handleSignup(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -103,6 +116,16 @@ export default function Home() {
       email: String(formData.get("signin-email") ?? ""),
       password: String(formData.get("signin-password") ?? ""),
     });
+  }
+
+  function handleSearch(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSearchQuery(searchInput.trim());
+  }
+
+  function clearSearch() {
+    setSearchInput("");
+    setSearchQuery("");
   }
 
   async function submitAuth(path: string, body: Record<string, string>) {
@@ -155,7 +178,10 @@ export default function Home() {
     <main className="min-h-screen bg-[#f7f7f4] text-[#1d1d1f]">
       <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-5 py-6 sm:px-8 lg:px-10">
         <header className="flex items-center justify-between border-b border-[#deded8] pb-5">
-          <Link className="text-lg font-semibold tracking-normal" href="/">
+          <Link
+            className="-mx-2 flex min-h-11 items-center px-2 text-lg font-semibold tracking-normal"
+            href="/"
+          >
             BearBnB
           </Link>
           <span className="rounded-full border border-[#d8d8d2] bg-white px-3 py-1 text-sm text-[#62625c]">
@@ -268,12 +294,40 @@ export default function Home() {
         </section>
 
         <section className="border-t border-[#deded8] py-10">
-          <div className="mb-6">
+          <div className="mb-6 grid gap-5 lg:grid-cols-[1fr_360px] lg:items-end">
             <div>
               <h2 className="text-3xl font-semibold tracking-normal text-[#111113]">
                 Available places
               </h2>
             </div>
+            <form className="flex gap-2" onSubmit={handleSearch}>
+              <label className="min-w-0 flex-1">
+                <span className="sr-only">Search places</span>
+                <input
+                  className="h-11 w-full border border-[#d9d9d2] bg-white px-3 text-base text-[#171717] outline-none transition placeholder:text-[#9b9b94] focus:border-[#1d1d1f]"
+                  name="place-search"
+                  onChange={(event) => setSearchInput(event.target.value)}
+                  placeholder="Search places"
+                  type="search"
+                  value={searchInput}
+                />
+              </label>
+              {searchQuery && (
+                <button
+                  className="h-11 border border-[#d9d9d2] bg-white px-4 text-sm font-semibold text-[#3f3f3a] transition hover:border-[#b9b9b1] hover:text-[#18181a]"
+                  onClick={clearSearch}
+                  type="button"
+                >
+                  Clear
+                </button>
+              )}
+              <button
+                className="h-11 bg-[#1d1d1f] px-4 text-sm font-semibold text-white transition hover:bg-[#333336]"
+                type="submit"
+              >
+                Search
+              </button>
+            </form>
           </div>
 
           {placesStatus ? (
@@ -384,7 +438,7 @@ function Field({
 
 function modeButtonClass(isActive: boolean) {
   return [
-    "h-10 text-sm font-semibold transition",
+    "h-11 text-sm font-semibold transition",
     isActive
       ? "bg-white text-[#18181a] shadow-sm"
       : "text-[#696962] hover:text-[#18181a]",

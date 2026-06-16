@@ -4,8 +4,10 @@ export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
   const upstreamUrl = new URL("/v1/guest/places", apiUrl);
   const cursor = requestUrl.searchParams.get("cursor");
+  const q = requestUrl.searchParams.get("q");
 
   if (cursor) upstreamUrl.searchParams.set("cursor", cursor);
+  if (q) upstreamUrl.searchParams.set("q", q);
 
   const upstreamResponse = await fetch(upstreamUrl, {
     cache: "no-store",
