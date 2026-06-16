@@ -1,3 +1,4 @@
+import { ops } from '@rvoh/dream'
 import { OpenAPI } from '@rvoh/psychic'
 import Place from '@models/Place.js'
 import V1GuestBaseController from './BaseController.js'
@@ -12,11 +13,16 @@ export default class V1GuestPlacesController extends V1GuestBaseController {
     cursorPaginate: true,
     serializerKey: 'summaryForGuests',
     fastJsonStringify: true,
+    query: {
+      q: { required: false, schema: 'string' },
+    },
   })
   public async index() {
-    const places = await Place.passthrough({ locale: this.locale })
-      .preloadFor('summaryForGuests')
-      .cursorPaginate({ cursor: this.castParam('cursor', 'string', { allowNull: true }) })
+    const q = this.castParam('q', 'string', { allowNull: true })?.trim()
+    const query = Place.passthrough({ locale: this.locale }).preloadFor('summaryForGuests')
+    const places = await (
+      q ? query.where({ name: ops.ilike(`%${ops.like.escape(q)}%`) }) : query
+    ).cursorPaginate({ cursor: this.castParam('cursor', 'string', { allowNull: true }) })
     this.ok(places)
   }
 
@@ -31,7 +37,7 @@ export default class V1GuestPlacesController extends V1GuestBaseController {
     this.ok(
       await Place.passthrough({ locale: this.locale })
         .preloadFor('forGuests')
-        .findOrFail(this.castParam('id', 'uuid'))
+        .findOrFail(this.castParam('id', 'uuid')),
     )
   }
 }
