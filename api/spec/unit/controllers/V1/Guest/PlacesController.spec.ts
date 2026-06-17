@@ -22,7 +22,7 @@ describe('V1/Guest/PlacesController', () => {
   describe('GET index', () => {
     const subject = async <StatusCode extends 200 | 400>(
       expectedStatus: StatusCode,
-      query: { q?: string } = {},
+      query: { cursor?: string | null; q?: string } = {},
     ) => {
       return request.get('/v1/guest/places', expectedStatus, {
         query,
@@ -60,6 +60,23 @@ describe('V1/Guest/PlacesController', () => {
           title: 'The River title',
         },
       ])
+    })
+
+    it('returns a cursor when more Places are available', async () => {
+      for (let index = 0; index < 19; index++) {
+        const place = await createPlace({ name: `Place ${index}` })
+        await createLocalizedText({ localizable: place, locale: 'es-ES', title: `Place ${index}` })
+      }
+
+      const { body: firstPage } = await subject(200)
+
+      expect(firstPage.results).toHaveLength(18)
+      expect(firstPage.cursor).toEqual(expect.any(String))
+
+      const { body: secondPage } = await subject(200, { cursor: firstPage.cursor })
+
+      expect(secondPage.results).toHaveLength(1)
+      expect(secondPage.cursor).toBeNull()
     })
   })
 

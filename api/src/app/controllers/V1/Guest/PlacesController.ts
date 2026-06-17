@@ -4,6 +4,7 @@ import Place from '@models/Place.js'
 import V1GuestBaseController from './BaseController.js'
 
 const openApiTags = ['guest-places']
+const placesPageSize = 18
 
 export default class V1GuestPlacesController extends V1GuestBaseController {
   @OpenAPI(Place, {
@@ -22,7 +23,10 @@ export default class V1GuestPlacesController extends V1GuestBaseController {
     const query = Place.passthrough({ locale: this.locale }).preloadFor('summaryForGuests')
     const places = await (
       q ? query.where({ name: ops.ilike(`%${ops.like.escape(q)}%`) }) : query
-    ).cursorPaginate({ cursor: this.castParam('cursor', 'string', { allowNull: true }) })
+    ).cursorPaginate({
+      cursor: this.castParam('cursor', 'string', { allowNull: true }),
+      pageSize: placesPageSize,
+    })
     this.ok(places)
   }
 

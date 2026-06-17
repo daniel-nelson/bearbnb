@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useState } from "react";
 
 type AuthUser = {
   id: string;
@@ -30,6 +30,9 @@ export default function Home() {
   const [searchInput, setSearchInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [placesStatus, setPlacesStatus] = useState("Loading places...");
+  const [paginationStatus, setPaginationStatus] = useState("");
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
 
   useEffect(() => {
@@ -47,12 +50,11 @@ export default function Home() {
     void loadSession();
   }, []);
 
-  useEffect(() => {
-    async function loadPlaces() {
-      setPlacesStatus("Loading places...");
-
+  const requestPlaces = useCallback(
+    async (cursor: string | null = null) => {
       const url = new URL("/api/guest/places", window.location.origin);
       if (searchQuery) url.searchParams.set("q", searchQuery);
+      if (cursor) url.searchParams.set("cursor", cursor);
 
       const response = await fetch(url, {
         headers: {
@@ -61,12 +63,26 @@ export default function Home() {
       });
 
       if (!response.ok) {
+        return null;
+      }
+
+      return (await response.json()) as PlacesIndexResponse;
+    },
+    [searchQuery],
+  );
+
+  useEffect(() => {
+    async function loadFirstPage() {
+      const body = await requestPlaces();
+
+      if (!body) {
         setPlacesStatus("Places are not available right now.");
         return;
       }
 
-      const body = (await response.json()) as PlacesIndexResponse;
       setPlaces(body.results);
+      setNextCursor(body.cursor);
+      setPaginationStatus("");
       setPlacesStatus(
         body.results.length
           ? ""
@@ -76,17 +92,77 @@ export default function Home() {
       );
     }
 
-    void loadPlaces();
-  }, [searchQuery]);
+    void loadFirstPage();
+  }, [requestPlaces, searchQuery]);
+
+  async function reloadFirstPage() {
+    const body = await requestPlaces();
+
+    if (!body) {
+      setPlacesStatus("Places are not available right now.");
+      return;
+    }
+
+    setPlaces(body.results);
+    setNextCursor(body.cursor);
+    setPaginationStatus("");
+    setPlacesStatus(
+      body.results.length
+        ? ""
+        : searchQuery
+          ? "No places match that search."
+          : "No places are available yet.",
+    );
+  }
+
+  async function loadMorePlaces() {
+    if (!nextCursor) return;
+
+    setIsLoadingMore(true);
+    setPaginationStatus("");
+
+    try {
+      const body = await requestPlaces(nextCursor);
+
+      if (!body) {
+        setPaginationStatus("More places are not available right now.");
+        return;
+      }
+
+      setPlaces((currentPlaces) => [...currentPlaces, ...body.results]);
+      setNextCursor(body.cursor);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }
 
   function handleSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setSearchQuery(searchInput.trim());
+    const nextSearchQuery = searchInput.trim();
+    setNextCursor(null);
+    setPaginationStatus("");
+    setPlaces([]);
+    setPlacesStatus("Loading places...");
+
+    if (nextSearchQuery === searchQuery) {
+      void reloadFirstPage();
+    } else {
+      setSearchQuery(nextSearchQuery);
+    }
   }
 
   function clearSearch() {
     setSearchInput("");
-    setSearchQuery("");
+    setNextCursor(null);
+    setPaginationStatus("");
+    setPlaces([]);
+    setPlacesStatus("Loading places...");
+
+    if (searchQuery) {
+      setSearchQuery("");
+    } else {
+      void reloadFirstPage();
+    }
   }
 
   async function signOut() {
@@ -206,19 +282,40 @@ export default function Home() {
               {placesStatus}
             </p>
           ) : (
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {places.map((place) => (
-                <Link
-                  className="block border border-[#deded8] bg-white p-3 transition hover:border-[#b9b9b1] focus-visible:border-[#1d1d1f] focus-visible:outline-none sm:p-4"
-                  href={`/places/${place.id}`}
-                  key={place.id}
-                >
-                  <p className="text-lg font-semibold text-[#171719]">
-                    {place.title}
-                  </p>
-                </Link>
-              ))}
-            </div>
+            <>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {places.map((place) => (
+                  <Link
+                    className="block border border-[#deded8] bg-white p-3 transition hover:border-[#b9b9b1] focus-visible:border-[#1d1d1f] focus-visible:outline-none sm:p-4"
+                    href={`/places/${place.id}`}
+                    key={place.id}
+                  >
+                    <p className="text-lg font-semibold text-[#171719]">
+                      {place.title}
+                    </p>
+                  </Link>
+                ))}
+              </div>
+              {(nextCursor || paginationStatus) && (
+                <div className="mt-5 flex flex-col items-center gap-3 border-t border-[#deded8] pt-5">
+                  {paginationStatus && (
+                    <p className="text-sm text-[#62625c]">
+                      {paginationStatus}
+                    </p>
+                  )}
+                  {nextCursor && (
+                    <button
+                      className="h-11 border border-[#d8d8d2] bg-white px-5 text-sm font-semibold text-[#3f3f3a] transition hover:border-[#b9b9b1] hover:text-[#18181a] disabled:cursor-not-allowed disabled:bg-[#f0f0ec] disabled:text-[#8a8a84]"
+                      disabled={isLoadingMore}
+                      onClick={() => void loadMorePlaces()}
+                      type="button"
+                    >
+                      {isLoadingMore ? "Loading..." : "Load more"}
+                    </button>
+                  )}
+                </div>
+              )}
+            </>
           )}
         </section>
       </div>
