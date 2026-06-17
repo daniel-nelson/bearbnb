@@ -17,6 +17,7 @@ export default class Review extends ApplicationModel {
     return {
       default: 'ReviewSerializer',
       summary: 'ReviewSummarySerializer',
+      forPlaceGuests: 'ReviewForPlaceGuestsSerializer',
     }
   }
 

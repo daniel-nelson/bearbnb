@@ -1691,6 +1691,7 @@
         "required": [
           "displayStyle",
           "id",
+          "reviews",
           "rooms",
           "sleeps",
           "style",
@@ -1702,6 +1703,12 @@
           },
           "id": {
             "type": "string"
+          },
+          "reviews": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReviewForPlaceGuests"
+            }
           },
           "rooms": {
             "type": "array",
@@ -1795,6 +1802,25 @@
             "type": "string"
           },
           "placeId": {
+            "type": "string"
+          },
+          "rating": {
+            "type": "integer"
+          }
+        }
+      },
+      "ReviewForPlaceGuests": {
+        "type": "object",
+        "required": [
+          "body",
+          "id",
+          "rating"
+        ],
+        "properties": {
+          "body": {
+            "type": "string"
+          },
+          "id": {
             "type": "string"
           },
           "rating": {

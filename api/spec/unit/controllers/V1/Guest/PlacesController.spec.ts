@@ -1,6 +1,7 @@
 import Place from '@models/Place.js'
 import createLocalizedText from '@spec/factories/LocalizedTextFactory.js'
 import createPlace from '@spec/factories/PlaceFactory.js'
+import createReview from '@spec/factories/ReviewFactory.js'
 import createBathroom from '@spec/factories/Room/BathroomFactory.js'
 import createBedroom from '@spec/factories/Room/BedroomFactory.js'
 import createDen from '@spec/factories/Room/DenFactory.js'
@@ -77,6 +78,12 @@ describe('V1/Guest/PlacesController', () => {
       await createLocalizedText({ localizable: place, locale: 'es-ES', title: 'The Spanish place title' })
 
       const { kitchen, bathroom, bedroom, den, livingRoom } = await createRoomsForPlace(place)
+      const review = await createReview({
+        place,
+        rating: 5,
+        body: 'Quiet, clean, and close to the river.',
+      })
+      await createReview({ rating: 1, body: 'Another place review.' })
 
       const { body } = await subject(place, 200)
 
@@ -136,6 +143,14 @@ describe('V1/Guest/PlacesController', () => {
             type: 'LivingRoom',
             displayType: 'sala de estar',
             title: 'The Spanish livingRoom title',
+          },
+        ],
+
+        reviews: [
+          {
+            id: review.id,
+            rating: 5,
+            body: 'Quiet, clean, and close to the river.',
           },
         ],
       })

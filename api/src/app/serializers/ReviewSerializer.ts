@@ -10,3 +10,6 @@ export const ReviewSummarySerializer = (review: Review) =>
     .attribute('body')
 
 export const ReviewSerializer = (review: Review) => ReviewSummarySerializer(review)
+
+export const ReviewForPlaceGuestsSerializer = (review: Review) =>
+  DreamSerializer(Review, review).attribute('id').attribute('rating').attribute('body')

@@ -1003,6 +1003,7 @@ export interface components {
         PlaceForGuests: {
             displayStyle: string;
             id: string;
+            reviews: components["schemas"]["ReviewForPlaceGuests"][];
             rooms: (components["schemas"]["RoomBathroomForGuests"] | components["schemas"]["RoomBedroomForGuests"] | components["schemas"]["RoomDenForGuests"] | components["schemas"]["RoomKitchenForGuests"] | components["schemas"]["RoomLivingRoomForGuests"])[];
             sleeps: number;
             /** @enum {string} */
@@ -1022,6 +1023,11 @@ export interface components {
             bookingId: string;
             id: string;
             placeId: string;
+            rating: number;
+        };
+        ReviewForPlaceGuests: {
+            body: string;
+            id: string;
             rating: number;
         };
         ReviewSummary: {

@@ -70,6 +70,7 @@ export const globalTypeConfig = {
     'PlaceSerializer',
     'PlaceSummaryForGuestsSerializer',
     'PlaceSummarySerializer',
+    'ReviewForPlaceGuestsSerializer',
     'ReviewSerializer',
     'ReviewSummarySerializer',
     'Room/ApplianceSerializer',

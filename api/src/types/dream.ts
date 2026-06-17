@@ -1071,7 +1071,7 @@ export const schema = {
     },
   },
   reviews: {
-    serializerKeys: ['default', 'summary'],
+    serializerKeys: ['default', 'forPlaceGuests', 'summary'],
     scopes: {
       default: ['dream:SoftDelete'],
       named: [],

@@ -4,14 +4,10 @@ import { type LocalesEnum } from '@src/types/db.js'
 import i18n from '@src/utils/i18n.js'
 
 export const PlaceSummarySerializer = (place: Place) =>
-  DreamSerializer(Place, place)
-    .attribute('id')
-    .attribute('name')
+  DreamSerializer(Place, place).attribute('id').attribute('name')
 
 export const PlaceSerializer = (place: Place) =>
-  PlaceSummarySerializer(place)
-    .attribute('style')
-    .attribute('sleeps')
+  PlaceSummarySerializer(place).attribute('style').attribute('sleeps')
 
 export const PlaceSummaryForGuestsSerializer = (place: Place) =>
   DreamSerializer(Place, place)
@@ -26,3 +22,4 @@ export const PlaceForGuestsSerializer = (place: Place, passthrough: { locale: Lo
     })
     .attribute('sleeps')
     .rendersMany('rooms', { serializerKey: 'forGuests' })
+    .rendersMany('reviews', { serializerKey: 'forPlaceGuests' })
