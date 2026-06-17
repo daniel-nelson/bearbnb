@@ -6,3 +6,6 @@ export const BookingSummarySerializer = (booking: Booking) =>
 
 export const BookingSerializer = (booking: Booking) =>
   BookingSummarySerializer(booking).attribute('startsOn').attribute('endsOn')
+
+export const BookingBookedRangeSerializer = (booking: Booking) =>
+  DreamSerializer(Booking, booking).attribute('startsOn').attribute('endsOn')

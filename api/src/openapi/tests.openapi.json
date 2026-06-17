@@ -133,7 +133,33 @@
             "$ref": "#/components/responses/Conflict"
           },
           "422": {
-            "$ref": "#/components/responses/ValidationErrors"
+            "description": "Unprocessable entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "errors"
+                  ],
+                  "properties": {
+                    "errors": {
+                      "type": "object",
+                      "required": [
+                        "startsOn"
+                      ],
+                      "properties": {
+                        "startsOn": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
           },
           "500": {
             "$ref": "#/components/responses/InternalServerError"
@@ -236,7 +262,33 @@
             "$ref": "#/components/responses/Conflict"
           },
           "422": {
-            "$ref": "#/components/responses/ValidationErrors"
+            "description": "Unprocessable entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "errors"
+                  ],
+                  "properties": {
+                    "errors": {
+                      "type": "object",
+                      "required": [
+                        "startsOn"
+                      ],
+                      "properties": {
+                        "startsOn": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
           },
           "500": {
             "$ref": "#/components/responses/InternalServerError"
@@ -1584,6 +1636,23 @@
           }
         }
       },
+      "BookingBookedRange": {
+        "type": "object",
+        "required": [
+          "endsOn",
+          "startsOn"
+        ],
+        "properties": {
+          "endsOn": {
+            "type": "string",
+            "format": "date"
+          },
+          "startsOn": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
       "BookingSummary": {
         "type": "object",
         "required": [
@@ -1689,6 +1758,7 @@
       "PlaceForGuests": {
         "type": "object",
         "required": [
+          "bookedRanges",
           "displayStyle",
           "id",
           "reviews",
@@ -1698,6 +1768,12 @@
           "title"
         ],
         "properties": {
+          "bookedRanges": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BookingBookedRange"
+            }
+          },
           "displayStyle": {
             "type": "string"
           },

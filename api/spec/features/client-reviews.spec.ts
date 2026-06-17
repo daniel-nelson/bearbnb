@@ -28,8 +28,9 @@ describe('client reviews', () => {
 
     await expect(page).toMatchTextContent('Reserve this place')
 
-    await fillIn('[name="starts-on"]', '2026-07-01')
-    await fillIn('[name="ends-on"]', '2026-07-03')
+    await page.click('button[aria-label="Next month"]')
+    await page.click('button[aria-label="July 1, 2026"]')
+    await page.click('button[aria-label="July 3, 2026"]')
     await clickButton('Book place')
 
     await expect(page).toMatchTextContent('Booked Riverbend Cabin.')

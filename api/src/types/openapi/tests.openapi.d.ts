@@ -81,7 +81,19 @@ export interface paths {
                 403: components["responses"]["Forbidden"];
                 404: components["responses"]["NotFound"];
                 409: components["responses"]["Conflict"];
-                422: components["responses"]["ValidationErrors"];
+                /** @description Unprocessable entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            errors: {
+                                startsOn: string[];
+                            };
+                        };
+                    };
+                };
                 500: components["responses"]["InternalServerError"];
             };
         };
@@ -185,7 +197,19 @@ export interface paths {
                 403: components["responses"]["Forbidden"];
                 404: components["responses"]["NotFound"];
                 409: components["responses"]["Conflict"];
-                422: components["responses"]["ValidationErrors"];
+                /** @description Unprocessable entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            errors: {
+                                startsOn: string[];
+                            };
+                        };
+                    };
+                };
                 500: components["responses"]["InternalServerError"];
             };
         };
@@ -976,6 +1000,12 @@ export interface components {
             /** Format: date */
             startsOn: string;
         };
+        BookingBookedRange: {
+            /** Format: date */
+            endsOn: string;
+            /** Format: date */
+            startsOn: string;
+        };
         BookingSummary: {
             id: string;
             placeId: string;
@@ -1001,6 +1031,7 @@ export interface components {
             style: "cabin" | "cave" | "cottage" | "dump" | "lean_to" | "tent" | "treehouse";
         };
         PlaceForGuests: {
+            bookedRanges: components["schemas"]["BookingBookedRange"][];
             displayStyle: string;
             id: string;
             reviews: components["schemas"]["ReviewForPlaceGuests"][];

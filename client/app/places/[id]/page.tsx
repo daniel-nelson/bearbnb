@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { DateTime } from "luxon";
 import { useParams } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
 
@@ -26,6 +27,11 @@ type Review = {
   body: string;
 };
 
+type BookedRange = {
+  startsOn: string;
+  endsOn: string;
+};
+
 type PlaceDetail = {
   id: string;
   title: string;
@@ -34,6 +40,7 @@ type PlaceDetail = {
   sleeps: number;
   rooms: Room[];
   reviews: Review[];
+  bookedRanges: BookedRange[];
 };
 
 type BookingResponse = {
@@ -47,6 +54,11 @@ export default function PlaceDetailPage() {
   const [confirmedBookingId, setConfirmedBookingId] = useState("");
   const [bookingStatus, setBookingStatus] = useState("");
   const [isBooking, setIsBooking] = useState(false);
+  const [selectedStartsOn, setSelectedStartsOn] = useState("");
+  const [selectedEndsOn, setSelectedEndsOn] = useState("");
+  const [visibleMonth, setVisibleMonth] = useState(() =>
+    isoDate(DateTime.local().startOf("month")),
+  );
   const [reviewStatus, setReviewStatus] = useState("");
   const [isReviewing, setIsReviewing] = useState(false);
   const hasSavedReview = reviewStatus.startsWith("Reviewed ");
@@ -76,9 +88,15 @@ export default function PlaceDetailPage() {
     event.preventDefault();
     if (!place) return;
 
-    const formData = new FormData(event.currentTarget);
-    const startsOn = String(formData.get("starts-on") ?? "");
-    const endsOn = String(formData.get("ends-on") ?? "");
+    if (!selectedStartsOn || !selectedEndsOn) {
+      setBookingStatus("Choose available start and end dates.");
+      return;
+    }
+
+    if (rangeIncludesBookedDate(selectedStartsOn, selectedEndsOn, place.bookedRanges)) {
+      setBookingStatus("Choose dates that do not include a booked day.");
+      return;
+    }
 
     setIsBooking(true);
     setBookingStatus("");
@@ -89,8 +107,8 @@ export default function PlaceDetailPage() {
       const response = await fetch("/api/guest/bookings", {
         body: JSON.stringify({
           placeId: place.id,
-          startsOn,
-          endsOn,
+          startsOn: selectedStartsOn,
+          endsOn: selectedEndsOn,
         }),
         cache: "no-store",
         credentials: "include",
@@ -105,8 +123,17 @@ export default function PlaceDetailPage() {
         const booking = (await response.json()) as BookingResponse;
         setConfirmedBookingId(booking.id);
         setBookingStatus(`Booked ${place.title}.`);
+        setPlace({
+          ...place,
+          bookedRanges: [
+            ...place.bookedRanges,
+            { startsOn: selectedStartsOn, endsOn: selectedEndsOn },
+          ],
+        });
       } else if (response.status === 401) {
         setBookingStatus("Sign in before booking this place.");
+      } else if (response.status === 400) {
+        setBookingStatus("Those dates are not available.");
       } else {
         setBookingStatus("We could not book this place.");
       }
@@ -285,31 +312,19 @@ export default function PlaceDetailPage() {
                       Reserve this place
                     </h2>
                   </div>
-                  <label className="block">
-                    <span className="text-sm font-medium text-[#4f4f4a]">
-                      Starts
-                    </span>
-                    <input
-                      className="mt-2 h-11 w-full border border-[#d9d9d2] bg-white px-3 text-base text-[#171717] outline-none transition focus:border-[#1d1d1f]"
-                      name="starts-on"
-                      required
-                      type="date"
-                    />
-                  </label>
-                  <label className="block">
-                    <span className="text-sm font-medium text-[#4f4f4a]">
-                      Ends
-                    </span>
-                    <input
-                      className="mt-2 h-11 w-full border border-[#d9d9d2] bg-white px-3 text-base text-[#171717] outline-none transition focus:border-[#1d1d1f]"
-                      name="ends-on"
-                      required
-                      type="date"
-                    />
-                  </label>
+                  <BookingCalendar
+                    bookedRanges={place.bookedRanges}
+                    selectedEndsOn={selectedEndsOn}
+                    selectedStartsOn={selectedStartsOn}
+                    setBookingStatus={setBookingStatus}
+                    setSelectedEndsOn={setSelectedEndsOn}
+                    setSelectedStartsOn={setSelectedStartsOn}
+                    setVisibleMonth={setVisibleMonth}
+                    visibleMonth={visibleMonth}
+                  />
                   <button
                     className="h-11 w-full bg-[#1d1d1f] px-4 text-sm font-semibold text-white transition hover:bg-[#333336] disabled:cursor-not-allowed disabled:bg-[#9a9a93]"
-                    disabled={isBooking}
+                    disabled={isBooking || !selectedStartsOn || !selectedEndsOn}
                     type="submit"
                   >
                     {isBooking ? "Booking..." : "Book place"}
@@ -382,6 +397,178 @@ export default function PlaceDetailPage() {
       </div>
     </main>
   );
+}
+
+function BookingCalendar({
+  bookedRanges,
+  selectedEndsOn,
+  selectedStartsOn,
+  setBookingStatus,
+  setSelectedEndsOn,
+  setSelectedStartsOn,
+  setVisibleMonth,
+  visibleMonth,
+}: {
+  bookedRanges: BookedRange[];
+  selectedEndsOn: string;
+  selectedStartsOn: string;
+  setBookingStatus: (status: string) => void;
+  setSelectedEndsOn: (date: string) => void;
+  setSelectedStartsOn: (date: string) => void;
+  setVisibleMonth: (date: string) => void;
+  visibleMonth: string;
+}) {
+  const month = DateTime.fromISO(visibleMonth, { zone: "utc" }).startOf("month");
+  const bookedDates = bookedDateSet(bookedRanges);
+  const days = calendarDays(month);
+  const today = isoDate(DateTime.local().startOf("day"));
+  const selectedLabel = selectedStartsOn
+    ? selectedEndsOn
+      ? `${selectedStartsOn} to ${selectedEndsOn}`
+      : `${selectedStartsOn} to ...`
+    : "No dates selected";
+
+  function selectDate(date: string) {
+    if (bookedDates.has(date)) return;
+
+    if (!selectedStartsOn || selectedEndsOn || date < selectedStartsOn) {
+      setSelectedStartsOn(date);
+      setSelectedEndsOn("");
+      setBookingStatus("");
+      return;
+    }
+
+    if (rangeIncludesBookedDate(selectedStartsOn, date, bookedRanges)) {
+      setBookingStatus("Choose dates that do not include a booked day.");
+      return;
+    }
+
+    setSelectedEndsOn(date);
+    setBookingStatus("");
+  }
+
+  return (
+    <div className="border border-[#deded8]">
+      <div className="flex min-h-12 items-center justify-between border-b border-[#deded8] px-3">
+        <button
+          aria-label="Previous month"
+          className="flex h-9 w-9 items-center justify-center border border-[#d9d9d2] text-lg leading-none text-[#4f4f4a] transition hover:border-[#b9b9b1]"
+          onClick={() => setVisibleMonth(isoDate(month.minus({ months: 1 })))}
+          type="button"
+        >
+          ‹
+        </button>
+        <p className="text-sm font-semibold text-[#252523]">
+          {month.toLocaleString({ month: "long", year: "numeric" })}
+        </p>
+        <button
+          aria-label="Next month"
+          className="flex h-9 w-9 items-center justify-center border border-[#d9d9d2] text-lg leading-none text-[#4f4f4a] transition hover:border-[#b9b9b1]"
+          onClick={() => setVisibleMonth(isoDate(month.plus({ months: 1 })))}
+          type="button"
+        >
+          ›
+        </button>
+      </div>
+      <div className="grid grid-cols-7 border-b border-[#deded8] bg-[#fafaf8] text-center text-[11px] font-semibold uppercase text-[#707069]">
+        {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
+          <div className="py-2" key={day}>
+            {day}
+          </div>
+        ))}
+      </div>
+      <div className="grid grid-cols-7">
+        {days.map((day) => {
+          const date = isoDate(day);
+          const isBooked = bookedDates.has(date);
+          const isOutsideMonth = day.month !== month.month;
+          const isSelected =
+            date === selectedStartsOn ||
+            date === selectedEndsOn ||
+            Boolean(selectedStartsOn && selectedEndsOn && date > selectedStartsOn && date < selectedEndsOn);
+          const isPast = today ? date < today : false;
+
+          return (
+            <button
+              aria-label={day.toLocaleString(DateTime.DATE_FULL)}
+              aria-pressed={isSelected}
+              className={[
+                "aspect-square border-b border-r border-[#edede7] text-sm font-medium transition last:border-r-0 disabled:cursor-not-allowed",
+                isOutsideMonth ? "text-[#b6b6ae]" : "text-[#272724]",
+                isBooked ? "bg-[#d7d7d0] text-[#77776f] line-through" : "bg-white hover:bg-[#f3f3ee]",
+                isSelected ? "bg-[#1d1d1f] text-white hover:bg-[#1d1d1f]" : "",
+                isPast && !isSelected ? "text-[#a5a59e]" : "",
+              ].join(" ")}
+              disabled={isBooked || isPast}
+              key={date}
+              onClick={() => selectDate(date)}
+              type="button"
+            >
+              {day.day}
+            </button>
+          );
+        })}
+      </div>
+      <div className="flex items-center justify-between gap-3 px-3 py-3 text-sm text-[#4f4f4a]">
+        <span>{selectedLabel}</span>
+        <span className="inline-flex items-center gap-2">
+          <span className="h-3 w-3 bg-[#d7d7d0]" aria-hidden="true" />
+          Booked
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function calendarDays(month: DateTime) {
+  const firstDay = month.startOf("month");
+  const lastDay = month.endOf("month");
+  const gridStart = firstDay.minus({ days: firstDay.weekday % 7 });
+  const gridEnd = lastDay.plus({ days: 6 - (lastDay.weekday % 7) });
+  const days: DateTime[] = [];
+  let cursor = gridStart;
+
+  while (cursor <= gridEnd) {
+    days.push(cursor);
+    cursor = cursor.plus({ days: 1 });
+  }
+
+  return days;
+}
+
+function isoDate(date: DateTime) {
+  const value = date.toISODate();
+  if (!value) throw new Error("Expected a valid calendar date");
+  return value;
+}
+
+function bookedDateSet(bookedRanges: BookedRange[]) {
+  const dates = new Set<string>();
+
+  for (const bookedRange of bookedRanges) {
+    let cursor = DateTime.fromISO(bookedRange.startsOn, { zone: "utc" });
+    const end = DateTime.fromISO(bookedRange.endsOn, { zone: "utc" });
+
+    while (cursor <= end) {
+      dates.add(isoDate(cursor));
+      cursor = cursor.plus({ days: 1 });
+    }
+  }
+
+  return dates;
+}
+
+function rangeIncludesBookedDate(startsOn: string, endsOn: string, bookedRanges: BookedRange[]) {
+  const bookedDates = bookedDateSet(bookedRanges);
+  let cursor = DateTime.fromISO(startsOn, { zone: "utc" });
+  const end = DateTime.fromISO(endsOn, { zone: "utc" });
+
+  while (cursor <= end) {
+    if (bookedDates.has(isoDate(cursor))) return true;
+    cursor = cursor.plus({ days: 1 });
+  }
+
+  return false;
 }
 
 function RoomDetails({ room }: { room: Room }) {

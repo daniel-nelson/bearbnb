@@ -410,7 +410,7 @@ export const schema = {
     associations: {},
   },
   bookings: {
-    serializerKeys: ['default', 'summary'],
+    serializerKeys: ['bookedRange', 'default', 'summary'],
     scopes: {
       default: ['dream:SoftDelete'],
       named: [],

@@ -1,4 +1,6 @@
 import Place from '@models/Place.js'
+import { CalendarDate } from '@rvoh/dream'
+import createBooking from '@spec/factories/BookingFactory.js'
 import createLocalizedText from '@spec/factories/LocalizedTextFactory.js'
 import createPlace from '@spec/factories/PlaceFactory.js'
 import createReview from '@spec/factories/ReviewFactory.js'
@@ -95,7 +97,15 @@ describe('V1/Guest/PlacesController', () => {
       await createLocalizedText({ localizable: place, locale: 'es-ES', title: 'The Spanish place title' })
 
       const { kitchen, bathroom, bedroom, den, livingRoom } = await createRoomsForPlace(place)
+      const startsOn = CalendarDate.today()
+      const booking = await createBooking({
+        place,
+        startsOn,
+        endsOn: startsOn.plus({ days: 2 }),
+      })
+      await createBooking()
       const review = await createReview({
+        booking,
         place,
         rating: 5,
         body: 'Quiet, clean, and close to the river.',
@@ -168,6 +178,13 @@ describe('V1/Guest/PlacesController', () => {
             id: review.id,
             rating: 5,
             body: 'Quiet, clean, and close to the river.',
+          },
+        ],
+
+        bookedRanges: [
+          {
+            startsOn: booking.startsOn.toISO(),
+            endsOn: booking.endsOn.toISO(),
           },
         ],
       })

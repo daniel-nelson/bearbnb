@@ -81,7 +81,7 @@ describe('V1/Guest/BookingsController', () => {
   })
 
   describe('POST create', () => {
-    const create = async <StatusCode extends 201 | 400 | 404>(
+    const create = async <StatusCode extends 201 | 400 | 404 | 422>(
       data: RequestBody<'post', '/v1/guest/bookings'>,
       expectedStatus: StatusCode,
     ) => {
@@ -139,10 +139,60 @@ describe('V1/Guest/BookingsController', () => {
       const booking = await guest.associationQuery('bookings').firstOrFail()
       expect(body).toEqual(expect.objectContaining({ id: booking.id }))
     })
+
+    it('does not create a Booking when the requested dates overlap an existing Booking for the Place', async () => {
+      const startsOn = CalendarDate.today()
+      const endsOn = startsOn.plus({ days: 2 })
+      await createBooking({ place, startsOn, endsOn })
+
+      await create(
+        {
+          placeId: place.id,
+          startsOn: startsOn.plus({ days: 1 }).toISO(),
+          endsOn: startsOn.plus({ days: 3 }).toISO(),
+        },
+        422,
+      )
+
+      expect(await Booking.where({ placeId: place.id }).count()).toEqual(1)
+    })
+
+    it('creates a Booking when the requested dates only overlap a different Place', async () => {
+      const startsOn = CalendarDate.today()
+      const endsOn = startsOn.plus({ days: 2 })
+      await createBooking({ startsOn, endsOn })
+
+      const { body } = await create(
+        {
+          placeId: place.id,
+          startsOn: startsOn.plus({ days: 1 }).toISO(),
+          endsOn: startsOn.plus({ days: 3 }).toISO(),
+        },
+        201,
+      )
+
+      const booking = await guest.associationQuery('bookings').firstOrFail()
+      expect(body).toEqual(expect.objectContaining({ id: booking.id }))
+    })
+
+    it('does not create a Booking when the requested end date is before the start date', async () => {
+      const startsOn = CalendarDate.today()
+
+      await create(
+        {
+          placeId: place.id,
+          startsOn: startsOn.toISO(),
+          endsOn: startsOn.minus({ days: 1 }).toISO(),
+        },
+        422,
+      )
+
+      expect(await Booking.where({ placeId: place.id }).exists()).toEqual(false)
+    })
   })
 
   describe('PATCH update', () => {
-    const update = async <StatusCode extends 204 | 400 | 404>(
+    const update = async <StatusCode extends 204 | 400 | 404 | 422>(
       booking: Booking,
       data: RequestBody<'patch', '/v1/guest/bookings/{id}'>,
       expectedStatus: StatusCode,
@@ -193,6 +243,34 @@ describe('V1/Guest/BookingsController', () => {
         expect(booking.startsOn).toEqual(originalStartsOn)
         expect(booking.endsOn).toEqual(originalEndsOn)
       })
+    })
+
+    it('does not update a Booking when the requested dates overlap an existing Booking for the Place', async () => {
+      const startsOn = CalendarDate.today()
+      const booking = await createBooking({
+        guest,
+        place,
+        startsOn,
+        endsOn: startsOn.plus({ days: 1 }),
+      })
+      await createBooking({
+        place,
+        startsOn: startsOn.plus({ days: 3 }),
+        endsOn: startsOn.plus({ days: 4 }),
+      })
+
+      await update(
+        booking,
+        {
+          startsOn: startsOn.plus({ days: 2 }).toISO(),
+          endsOn: startsOn.plus({ days: 3 }).toISO(),
+        },
+        422,
+      )
+
+      await booking.reload()
+      expect(booking.startsOn).toEqualCalendarDate(startsOn)
+      expect(booking.endsOn).toEqualCalendarDate(startsOn.plus({ days: 1 }))
     })
   })
 

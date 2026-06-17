@@ -1,5 +1,6 @@
-import { Decorators, SoftDelete } from '@rvoh/dream'
+import { Decorators, ops, SoftDelete } from '@rvoh/dream'
 import { DreamColumn, DreamSerializers } from '@rvoh/dream/types'
+import { range } from '@rvoh/dream/utils'
 import ApplicationModel from '@models/ApplicationModel.js'
 import Guest from '@models/Guest.js'
 import Place from '@models/Place.js'
@@ -16,6 +17,7 @@ export default class Booking extends ApplicationModel {
   public get serializers(): DreamSerializers<Booking> {
     return {
       default: 'BookingSerializer',
+      bookedRange: 'BookingBookedRangeSerializer',
       summary: 'BookingSummarySerializer',
     }
   }
@@ -37,4 +39,26 @@ export default class Booking extends ApplicationModel {
 
   @deco.HasMany('Review', { dependent: 'destroy' })
   public reviews: Review[]
+
+  @deco.Validate()
+  public validateDateOrder(this: Booking) {
+    if (this.startsOn && this.endsOn && this.startsOn > this.endsOn) {
+      this.addError('endsOn', 'must be on or after startsOn')
+    }
+  }
+
+  @deco.Validate()
+  public async validateAvailability(this: Booking) {
+    if (!this.placeId || !this.startsOn || !this.endsOn) return
+
+    let query = Booking.where({
+      placeId: this.placeId,
+      startsOn: range(null, this.endsOn),
+      endsOn: range(this.startsOn, null),
+    })
+
+    if (this.isPersisted) query = query.where({ id: ops.not.equal(this.id) })
+
+    if (await query.exists()) this.addError('startsOn', 'is not available for this place')
+  }
 }

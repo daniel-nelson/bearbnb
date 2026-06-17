@@ -23,3 +23,4 @@ export const PlaceForGuestsSerializer = (place: Place, passthrough: { locale: Lo
     .attribute('sleeps')
     .rendersMany('rooms', { serializerKey: 'forGuests' })
     .rendersMany('reviews', { serializerKey: 'forPlaceGuests' })
+    .rendersMany('bookings', { serializerKey: 'bookedRange', as: 'bookedRanges' })

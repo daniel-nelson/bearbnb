@@ -42,7 +42,7 @@ export default class Place extends ApplicationModel {
   @deco.HasMany('Room', { order: 'position', dependent: 'destroy' })
   public rooms: Room[]
 
-  @deco.HasMany('Booking', { dependent: 'destroy' })
+  @deco.HasMany('Booking', { order: 'startsOn', dependent: 'destroy' })
   public bookings: Booking[]
 
   @deco.HasMany('Review', { dependent: 'destroy' })
