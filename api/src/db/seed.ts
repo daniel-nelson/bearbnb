@@ -328,6 +328,7 @@ const placeSeeds: PlaceSeed[] = [
     livingRooms: ['Ridge Great Room'],
     dens: ['Media Den'],
   },
+  ...buildAdditionalPlaceSeeds(),
 ]
 
 type BedroomSeed = {
@@ -355,6 +356,111 @@ type PlaceSeed = {
   kitchens?: KitchenSeed[]
   livingRooms?: string[]
   dens?: string[]
+}
+
+function buildAdditionalPlaceSeeds(): PlaceSeed[] {
+  const names = [
+    'Alder Brook Cabin',
+    'Birch Lantern Cottage',
+    'Canyon Echo Cave',
+    'Dewdrop Ridge Tent',
+    'Elderberry Lean-To',
+    'Frost Hollow Lodge',
+    'Goldenroot Treehouse',
+    'Hazelwood Hideaway',
+    'Ironbark Cabin',
+    'Jade Fern Cottage',
+    'Kettle Creek Cave',
+    'Lichen Loop Tent',
+    'Meadow Paw Lean-To',
+    'Northstar Lodge',
+    'Oakmoss Treehouse',
+    'Pebble Run Cabin',
+    'Quartz Hollow Cave',
+    'Red Clover Cottage',
+    'Spruce Needle Tent',
+    'Tamarack Lean-To',
+    'Umbra Ridge Cabin',
+    'Violet Vale Cottage',
+    'Whitecap Lodge',
+    'Xylo Grove Treehouse',
+    'Yellow Birch Cave',
+    'Zephyr Flats Tent',
+    'Amber Hollow Cabin',
+    'Bracken Hill Cottage',
+    'Cloverleaf Lean-To',
+    'Dusk Pine Lodge',
+    'Ember Creek Treehouse',
+    'Foxglove Cave',
+    'Glacier Paw Cabin',
+    'Heather Run Tent',
+    'Ivory Fern Cottage',
+    'Juniper Star Lodge',
+    'Kindling Ridge Cabin',
+    'Laurel Bend Treehouse',
+    'Moonstone Cave',
+  ]
+
+  const styles: PlaceStylesEnum[] = ['cabin', 'cottage', 'cave', 'tent', 'lean_to', 'treehouse', 'dump']
+  const bedroomSets: BedroomSeed[][] = [
+    [{ title: 'Bedroom', bedTypes: ['queen'] }],
+    [
+      { title: 'Main Bedroom', bedTypes: ['king'] },
+      { title: 'Cub Room', bedTypes: ['bunk'] },
+    ],
+    [
+      { title: 'Primary Suite', bedTypes: ['king'] },
+      { title: 'Guest Bedroom', bedTypes: ['queen'] },
+      { title: 'Loft Room', bedTypes: ['twin', 'twin'] },
+    ],
+    [
+      { title: 'North Bedroom', bedTypes: ['queen'] },
+      { title: 'South Bedroom', bedTypes: ['queen'] },
+      { title: 'Sleeper Den', bedTypes: ['sofabed'] },
+      { title: 'Bunkroom', bedTypes: ['bunk', 'bunk'] },
+    ],
+  ]
+  const bathroomSets: BathroomSeed[][] = [
+    [{ title: 'Bathroom', bathOrShowerStyle: 'shower' }],
+    [
+      { title: 'Main Bath', bathOrShowerStyle: 'bath_and_shower' },
+      { title: 'Half Bath', bathOrShowerStyle: 'none' },
+    ],
+    [
+      { title: 'Primary Bath', bathOrShowerStyle: 'bath' },
+      { title: 'Hall Shower', bathOrShowerStyle: 'shower' },
+    ],
+    [
+      { title: 'Primary Bath', bathOrShowerStyle: 'bath_and_shower' },
+      { title: 'Bunkroom Bath', bathOrShowerStyle: 'shower' },
+      { title: 'Powder Room', bathOrShowerStyle: 'none' },
+    ],
+  ]
+  const kitchenSets: KitchenSeed[][] = [
+    [],
+    [{ title: 'Kitchen', appliances: ['stove', 'oven'] }],
+    [{ title: 'Trail Kitchen', appliances: ['stove', 'microwave'] }],
+    [{ title: 'Lodge Kitchen', appliances: ['stove', 'oven', 'microwave', 'dishwasher'] }],
+  ]
+
+  return names.map((name, index) => {
+    const bedrooms = bedroomSets[index % bedroomSets.length]!
+    const kitchens = kitchenSets[index % kitchenSets.length]!
+    const livingRooms = index % 3 === 0 ? ['Living Room'] : undefined
+    const dens = index % 4 === 0 ? ['Den'] : undefined
+
+    return {
+      name,
+      style: styles[index % styles.length]!,
+      sleeps: bedrooms.reduce((total, bedroom) => total + bedroom.bedTypes.length, 0) * 2,
+      title: name,
+      bedrooms,
+      bathrooms: bathroomSets[index % bathroomSets.length]!,
+      ...(kitchens.length ? { kitchens } : {}),
+      ...(livingRooms ? { livingRooms } : {}),
+      ...(dens ? { dens } : {}),
+    }
+  })
 }
 
 async function seedPlaceWithRooms(seed: PlaceSeed) {
