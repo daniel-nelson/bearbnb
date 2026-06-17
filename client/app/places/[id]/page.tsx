@@ -28,12 +28,20 @@ type PlaceDetail = {
   rooms: Room[];
 };
 
+type BookingResponse = {
+  id: string;
+};
+
 export default function PlaceDetailPage() {
   const params = useParams<{ id: string }>();
   const [place, setPlace] = useState<PlaceDetail | null>(null);
   const [status, setStatus] = useState("Loading place...");
+  const [confirmedBookingId, setConfirmedBookingId] = useState("");
   const [bookingStatus, setBookingStatus] = useState("");
   const [isBooking, setIsBooking] = useState(false);
+  const [reviewStatus, setReviewStatus] = useState("");
+  const [isReviewing, setIsReviewing] = useState(false);
+  const hasSavedReview = reviewStatus.startsWith("Reviewed ");
 
   useEffect(() => {
     async function loadPlace() {
@@ -66,6 +74,8 @@ export default function PlaceDetailPage() {
 
     setIsBooking(true);
     setBookingStatus("");
+    setConfirmedBookingId("");
+    setReviewStatus("");
 
     try {
       const response = await fetch("/api/guest/bookings", {
@@ -84,6 +94,8 @@ export default function PlaceDetailPage() {
       });
 
       if (response.ok) {
+        const booking = (await response.json()) as BookingResponse;
+        setConfirmedBookingId(booking.id);
         setBookingStatus(`Booked ${place.title}.`);
       } else if (response.status === 401) {
         setBookingStatus("Sign in before booking this place.");
@@ -92,6 +104,45 @@ export default function PlaceDetailPage() {
       }
     } finally {
       setIsBooking(false);
+    }
+  }
+
+  async function handleReview(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!place || !confirmedBookingId) return;
+
+    const formData = new FormData(event.currentTarget);
+    const rating = Number(formData.get("rating") ?? "");
+    const body = String(formData.get("review-body") ?? "");
+
+    setIsReviewing(true);
+    setReviewStatus("");
+
+    try {
+      const response = await fetch("/api/guest/reviews", {
+        body: JSON.stringify({
+          bookingId: confirmedBookingId,
+          rating,
+          body,
+        }),
+        cache: "no-store",
+        credentials: "include",
+        headers: {
+          "accept-language": "en-US",
+          "Content-Type": "application/json",
+        },
+        method: "POST",
+      });
+
+      if (response.ok) {
+        setReviewStatus(`Reviewed ${place.title}.`);
+      } else if (response.status === 401) {
+        setReviewStatus("Sign in before reviewing this place.");
+      } else {
+        setReviewStatus("We could not save this review.");
+      }
+    } finally {
+      setIsReviewing(false);
     }
   }
 
@@ -197,6 +248,61 @@ export default function PlaceDetailPage() {
                     </p>
                   )}
                 </form>
+
+                {confirmedBookingId && (
+                  <form
+                    className="space-y-4 border-t border-[#deded8] p-4"
+                    onSubmit={handleReview}
+                  >
+                    <div>
+                      <p className="text-sm font-medium uppercase tracking-[0.12em] text-[#707069]">
+                        Review
+                      </p>
+                      <h2 className="mt-2 text-2xl font-semibold tracking-normal text-[#151516]">
+                        Review this place
+                      </h2>
+                    </div>
+                    <label className="block">
+                      <span className="text-sm font-medium text-[#4f4f4a]">
+                        Rating
+                      </span>
+                      <input
+                        className="mt-2 h-11 w-full border border-[#d9d9d2] bg-white px-3 text-base text-[#171717] outline-none transition focus:border-[#1d1d1f]"
+                        max="5"
+                        min="1"
+                        name="rating"
+                        required
+                        type="number"
+                      />
+                    </label>
+                    <label className="block">
+                      <span className="text-sm font-medium text-[#4f4f4a]">
+                        Notes
+                      </span>
+                      <textarea
+                        className="mt-2 min-h-24 w-full resize-y border border-[#d9d9d2] bg-white px-3 py-2 text-base text-[#171717] outline-none transition focus:border-[#1d1d1f]"
+                        name="review-body"
+                        required
+                      />
+                    </label>
+                    <button
+                      className="h-11 w-full bg-[#1d1d1f] px-4 text-sm font-semibold text-white transition hover:bg-[#333336] disabled:cursor-not-allowed disabled:bg-[#9a9a93]"
+                      disabled={isReviewing || hasSavedReview}
+                      type="submit"
+                    >
+                      {isReviewing
+                        ? "Saving..."
+                        : hasSavedReview
+                          ? "Review saved"
+                          : "Save review"}
+                    </button>
+                    {reviewStatus && (
+                      <p className="border border-[#e4e4de] bg-[#fafaf8] px-3 py-2 text-sm text-[#4f4f4a]">
+                        {reviewStatus}
+                      </p>
+                    )}
+                  </form>
+                )}
               </aside>
             </section>
 
