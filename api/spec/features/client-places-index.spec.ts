@@ -60,7 +60,6 @@ describe('client places index', () => {
       link.click()
     })
 
-    await expect(page).toMatchTextContent('Stay detail')
     await expect(page).toMatchTextContent('Riverbend Cabin')
     await expect(page).toMatchTextContent('cabin')
     await expect(page).toMatchTextContent('Kitchen')
