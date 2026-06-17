@@ -19,6 +19,12 @@ type Room = {
   bathOrShowerStyle?: LabeledValue;
 };
 
+type Review = {
+  id: string;
+  rating: number;
+  body: string;
+};
+
 type PlaceDetail = {
   id: string;
   title: string;
@@ -26,6 +32,7 @@ type PlaceDetail = {
   displayStyle: string;
   sleeps: number;
   rooms: Room[];
+  reviews: Review[];
 };
 
 type BookingResponse = {
@@ -306,30 +313,61 @@ export default function PlaceDetailPage() {
               </aside>
             </section>
 
-            <section className="py-10">
-              <div className="mb-6">
-                <h2 className="mt-2 text-3xl font-semibold tracking-normal text-[#111113]">
-                  What is inside
-                </h2>
-              </div>
+            {place.rooms.length > 0 && (
+              <section className="py-10">
+                <div className="mb-6">
+                  <h2 className="mt-2 text-3xl font-semibold tracking-normal text-[#111113]">
+                    What is inside
+                  </h2>
+                </div>
 
-              <div className="grid gap-3 md:grid-cols-2">
-                {place.rooms.map((room) => (
-                  <article
-                    className="border border-[#deded8] bg-white p-4"
-                    key={room.id}
-                  >
-                    <p className="text-sm font-medium uppercase tracking-[0.12em] text-[#707069]">
-                      {room.displayType}
-                    </p>
-                    <h3 className="mt-2 text-xl font-semibold text-[#171719]">
-                      {room.title}
-                    </h3>
-                    <RoomDetails room={room} />
-                  </article>
-                ))}
-              </div>
-            </section>
+                <div className="grid gap-3 md:grid-cols-2">
+                  {place.rooms.map((room) => (
+                    <article
+                      className="border border-[#deded8] bg-white p-4"
+                      key={room.id}
+                    >
+                      <p className="text-sm font-medium uppercase tracking-[0.12em] text-[#707069]">
+                        {room.displayType}
+                      </p>
+                      <h3 className="mt-2 text-xl font-semibold text-[#171719]">
+                        {room.title}
+                      </h3>
+                      <RoomDetails room={room} />
+                    </article>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {place.reviews.length > 0 && (
+              <section className="border-t border-[#deded8] py-10">
+                <div className="mb-6">
+                  <p className="text-sm font-medium uppercase tracking-[0.14em] text-[#707069]">
+                    Reviews
+                  </p>
+                  <h2 className="mt-2 text-3xl font-semibold tracking-normal text-[#111113]">
+                    Guest notes
+                  </h2>
+                </div>
+
+                <div className="grid gap-3 md:grid-cols-2">
+                  {place.reviews.map((review) => (
+                    <article
+                      className="border border-[#deded8] bg-white p-4"
+                      key={review.id}
+                    >
+                      <p className="text-sm font-medium uppercase tracking-[0.12em] text-[#707069]">
+                        {review.rating} out of 5
+                      </p>
+                      <p className="mt-3 text-base leading-7 text-[#2f2f2c]">
+                        {review.body}
+                      </p>
+                    </article>
+                  ))}
+                </div>
+              </section>
+            )}
           </>
         ) : null}
       </div>
