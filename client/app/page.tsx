@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { FormEvent, useEffect, useState } from "react";
 
 type AuthUser = {
@@ -179,10 +180,18 @@ export default function Home() {
       <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-5 py-6 sm:px-8 lg:px-10">
         <header className="flex items-center justify-between border-b border-[#deded8] pb-5">
           <Link
-            className="-mx-2 flex min-h-11 items-center px-2 text-lg font-semibold tracking-normal"
+            className="-mx-2 flex min-h-11 items-center gap-2 px-2 text-lg font-semibold tracking-normal"
             href="/"
           >
-            BearBnB
+            <Image
+              alt=""
+              aria-hidden="true"
+              className="h-9 w-9"
+              height={36}
+              src="/bearbnb-logo.svg"
+              width={36}
+            />
+            <span>BearBnB</span>
           </Link>
           <span className="rounded-full border border-[#d8d8d2] bg-white px-3 py-1 text-sm text-[#62625c]">
             Guest preview
