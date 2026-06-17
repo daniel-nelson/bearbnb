@@ -10,7 +10,7 @@ describe('client bookings', () => {
     const place = await createPlace({ name: 'riverbend-cabin', style: 'cabin', sleeps: 4 })
     await setPlaceTitle(place, 'Riverbend Cabin')
 
-    await visit('/', { baseUrl: AppEnv.string('CLIENT_APP_HOST') })
+    await visit('/auth', { baseUrl: AppEnv.string('CLIENT_APP_HOST') })
 
     await fillIn('[name="signup-name"]', 'Maple Bear')
     await fillIn('[name="signup-email"]', `front-end-bookings-${randomUUID()}@example.com`)
