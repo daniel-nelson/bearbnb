@@ -33,7 +33,7 @@ function buildAuth() {
     secret:
       AppEnv.string('BETTER_AUTH_SECRET', { optional: !AppEnv.isProduction }) ||
       AppEnv.string('APP_ENCRYPTION_KEY'),
-    trustedOrigins: allowedCorsOrigins,
+    trustedOrigins: allowedCorsOrigins(),
     advanced: {
       database: {
         generateId: ({ model }) => (model === 'user' || model === 'users' ? false : randomUUID()),
