@@ -1,23 +1,21 @@
 import { ObjectSerializer } from '@rvoh/dream'
-import { RoomForGuestsSerializer, RoomSerializer, RoomSummarySerializer } from '@serializers/RoomSerializer.js'
-import Bathroom from '@models/Room/Bathroom.js'
 import {
-  type BathOrShowerStylesEnum,
-  BathOrShowerStylesEnumValues,
-  type LocalesEnum,
-} from '@src/types/db.js'
+  RoomForGuestsSerializer,
+  RoomSerializer,
+  RoomSummarySerializer,
+} from '@serializers/RoomSerializer.js'
+import Bathroom from '@models/Room/Bathroom.js'
+import { type BathOrShowerStylesEnum, BathOrShowerStylesEnumValues, type LocalesEnum } from '@src/types/db.js'
 import i18n from '@src/utils/i18n.js'
 
-export const RoomBathroomSummarySerializer = (bathroom: Bathroom) =>
-  RoomSummarySerializer(Bathroom, bathroom)
+export const RoomBathroomSummarySerializer = (bathroom: Bathroom) => RoomSummarySerializer(Bathroom, bathroom)
 
 export const RoomBathroomSerializer = (bathroom: Bathroom) =>
-  RoomSerializer(Bathroom, bathroom)
-    .attribute('bathOrShowerStyle')
+  RoomSerializer(Bathroom, bathroom).attribute('bathOrShowerStyle')
 
 export const BathOrShowerStyleSerializer = (
   bathOrShowerStyle: BathOrShowerStylesEnum,
-  passthrough: { locale: LocalesEnum }
+  passthrough: { locale: LocalesEnum },
 ) =>
   ObjectSerializer({ bathOrShowerStyle }, passthrough)
     .attribute('bathOrShowerStyle', {
@@ -29,9 +27,13 @@ export const BathOrShowerStyleSerializer = (
       () => i18n(passthrough.locale, `rooms.Bathroom.bathOrShowerStyles.${bathOrShowerStyle}`),
       {
         openapi: 'string',
-      }
+      },
     )
 
-export const RoomBathroomForGuestsSerializer = (roomBathroom: Bathroom, passthrough: { locale: LocalesEnum }) =>
-  RoomForGuestsSerializer(Bathroom, roomBathroom, passthrough)
-    .rendersOne<Bathroom>('bathOrShowerStyle', { serializer: BathOrShowerStyleSerializer })
+export const RoomBathroomForGuestsSerializer = (
+  roomBathroom: Bathroom,
+  passthrough: { locale: LocalesEnum },
+) =>
+  RoomForGuestsSerializer(Bathroom, roomBathroom, passthrough).rendersOne<Bathroom>('bathOrShowerStyle', {
+    serializer: BathOrShowerStyleSerializer,
+  })

@@ -86,19 +86,22 @@ describe('V1/Host/Places/RoomsController', () => {
   describe('POST create', () => {
     const create = async <StatusCode extends 201 | 400 | 404>(
       data: RequestBody<'post', '/v1/host/places/{placeId}/rooms'>,
-      expectedStatus: StatusCode
+      expectedStatus: StatusCode,
     ) => {
       return request.post('/v1/host/places/{placeId}/rooms', expectedStatus, {
         placeId: place.id,
-        data
+        data,
       })
     }
 
     it('creates a Room for this Place', async () => {
-      const { body } = await create({
-        type: 'Kitchen',
-        appliances: ['oven', 'stove'],
-      }, 201)
+      const { body } = await create(
+        {
+          type: 'Kitchen',
+          appliances: ['oven', 'stove'],
+        },
+        201,
+      )
 
       const room = await place.associationQuery('rooms').firstOrFail()
       expect(room.type).toEqual('Kitchen')
@@ -118,7 +121,7 @@ describe('V1/Host/Places/RoomsController', () => {
     const update = async <StatusCode extends 204 | 400 | 404>(
       room: Room,
       data: RequestBody<'patch', '/v1/host/places/{placeId}/rooms/{id}'>,
-      expectedStatus: StatusCode
+      expectedStatus: StatusCode,
     ) => {
       return request.patch('/v1/host/places/{placeId}/rooms/{id}', expectedStatus, {
         placeId: place.id,
@@ -130,9 +133,13 @@ describe('V1/Host/Places/RoomsController', () => {
     it('updates the Room', async () => {
       const room = await createKitchen({ place, appliances: ['microwave'] })
 
-      await update(room, {
-        appliances: ['dishwasher'],
-      }, 204)
+      await update(
+        room,
+        {
+          appliances: ['dishwasher'],
+        },
+        204,
+      )
 
       await room.reload()
       expect(room.appliances).toEqual(['dishwasher'])
@@ -142,9 +149,13 @@ describe('V1/Host/Places/RoomsController', () => {
       it('is not updated', async () => {
         const room = await createKitchen({ appliances: ['microwave'] })
 
-        await update(room, {
-          appliances: ['dishwasher'],
-        }, 404)
+        await update(
+          room,
+          {
+            appliances: ['dishwasher'],
+          },
+          404,
+        )
 
         await room.reload()
         expect(room.appliances).toEqual(['microwave'])

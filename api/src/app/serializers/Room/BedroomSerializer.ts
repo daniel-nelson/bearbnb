@@ -1,15 +1,17 @@
 import { ObjectSerializer } from '@rvoh/dream'
-import { RoomForGuestsSerializer, RoomSerializer, RoomSummarySerializer } from '@serializers/RoomSerializer.js'
+import {
+  RoomForGuestsSerializer,
+  RoomSerializer,
+  RoomSummarySerializer,
+} from '@serializers/RoomSerializer.js'
 import Bedroom from '@models/Room/Bedroom.js'
 import { type BedTypesEnum, BedTypesEnumValues, type LocalesEnum } from '@src/types/db.js'
 import i18n from '@src/utils/i18n.js'
 
-export const RoomBedroomSummarySerializer = (bedroom: Bedroom) =>
-  RoomSummarySerializer(Bedroom, bedroom)
+export const RoomBedroomSummarySerializer = (bedroom: Bedroom) => RoomSummarySerializer(Bedroom, bedroom)
 
 export const RoomBedroomSerializer = (bedroom: Bedroom) =>
-  RoomSerializer(Bedroom, bedroom)
-    .attribute('bedTypes')
+  RoomSerializer(Bedroom, bedroom).attribute('bedTypes')
 
 export const BedTypeSerializer = (bedType: BedTypesEnum, passthrough: { locale: LocalesEnum }) =>
   ObjectSerializer({ bedType }, passthrough)

@@ -15,7 +15,7 @@ export const RoomSerializer = <T extends Room>(StiChildClass: typeof Room, room:
 export const RoomForGuestsSerializer = <T extends Room>(
   StiChildClass: typeof Room,
   room: T,
-  passthrough: { locale: LocalesEnum }
+  passthrough: { locale: LocalesEnum },
 ) =>
   DreamSerializer(StiChildClass ?? Room, room)
     .attribute('id')

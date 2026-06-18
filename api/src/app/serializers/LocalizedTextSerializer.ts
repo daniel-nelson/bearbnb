@@ -2,8 +2,7 @@ import { DreamSerializer } from '@rvoh/dream'
 import LocalizedText from '@models/LocalizedText.js'
 
 export const LocalizedTextSummarySerializer = (localizedText: LocalizedText) =>
-  DreamSerializer(LocalizedText, localizedText)
-    .attribute('id')
+  DreamSerializer(LocalizedText, localizedText).attribute('id')
 
 export const LocalizedTextSerializer = (localizedText: LocalizedText) =>
   LocalizedTextSummarySerializer(localizedText)

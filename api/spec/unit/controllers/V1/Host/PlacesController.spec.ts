@@ -83,19 +83,22 @@ describe('V1/Host/PlacesController', () => {
   describe('POST create', () => {
     const create = async <StatusCode extends 201 | 400 | 404>(
       data: RequestBody<'post', '/v1/host/places'>,
-      expectedStatus: StatusCode
+      expectedStatus: StatusCode,
     ) => {
       return request.post('/v1/host/places', expectedStatus, {
-        data
+        data,
       })
     }
 
     it('creates a Place for this Host', async () => {
-      const { body } = await create({
-        name: 'The Place name',
-        style: 'cottage',
-        sleeps: 1,
-      }, 201)
+      const { body } = await create(
+        {
+          name: 'The Place name',
+          style: 'cottage',
+          sleeps: 1,
+        },
+        201,
+      )
 
       const place = await host.associationQuery('places').firstOrFail()
       expect(place.name).toEqual('The Place name')
@@ -117,7 +120,7 @@ describe('V1/Host/PlacesController', () => {
     const update = async <StatusCode extends 204 | 400 | 404>(
       place: Place,
       data: RequestBody<'patch', '/v1/host/places/{id}'>,
-      expectedStatus: StatusCode
+      expectedStatus: StatusCode,
     ) => {
       return request.patch('/v1/host/places/{id}', expectedStatus, {
         id: place.id,
@@ -129,11 +132,15 @@ describe('V1/Host/PlacesController', () => {
       const place = await createPlace()
       await createHostPlace({ host, place })
 
-      await update(place, {
-        name: 'Updated Place name',
-        style: 'dump',
-        sleeps: 2,
-      }, 204)
+      await update(
+        place,
+        {
+          name: 'Updated Place name',
+          style: 'dump',
+          sleeps: 2,
+        },
+        204,
+      )
 
       await place.reload()
       expect(place.name).toEqual('Updated Place name')
@@ -148,11 +155,15 @@ describe('V1/Host/PlacesController', () => {
         const originalStyle = place.style
         const originalSleeps = place.sleeps
 
-        await update(place, {
-          name: 'Updated Place name',
-          style: 'dump',
-          sleeps: 2,
-        }, 404)
+        await update(
+          place,
+          {
+            name: 'Updated Place name',
+            style: 'dump',
+            sleeps: 2,
+          },
+          404,
+        )
 
         await place.reload()
         expect(place.name).toEqual(originalName)
