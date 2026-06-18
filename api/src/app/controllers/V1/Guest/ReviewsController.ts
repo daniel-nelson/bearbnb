@@ -59,6 +59,8 @@ export default class V1GuestReviewsController extends V1GuestBaseController {
   })
   public async create() {
     const booking = await this.reviewableBooking()
+    if (await Review.where({ bookingId: booking.id }).exists()) return this.bookingAlreadyReviewed()
+
     let review = await this.currentGuest.createAssociation('reviews', {
       booking,
       placeId: booking.placeId,
@@ -106,5 +108,9 @@ export default class V1GuestReviewsController extends V1GuestBaseController {
     return await this.currentGuest
       .associationQuery('bookings')
       .findOrFail(this.castParam('bookingId', 'uuid'))
+  }
+
+  private bookingAlreadyReviewed() {
+    this.unprocessableContent({ errors: { bookingId: ['has already been reviewed'] } })
   }
 }

@@ -85,7 +85,7 @@ describe('V1/Guest/ReviewsController', () => {
   })
 
   describe('POST create', () => {
-    const create = async <StatusCode extends 201 | 400 | 404>(
+    const create = async <StatusCode extends 201 | 400 | 404 | 422>(
       data: RequestBody<'post', '/v1/guest/reviews'>,
       expectedStatus: StatusCode,
     ) => {
@@ -134,6 +134,47 @@ describe('V1/Guest/ReviewsController', () => {
       )
 
       expect(await Review.where({ bookingId: otherBooking.id }).exists()).toBe(false)
+    })
+
+    it('does not create a Review with an out-of-range rating', async () => {
+      await create(
+        {
+          bookingId: booking.id,
+          rating: 6,
+          body: 'The Review body',
+        },
+        400,
+      )
+
+      expect(await Review.where({ bookingId: booking.id }).exists()).toBe(false)
+    })
+
+    it('does not create a Review with a blank body', async () => {
+      await create(
+        {
+          bookingId: booking.id,
+          rating: 1,
+          body: '',
+        },
+        400,
+      )
+
+      expect(await Review.where({ bookingId: booking.id }).exists()).toBe(false)
+    })
+
+    it('does not create more than one Review for a Booking', async () => {
+      await createReview({ guest, booking, place })
+
+      await create(
+        {
+          bookingId: booking.id,
+          rating: 1,
+          body: 'The Review body',
+        },
+        422,
+      )
+
+      expect(await Review.where({ bookingId: booking.id }).count()).toEqual(1)
     })
   })
 

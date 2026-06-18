@@ -1,4 +1,4 @@
-import { Kysely, sql } from 'kysely'
+import { Kysely, sql, SqlBool } from 'kysely'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function up(db: Kysely<any>): Promise<void> {
@@ -13,11 +13,22 @@ export async function up(db: Kysely<any>): Promise<void> {
     .addColumn('created_at', 'timestamp', col => col.notNull())
     .addColumn('updated_at', 'timestamp', col => col.notNull())
     .addColumn('deleted_at', 'timestamp')
+    .addCheckConstraint('reviews_rating_between_one_and_five', sql`rating >= 1 AND rating <= 5`)
+    .addCheckConstraint(
+      'reviews_body_present_and_length',
+      sql`char_length(body) > 0 AND char_length(body) <= 2000`,
+    )
     .execute()
 
   await db.schema.createIndex('reviews_guest_id').on('reviews').column('guest_id').execute()
 
-  await db.schema.createIndex('reviews_booking_id').on('reviews').column('booking_id').execute()
+  await db.schema
+    .createIndex('reviews_booking_id_unique')
+    .on('reviews')
+    .column('booking_id')
+    .unique()
+    .where(sql<SqlBool>`deleted_at IS NULL`)
+    .execute()
 
   await db.schema.createIndex('reviews_place_id').on('reviews').column('place_id').execute()
 }
@@ -25,7 +36,7 @@ export async function up(db: Kysely<any>): Promise<void> {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function down(db: Kysely<any>): Promise<void> {
   await db.schema.dropIndex('reviews_guest_id').execute()
-  await db.schema.dropIndex('reviews_booking_id').execute()
+  await db.schema.dropIndex('reviews_booking_id_unique').execute()
   await db.schema.dropIndex('reviews_place_id').execute()
   await db.schema.dropTable('reviews').execute()
 }

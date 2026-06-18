@@ -6,6 +6,7 @@ import Booking from '@models/Booking.js'
 import Place from '@models/Place.js'
 
 const deco = new Decorators<typeof Review>()
+const bodyMaxLength = 2000
 
 @SoftDelete()
 export default class Review extends ApplicationModel {
@@ -22,7 +23,9 @@ export default class Review extends ApplicationModel {
   }
 
   public id: DreamColumn<Review, 'id'>
+  @deco.Validates('numericality', { min: 1, max: 5 })
   public rating: DreamColumn<Review, 'rating'>
+  @deco.Validates('length', { min: 1, max: bodyMaxLength })
   public body: DreamColumn<Review, 'body'>
   public createdAt: DreamColumn<Review, 'createdAt'>
   public updatedAt: DreamColumn<Review, 'updatedAt'>
@@ -39,4 +42,14 @@ export default class Review extends ApplicationModel {
   @deco.BelongsTo('Place', { on: 'placeId' })
   public place: Place
   public placeId: DreamColumn<Review, 'placeId'>
+
+  @deco.Validate()
+  public async validateBookingHasNoReview(this: Review) {
+    if (!this.bookingId) return
+
+    let query = Review.where({ bookingId: this.bookingId })
+    if (this.isPersisted) query = query.whereNot({ id: this.id })
+
+    if (await query.exists()) this.addError('bookingId', 'has already been reviewed')
+  }
 }
