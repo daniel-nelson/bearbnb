@@ -1,5 +1,6 @@
 type RequestOptions = {
   token?: string;
+  badRequestMessage?: string;
 };
 
 export class ApiError extends Error {
@@ -46,7 +47,7 @@ export async function getJson<T>(
 export async function postJson<T>(
   path: string,
   body: unknown,
-  { token }: RequestOptions = {},
+  { badRequestMessage = "The submitted data is invalid.", token }: RequestOptions = {},
 ): Promise<T> {
   const response = await fetch(new URL(path, apiHost), {
     method: "POST",
@@ -60,8 +61,7 @@ export async function postJson<T>(
 
   if (response.ok) return (await response.json()) as T;
 
-  if (response.status === 400)
-    throw new ApiError("Those dates are not available.", response.status);
+  if (response.status === 400) throw new ApiError(badRequestMessage, response.status);
   if (response.status === 401)
     throw new ApiError("Sign in before continuing.", response.status);
   if (response.status === 404)
@@ -188,6 +188,24 @@ export async function createGuestBooking({
   return await postJson<GuestBooking>(
     "/v1/guest/bookings",
     { placeId, startsOn, endsOn },
-    { token },
+    { token, badRequestMessage: "Those dates are not available." },
+  );
+}
+
+export async function createGuestReview({
+  bookingId,
+  rating,
+  body,
+  token,
+}: {
+  bookingId: string;
+  rating: number;
+  body: string;
+  token: string;
+}) {
+  return await postJson<GuestReview>(
+    "/v1/guest/reviews",
+    { bookingId, rating, body },
+    { token, badRequestMessage: "That review could not be posted." },
   );
 }

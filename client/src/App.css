@@ -197,6 +197,20 @@
   border-top: 1px solid var(--border);
 }
 
+.review-form {
+  display: grid;
+  grid-template-columns: 120px 1fr auto;
+  gap: 14px;
+  align-items: end;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.review-form p {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
 .availability-calendar {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
@@ -306,6 +320,18 @@ input {
   background: var(--bg);
 }
 
+select,
+textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font: inherit;
+  color: var(--text-h);
+  background: var(--bg);
+}
+
 button {
   min-height: 40px;
   padding: 8px 14px;
@@ -352,6 +378,7 @@ button:hover {
   .subsection-header,
   .place-row,
   .booking-form,
+  .review-form,
   .review-list li,
   .room-list li {
     grid-template-columns: 1fr;
