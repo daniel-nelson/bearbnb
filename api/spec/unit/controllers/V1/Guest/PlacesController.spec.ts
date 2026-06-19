@@ -1,6 +1,8 @@
+import { CalendarDate } from '@rvoh/dream'
 import Place from '@models/Place.js'
 import { PsychicServer } from '@rvoh/psychic'
 import { OpenapiSpecRequest } from '@rvoh/psychic-spec-helpers'
+import createBooking from '@spec/factories/BookingFactory.js'
 import createLocalizedText from '@spec/factories/LocalizedTextFactory.js'
 import createPlace from '@spec/factories/PlaceFactory.js'
 import createBathroom from '@spec/factories/Room/BathroomFactory.js'
@@ -117,6 +119,32 @@ describe('V1/Guest/PlacesController', () => {
             type: 'LivingRoom',
             displayType: 'sala de estar',
             title: 'The Spanish livingRoom title',
+          },
+        ],
+      })
+    })
+  })
+
+  describe('GET availability', () => {
+    const subject = async <StatusCode extends 200 | 400>(place: Place, expectedStatus: StatusCode) => {
+      return request.get('/v1/guest/places/{id}/availability', expectedStatus, {
+        id: place.id,
+      })
+    }
+
+    it('returns occupied booking ranges with checkout dates kept exclusive', async () => {
+      const place = await createPlace()
+      const startsOn = CalendarDate.fromISO('2026-07-01')
+      const endsOn = CalendarDate.fromISO('2026-07-03')
+      await createBooking({ place, startsOn, endsOn })
+
+      const { body } = await subject(place, 200)
+
+      expect(body).toEqual({
+        occupiedRanges: [
+          {
+            startsOn: startsOn.toISO(),
+            endsOn: endsOn.toISO(),
           },
         ],
       })

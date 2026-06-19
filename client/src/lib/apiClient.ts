@@ -141,6 +141,21 @@ export async function getGuestPlace(id: string) {
   return await getJson<GuestPlaceDetail>(`/v1/guest/places/${id}`);
 }
 
+export type OccupiedRange = {
+  startsOn: string;
+  endsOn: string;
+};
+
+export type GuestPlaceAvailability = {
+  occupiedRanges: OccupiedRange[];
+};
+
+export async function getGuestPlaceAvailability(id: string) {
+  return await getJson<GuestPlaceAvailability>(
+    `/v1/guest/places/${id}/availability`,
+  );
+}
+
 export type GuestBooking = {
   id: string;
   startsOn: string;
