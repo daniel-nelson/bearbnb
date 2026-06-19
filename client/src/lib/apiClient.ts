@@ -43,6 +43,33 @@ export async function getJson<T>(
   throw new ApiError("The API request failed.", response.status);
 }
 
+export async function postJson<T>(
+  path: string,
+  body: unknown,
+  { token }: RequestOptions = {},
+): Promise<T> {
+  const response = await fetch(new URL(path, apiHost), {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (response.ok) return (await response.json()) as T;
+
+  if (response.status === 400)
+    throw new ApiError("Those dates are not available.", response.status);
+  if (response.status === 401)
+    throw new ApiError("Sign in before continuing.", response.status);
+  if (response.status === 404)
+    throw new ApiError("The requested record was not found.", response.status);
+
+  throw new ApiError("The API request failed.", response.status);
+}
+
 export async function checkApiHealth(): Promise<void> {
   const response = await fetch(new URL("/status", apiHost), {
     headers: { Accept: "application/json" },
@@ -112,4 +139,28 @@ export type GuestPlaceDetail = {
 
 export async function getGuestPlace(id: string) {
   return await getJson<GuestPlaceDetail>(`/v1/guest/places/${id}`);
+}
+
+export type GuestBooking = {
+  id: string;
+  startsOn: string;
+  endsOn: string;
+};
+
+export async function createGuestBooking({
+  placeId,
+  startsOn,
+  endsOn,
+  token,
+}: {
+  placeId: string;
+  startsOn: string;
+  endsOn: string;
+  token: string;
+}) {
+  return await postJson<GuestBooking>(
+    "/v1/guest/bookings",
+    { placeId, startsOn, endsOn },
+    { token },
+  );
 }
