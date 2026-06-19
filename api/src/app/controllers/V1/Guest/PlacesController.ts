@@ -31,7 +31,7 @@ export default class V1GuestPlacesController extends V1GuestBaseController {
     this.ok(
       await Place.passthrough({ locale: this.locale })
         .preloadFor('forGuests')
-        .findOrFail(this.castParam('id', 'uuid'))
+        .findOrFail(this.castParam('id', 'uuid')),
     )
   }
 }

@@ -76,7 +76,7 @@ function initializeWorkers(workersApp: PsychicAppWorkers) {
             },
             clusterRetryStrategy: (times: number) => Math.max(Math.min(Math.exp(times), 20000), 1000),
             enableOfflineQueue: false,
-          }
+          },
         )
       : new Redis({
           host: AppEnv.string('BG_JOBS_REDIS_HOST', { optional: true }) || 'localhost',
@@ -92,34 +92,34 @@ function initializeWorkers(workersApp: PsychicAppWorkers) {
     defaultWorkerConnection: !AppEnv.boolean('WORKER_SERVICE')
       ? undefined
       : AppEnv.isProduction
-      ? new Cluster(
-          [
+        ? new Cluster(
+            [
+              {
+                host: AppEnv.string('BG_JOBS_REDIS_HOST'),
+                port: AppEnv.integer('BG_JOBS_REDIS_PORT', { optional: true }) || 6379,
+              },
+            ],
             {
-              host: AppEnv.string('BG_JOBS_REDIS_HOST'),
-              port: AppEnv.integer('BG_JOBS_REDIS_PORT', { optional: true }) || 6379,
+              slotsRefreshTimeout: 15000,
+              dnsLookup: (address, callback) => callback(null, address),
+              redisOptions: {
+                username: AppEnv.string('BG_JOBS_REDIS_USERNAME'),
+                password: AppEnv.string('BG_JOBS_REDIS_PASSWORD'),
+                tls: {},
+                maxRetriesPerRequest: null,
+              },
+              clusterRetryStrategy: (times: number) => Math.max(Math.min(Math.exp(times), 20000), 1000),
             },
-          ],
-          {
-            slotsRefreshTimeout: 15000,
-            dnsLookup: (address, callback) => callback(null, address),
-            redisOptions: {
-              username: AppEnv.string('BG_JOBS_REDIS_USERNAME'),
-              password: AppEnv.string('BG_JOBS_REDIS_PASSWORD'),
-              tls: {},
-              maxRetriesPerRequest: null,
-            },
-            clusterRetryStrategy: (times: number) => Math.max(Math.min(Math.exp(times), 20000), 1000),
-          }
-        )
-      : new Redis({
-          host: AppEnv.string('BG_JOBS_REDIS_HOST', { optional: true }) || 'localhost',
-          port: AppEnv.integer('BG_JOBS_REDIS_PORT', { optional: true }) || 6379,
-          username: AppEnv.string('BG_JOBS_REDIS_USERNAME', { optional: true }),
-          password: AppEnv.string('BG_JOBS_REDIS_PASSWORD', { optional: true }),
-          // tls:  {},
-          maxRetriesPerRequest: null,
-          retryStrategy: (times: number) => Math.max(Math.min(Math.exp(times), 20000), 1000),
-        }),
+          )
+        : new Redis({
+            host: AppEnv.string('BG_JOBS_REDIS_HOST', { optional: true }) || 'localhost',
+            port: AppEnv.integer('BG_JOBS_REDIS_PORT', { optional: true }) || 6379,
+            username: AppEnv.string('BG_JOBS_REDIS_USERNAME', { optional: true }),
+            password: AppEnv.string('BG_JOBS_REDIS_PASSWORD', { optional: true }),
+            // tls:  {},
+            maxRetriesPerRequest: null,
+            retryStrategy: (times: number) => Math.max(Math.min(Math.exp(times), 20000), 1000),
+          }),
   })
 
   // ******

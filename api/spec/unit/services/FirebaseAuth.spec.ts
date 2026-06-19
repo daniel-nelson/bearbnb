@@ -70,16 +70,20 @@ describe('FirebaseAuth', () => {
         email_verified: true,
       })
 
-      await expect(FirebaseAuth.userFromBearerToken(`Bearer test-firebase:${nullPayloadToken}`)).resolves.toBeNull()
+      await expect(
+        FirebaseAuth.userFromBearerToken(`Bearer test-firebase:${nullPayloadToken}`),
+      ).resolves.toBeNull()
       expect(verifyIdToken).not.toHaveBeenCalled()
     })
 
     it('rejects test bearer tokens with non-string uid and email payloads', async () => {
-      const numericPayloadToken = Buffer.from(JSON.stringify({ uid: 1, email: 2, emailVerified: true })).toString(
-        'base64url',
-      )
+      const numericPayloadToken = Buffer.from(
+        JSON.stringify({ uid: 1, email: 2, emailVerified: true }),
+      ).toString('base64url')
 
-      await expect(FirebaseAuth.userFromBearerToken(`Bearer test-firebase:${numericPayloadToken}`)).resolves.toBeNull()
+      await expect(
+        FirebaseAuth.userFromBearerToken(`Bearer test-firebase:${numericPayloadToken}`),
+      ).resolves.toBeNull()
     })
 
     it('rejects Firebase UIDs that belong to soft-deleted local users', async () => {
@@ -97,7 +101,9 @@ describe('FirebaseAuth', () => {
 
       await expect(FirebaseAuth.userFromBearerToken('Bearer soft-deleted-token')).resolves.toBeNull()
       expect(await User.where({ email: 'soft-deleted@example.com' }).exists()).toBe(false)
-      expect(await User.removeAllDefaultScopes().where({ email: 'soft-deleted@example.com' }).count()).toEqual(1)
+      expect(
+        await User.removeAllDefaultScopes().where({ email: 'soft-deleted@example.com' }).count(),
+      ).toEqual(1)
     })
 
     it('rejects Firebase Auth emulator configuration outside test and development', async () => {

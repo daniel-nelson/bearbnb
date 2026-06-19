@@ -5,9 +5,13 @@ import { visit } from '@rvoh/psychic-spec-helpers'
 describe('guest places index', () => {
   it('shows places loaded from the Psychic API', async () => {
     const firstPlace = await createPlace()
-    await (await firstPlace.associationQuery('localizedTexts').firstOrFail()).update({ title: 'Mossy Hollow Den' })
+    await (
+      await firstPlace.associationQuery('localizedTexts').firstOrFail()
+    ).update({ title: 'Mossy Hollow Den' })
     const secondPlace = await createPlace()
-    await (await secondPlace.associationQuery('localizedTexts').firstOrFail()).update({ title: 'Cedar Ridge Cabin' })
+    await (
+      await secondPlace.associationQuery('localizedTexts').firstOrFail()
+    ).update({ title: 'Cedar Ridge Cabin' })
 
     await visit('/', { baseUrl: AppEnv.string('CLIENT_APP_HOST') })
 
