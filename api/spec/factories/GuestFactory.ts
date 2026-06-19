@@ -3,8 +3,12 @@ import Guest from '@models/Guest.js'
 import createUser from '@spec/factories/UserFactory.js'
 
 export default async function createGuest(attrs: UpdateableProperties<Guest> = {}) {
-  return await Guest.create({
-    user: attrs.user ? null : await createUser(),
-    ...attrs,
-  })
+  const user = attrs.user ?? (await createUser())
+  const guest = await user.associationQuery('guest').first()
+  if (!guest) return await Guest.create({ ...attrs, user })
+
+  const guestAttrs: UpdateableProperties<Guest> = { ...attrs }
+  delete guestAttrs.user
+  if (Object.keys(guestAttrs).length) await guest.update(guestAttrs)
+  return guest
 }

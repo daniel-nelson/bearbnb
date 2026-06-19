@@ -48,6 +48,70 @@
         }
       }
     },
+    "/v1/guest/bookings": {
+      "parameters": [],
+      "post": {
+        "tags": [
+          "bookings"
+        ],
+        "description": "Create a Booking",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "endsOn": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "startsOn": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "placeId": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Booking"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationErrors"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
     "/v1/guest/places": {
       "parameters": [
         {
@@ -1092,6 +1156,27 @@
               "sofabed",
               "twin"
             ]
+          }
+        }
+      },
+      "Booking": {
+        "type": "object",
+        "required": [
+          "endsOn",
+          "id",
+          "startsOn"
+        ],
+        "properties": {
+          "endsOn": {
+            "type": "string",
+            "format": "date"
+          },
+          "id": {
+            "type": "string"
+          },
+          "startsOn": {
+            "type": "string",
+            "format": "date"
           }
         }
       },
