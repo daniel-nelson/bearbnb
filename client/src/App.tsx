@@ -1,11 +1,29 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import reactLogo from './assets/react.svg'
 import viteLogo from './assets/vite.svg'
 import heroImg from './assets/hero.png'
+import { apiHost, checkApiHealth } from './lib/apiClient'
 import './App.css'
 
 function App() {
   const [count, setCount] = useState(0)
+  const [apiState, setApiState] = useState<'loading' | 'connected' | 'failed'>('loading')
+
+  useEffect(() => {
+    let active = true
+
+    checkApiHealth()
+      .then(() => {
+        if (active) setApiState('connected')
+      })
+      .catch(() => {
+        if (active) setApiState('failed')
+      })
+
+    return () => {
+      active = false
+    }
+  }, [])
 
   return (
     <>
@@ -28,6 +46,11 @@ function App() {
         >
           Count is {count}
         </button>
+        <div className="api-status" data-state={apiState}>
+          <span>Psychic API</span>
+          <strong>{apiState === 'connected' ? 'Connected' : apiState === 'failed' ? 'Unavailable' : 'Checking'}</strong>
+          <code>{apiHost}</code>
+        </div>
       </section>
 
       <div className="ticks"></div>

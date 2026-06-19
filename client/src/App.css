@@ -17,6 +17,35 @@
   }
 }
 
+.api-status {
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 6px 12px;
+  align-items: center;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  background: var(--panel-bg);
+
+  strong {
+    color: var(--text-h);
+  }
+
+  code {
+    grid-column: 1 / -1;
+    justify-self: center;
+  }
+
+  &[data-state='connected'] strong {
+    color: var(--success);
+  }
+
+  &[data-state='failed'] strong {
+    color: var(--danger);
+  }
+}
+
 .hero {
   position: relative;
 
