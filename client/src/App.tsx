@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
+import { DateTime } from "luxon";
 import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
@@ -9,6 +10,7 @@ import {
 import {
   apiHost,
   checkApiHealth,
+  createGuestBooking,
   getGuestPlace,
   getCurrentUser,
   listGuestPlaces,
@@ -37,6 +39,7 @@ function App() {
   >(useTestAuth ? "signed-out" : "checking");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [noticeMessage, setNoticeMessage] = useState<string | null>(null);
+  const [testToken, setTestToken] = useState<string | null>(null);
   const [places, setPlaces] = useState<GuestPlaceSummary[]>([]);
   const [placesState, setPlacesState] = useState<
     "loading" | "loaded" | "failed"
@@ -143,6 +146,7 @@ function App() {
     if (useTestAuth) {
       setCurrentUser(null);
       setAuthState("signed-out");
+      setTestToken(null);
       return;
     }
 
@@ -150,10 +154,17 @@ function App() {
   }
 
   async function signInWithTestToken(email: string) {
-    const user = await getCurrentUser(testAuthToken(email));
+    const token = testAuthToken(email);
+    const user = await getCurrentUser(token);
     setCurrentUser(user);
     setAuthState("signed-in");
     setNoticeMessage(null);
+    setTestToken(token);
+  }
+
+  async function currentAuthToken() {
+    if (useTestAuth) return testToken;
+    return (await auth.currentUser?.getIdToken()) ?? null;
   }
 
   return (
@@ -211,6 +222,7 @@ function App() {
               Email
               <input
                 data-testid="auth-email"
+                name="email"
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
                 type="email"
@@ -221,6 +233,7 @@ function App() {
               Password
               <input
                 data-testid="auth-password"
+                name="password"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 type="password"
@@ -242,7 +255,13 @@ function App() {
               <button
                 type="button"
                 data-testid="test-auth-submit"
-                onClick={() => void signInWithTestToken(email)}
+                onClick={(event) => {
+                  const form = event.currentTarget.form;
+                  const formData = form ? new FormData(form) : null;
+                  void signInWithTestToken(
+                    String(formData?.get("email") ?? email),
+                  );
+                }}
               >
                 Continue as test guest
               </button>
@@ -257,7 +276,15 @@ function App() {
             path="/"
             element={<PlacesIndex places={places} placesState={placesState} />}
           />
-          <Route path="/places/:placeId" element={<PlaceDetail />} />
+          <Route
+            path="/places/:placeId"
+            element={
+              <PlaceDetail
+                authState={authState}
+                currentAuthToken={currentAuthToken}
+              />
+            }
+          />
         </Routes>
       </BrowserRouter>
     </main>
@@ -307,12 +334,28 @@ function PlacesIndex({
   );
 }
 
-function PlaceDetail() {
+function PlaceDetail({
+  authState,
+  currentAuthToken,
+}: {
+  authState: "checking" | "signed-out" | "signed-in";
+  currentAuthToken: () => Promise<string | null>;
+}) {
   const { placeId } = useParams();
   const [place, setPlace] = useState<GuestPlaceDetail | null>(null);
   const [detailState, setDetailState] = useState<
     "loading" | "loaded" | "failed"
   >("loading");
+  const [startsOn, setStartsOn] = useState(() =>
+    DateTime.now().plus({ days: 1 }).toFormat("yyyy-MM-dd"),
+  );
+  const [endsOn, setEndsOn] = useState(() =>
+    DateTime.now().plus({ days: 3 }).toFormat("yyyy-MM-dd"),
+  );
+  const [bookingState, setBookingState] = useState<
+    "idle" | "submitting" | "booked" | "failed"
+  >("idle");
+  const [bookingMessage, setBookingMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (!placeId) return;
@@ -367,8 +410,129 @@ function PlaceDetail() {
               ))}
             </ul>
           </section>
+
+          <BookingForm
+            authState={authState}
+            bookingMessage={bookingMessage}
+            bookingState={bookingState}
+            endsOn={endsOn}
+            onEndsOnChange={setEndsOn}
+            onSubmit={async (event) => {
+              event.preventDefault();
+              setBookingMessage(null);
+
+              if (!placeId) return;
+
+              const formData = new FormData(event.currentTarget);
+              const submittedStartsOn = String(formData.get("startsOn") ?? "");
+              const submittedEndsOn = String(formData.get("endsOn") ?? "");
+              const parsedStartsOn = DateTime.fromISO(submittedStartsOn);
+              const parsedEndsOn = DateTime.fromISO(submittedEndsOn);
+              if (
+                !parsedStartsOn.isValid ||
+                !parsedEndsOn.isValid ||
+                parsedEndsOn <= parsedStartsOn
+              ) {
+                setBookingState("failed");
+                setBookingMessage("Choose a checkout date after check-in.");
+                return;
+              }
+
+              const token = await currentAuthToken();
+              if (!token) {
+                setBookingState("failed");
+                setBookingMessage("Sign in before booking this place.");
+                return;
+              }
+
+              setBookingState("submitting");
+              try {
+                await createGuestBooking({
+                  placeId,
+                  startsOn: submittedStartsOn,
+                  endsOn: submittedEndsOn,
+                  token,
+                });
+                setBookingState("booked");
+                setBookingMessage("Booking confirmed.");
+              } catch (error) {
+                setBookingState("failed");
+                setBookingMessage(
+                  error instanceof Error
+                    ? error.message
+                    : "Booking could not be completed.",
+                );
+              }
+            }}
+            startsOn={startsOn}
+            onStartsOnChange={setStartsOn}
+          />
         </article>
       )}
+    </section>
+  );
+}
+
+function BookingForm({
+  authState,
+  bookingMessage,
+  bookingState,
+  endsOn,
+  onEndsOnChange,
+  onStartsOnChange,
+  onSubmit,
+  startsOn,
+}: {
+  authState: "checking" | "signed-out" | "signed-in";
+  bookingMessage: string | null;
+  bookingState: "idle" | "submitting" | "booked" | "failed";
+  endsOn: string;
+  onEndsOnChange: (value: string) => void;
+  onStartsOnChange: (value: string) => void;
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  startsOn: string;
+}) {
+  return (
+    <section aria-labelledby="booking-heading">
+      <h3 id="booking-heading">Book this stay</h3>
+      <form className="booking-form" onSubmit={onSubmit}>
+        <label>
+          Check-in
+          <input
+            data-testid="booking-starts-on"
+            name="startsOn"
+            type="date"
+            value={startsOn}
+            onChange={(event) => onStartsOnChange(event.target.value)}
+          />
+        </label>
+        <label>
+          Checkout
+          <input
+            data-testid="booking-ends-on"
+            name="endsOn"
+            type="date"
+            value={endsOn}
+            onChange={(event) => onEndsOnChange(event.target.value)}
+          />
+        </label>
+        {bookingMessage ? (
+          <p
+            className={bookingState === "booked" ? "form-notice" : "form-error"}
+            role={bookingState === "failed" ? "alert" : undefined}
+          >
+            {bookingMessage}
+          </p>
+        ) : null}
+        <button
+          type="submit"
+          className="primary-action"
+          data-testid="booking-submit"
+          disabled={bookingState === "submitting" || authState === "checking"}
+        >
+          {bookingState === "submitting" ? "Booking..." : "Book stay"}
+        </button>
+      </form>
     </section>
   );
 }
