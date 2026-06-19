@@ -1,1 +1,4 @@
+allowBuilds:
+  "@firebase/util": false
+  protobufjs: false
 strictDepBuilds: false

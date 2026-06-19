@@ -58,6 +58,7 @@ us humans, he says:
 
 export const globalTypeConfig = {
   serializers: [
+    'CurrentUserSerializer',
     'GuestSerializer',
     'GuestSummarySerializer',
     'HostSerializer',
@@ -89,5 +90,6 @@ export const globalTypeConfig = {
     'RoomForGuestsSerializer',
     'RoomSerializer',
     'RoomSummarySerializer',
+    'StatusSerializer',
   ],
 } as const
