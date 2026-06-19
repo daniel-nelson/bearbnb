@@ -156,6 +156,18 @@ export async function getGuestPlaceAvailability(id: string) {
   );
 }
 
+export type GuestReview = {
+  id: string;
+  rating: number;
+  body: string;
+};
+
+export async function listGuestPlaceReviews(id: string) {
+  return await getJson<CursorPaginatedResponse<GuestReview>>(
+    `/v1/guest/places/${id}/reviews`,
+  );
+}
+
 export type GuestBooking = {
   id: string;
   startsOn: string;

@@ -241,6 +241,62 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/guest/places/{placeId}/reviews": {
+        parameters: {
+            query?: {
+                /** @description Pagination cursor */
+                cursor?: string | null;
+            };
+            header?: never;
+            path: {
+                placeId: string;
+            };
+            cookie?: never;
+        };
+        /** @description Paginated index of Reviews */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Pagination cursor */
+                    cursor?: string | null;
+                };
+                header?: never;
+                path: {
+                    placeId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Success */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            cursor: string | null;
+                            results: components["schemas"]["Review"][];
+                        };
+                    };
+                };
+                400: components["responses"]["BadRequest"];
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["Forbidden"];
+                404: components["responses"]["NotFound"];
+                409: components["responses"]["Conflict"];
+                422: components["responses"]["ValidationErrors"];
+                500: components["responses"]["InternalServerError"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/host/localized-texts/{id}": {
         parameters: {
             query?: never;
@@ -826,6 +882,11 @@ export interface components {
         PlaceSummaryForGuests: {
             id: string;
             title: string;
+        };
+        Review: {
+            body: string;
+            id: string;
+            rating: number;
         };
         RoomBathroom: {
             /** @enum {string|null} */

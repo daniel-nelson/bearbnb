@@ -288,6 +288,88 @@
         }
       }
     },
+    "/v1/guest/places/{placeId}/reviews": {
+      "parameters": [
+        {
+          "in": "path",
+          "name": "placeId",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "required": false,
+          "name": "cursor",
+          "description": "Pagination cursor",
+          "allowReserved": true,
+          "schema": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      ],
+      "get": {
+        "tags": [
+          "reviews"
+        ],
+        "description": "Paginated index of Reviews",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "cursor",
+                    "results"
+                  ],
+                  "properties": {
+                    "cursor": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "results": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Review"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationErrors"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
     "/v1/host/localized-texts/{id}": {
       "parameters": [
         {
@@ -1450,6 +1532,25 @@
           },
           "title": {
             "type": "string"
+          }
+        }
+      },
+      "Review": {
+        "type": "object",
+        "required": [
+          "body",
+          "id",
+          "rating"
+        ],
+        "properties": {
+          "body": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "rating": {
+            "type": "integer"
           }
         }
       },

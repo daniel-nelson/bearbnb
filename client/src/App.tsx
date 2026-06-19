@@ -14,10 +14,12 @@ import {
   getGuestPlace,
   getGuestPlaceAvailability,
   getCurrentUser,
+  listGuestPlaceReviews,
   listGuestPlaces,
   type CurrentUser,
   type GuestPlaceDetail,
   type GuestPlaceSummary,
+  type GuestReview,
   type OccupiedRange,
 } from "./lib/apiClient";
 import { auth } from "./lib/firebase";
@@ -359,6 +361,7 @@ function PlaceDetail({
   >("idle");
   const [bookingMessage, setBookingMessage] = useState<string | null>(null);
   const [occupiedRanges, setOccupiedRanges] = useState<OccupiedRange[]>([]);
+  const [reviews, setReviews] = useState<GuestReview[]>([]);
   const [calendarSelectionStep, setCalendarSelectionStep] = useState<
     "start" | "end"
   >("start");
@@ -368,11 +371,16 @@ function PlaceDetail({
 
     let active = true;
 
-    Promise.all([getGuestPlace(placeId), getGuestPlaceAvailability(placeId)])
-      .then(([place, availability]) => {
+    Promise.all([
+      getGuestPlace(placeId),
+      getGuestPlaceAvailability(placeId),
+      listGuestPlaceReviews(placeId),
+    ])
+      .then(([place, availability, reviews]) => {
         if (!active) return;
         setPlace(place);
         setOccupiedRanges(availability.occupiedRanges);
+        setReviews(reviews.results);
         setDetailState("loaded");
       })
       .catch(() => {
@@ -507,7 +515,32 @@ function PlaceDetail({
             startsOn={startsOn}
             onStartsOnChange={setStartsOn}
           />
+
+          <ReviewsList reviews={reviews} />
         </article>
+      )}
+    </section>
+  );
+}
+
+function ReviewsList({ reviews }: { reviews: GuestReview[] }) {
+  return (
+    <section aria-labelledby="reviews-heading">
+      <div className="subsection-header">
+        <h3 id="reviews-heading">Guest reviews</h3>
+        <span className="result-count">{reviews.length} posted</span>
+      </div>
+      {reviews.length === 0 ? (
+        <p className="inline-state">No guest reviews yet.</p>
+      ) : (
+        <ul className="review-list">
+          {reviews.map((review) => (
+            <li key={review.id}>
+              <span>{review.rating}/5</span>
+              <p>{review.body}</p>
+            </li>
+          ))}
+        </ul>
       )}
     </section>
   );
