@@ -60,3 +60,14 @@ export type CurrentUser = {
 export async function getCurrentUser(token: string) {
   return await getJson<CurrentUser>("/v1/me", { token });
 }
+
+export type GuestPlaceSummary = {
+  id: string;
+  title: string;
+};
+
+export async function listGuestPlaces() {
+  return await getJson<CursorPaginatedResponse<GuestPlaceSummary>>(
+    "/v1/guest/places",
+  );
+}

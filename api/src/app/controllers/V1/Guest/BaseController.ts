@@ -1,3 +1,3 @@
-import V1BaseController from '../BaseController.js'
+import UnauthedController from '@controllers/UnauthedController.js'
 
-export default class V1GuestBaseController extends V1BaseController {}
+export default class V1GuestBaseController extends UnauthedController {}

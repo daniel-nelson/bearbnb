@@ -10,7 +10,9 @@ import {
   apiHost,
   checkApiHealth,
   getCurrentUser,
+  listGuestPlaces,
   type CurrentUser,
+  type GuestPlaceSummary,
 } from "./lib/apiClient";
 import { auth } from "./lib/firebase";
 import "./App.css";
@@ -32,6 +34,10 @@ function App() {
   >(useTestAuth ? "signed-out" : "checking");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [noticeMessage, setNoticeMessage] = useState<string | null>(null);
+  const [places, setPlaces] = useState<GuestPlaceSummary[]>([]);
+  const [placesState, setPlacesState] = useState<
+    "loading" | "loaded" | "failed"
+  >("loading");
 
   useEffect(() => {
     let active = true;
@@ -42,6 +48,24 @@ function App() {
       })
       .catch(() => {
         if (active) setApiState("failed");
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    listGuestPlaces()
+      .then(({ results }) => {
+        if (!active) return;
+        setPlaces(results);
+        setPlacesState("loaded");
+      })
+      .catch(() => {
+        if (active) setPlacesState("failed");
       });
 
     return () => {
@@ -221,6 +245,36 @@ function App() {
               </button>
             ) : null}
           </form>
+        )}
+      </section>
+
+      <section className="places-section" aria-labelledby="places-heading">
+        <div className="section-header">
+          <div>
+            <span className="eyebrow">Stay search</span>
+            <h2 id="places-heading">Available places</h2>
+          </div>
+          <span className="result-count">{places.length} listed</span>
+        </div>
+
+        {placesState === "loading" ? (
+          <p className="inline-state">Loading places...</p>
+        ) : placesState === "failed" ? (
+          <p className="inline-state" role="alert">
+            Places are unavailable right now.
+          </p>
+        ) : places.length === 0 ? (
+          <p className="inline-state">No places are listed yet.</p>
+        ) : (
+          <ul className="places-list">
+            {places.map((place) => (
+              <li key={place.id}>
+                <div className="place-row">
+                  <span>{place.title}</span>
+                </div>
+              </li>
+            ))}
+          </ul>
         )}
       </section>
     </main>
