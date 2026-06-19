@@ -3,6 +3,7 @@ import { DreamColumn, DreamSerializers } from '@rvoh/dream/types'
 import ApplicationModel from '@models/ApplicationModel.js'
 import Guest from '@models/Guest.js'
 import Place from '@models/Place.js'
+import Review from '@models/Review.js'
 
 const deco = new Decorators<typeof Booking>()
 
@@ -33,6 +34,9 @@ export default class Booking extends ApplicationModel {
   @deco.BelongsTo('Place', { on: 'placeId' })
   public place: Place
   public placeId: DreamColumn<Booking, 'placeId'>
+
+  @deco.HasOne('Review', { dependent: 'destroy' })
+  public review: Review
 
   @deco.Validate()
   public validateCheckoutAfterStart(this: Booking) {
