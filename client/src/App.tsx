@@ -11,6 +11,7 @@ import {
   apiHost,
   checkApiHealth,
   createGuestBooking,
+  createGuestReview,
   getGuestPlace,
   getGuestPlaceAvailability,
   getCurrentUser,
@@ -362,6 +363,11 @@ function PlaceDetail({
   const [bookingMessage, setBookingMessage] = useState<string | null>(null);
   const [occupiedRanges, setOccupiedRanges] = useState<OccupiedRange[]>([]);
   const [reviews, setReviews] = useState<GuestReview[]>([]);
+  const [reviewState, setReviewState] = useState<
+    "idle" | "submitting" | "created" | "failed"
+  >("idle");
+  const [reviewMessage, setReviewMessage] = useState<string | null>(null);
+  const [recentBookingId, setRecentBookingId] = useState<string | null>(null);
   const [calendarSelectionStep, setCalendarSelectionStep] = useState<
     "start" | "end"
   >("start");
@@ -491,7 +497,7 @@ function PlaceDetail({
 
               setBookingState("submitting");
               try {
-                await createGuestBooking({
+                const booking = await createGuestBooking({
                   placeId,
                   startsOn: submittedStartsOn,
                   endsOn: submittedEndsOn,
@@ -501,6 +507,9 @@ function PlaceDetail({
                   ...currentRanges,
                   { startsOn: submittedStartsOn, endsOn: submittedEndsOn },
                 ]);
+                setRecentBookingId(booking.id);
+                setReviewState("idle");
+                setReviewMessage(null);
                 setBookingState("booked");
                 setBookingMessage("Booking confirmed.");
               } catch (error) {
@@ -516,9 +525,116 @@ function PlaceDetail({
             onStartsOnChange={setStartsOn}
           />
 
+          {recentBookingId ? (
+            <ReviewForm
+              onSubmit={async (event) => {
+                event.preventDefault();
+                setReviewMessage(null);
+                const form = event.currentTarget;
+
+                const token = await currentAuthToken();
+                if (!token) {
+                  setReviewState("failed");
+                  setReviewMessage("Sign in before reviewing this stay.");
+                  return;
+                }
+
+                const formData = new FormData(form);
+                const rating = Number(formData.get("rating"));
+                const body = String(formData.get("body") ?? "");
+                if (!Number.isInteger(rating) || rating < 1 || rating > 5 || !body.trim()) {
+                  setReviewState("failed");
+                  setReviewMessage("Choose a rating and write a review.");
+                  return;
+                }
+
+                setReviewState("submitting");
+                try {
+                  const review = await createGuestReview({
+                    bookingId: recentBookingId,
+                    rating,
+                    body,
+                    token,
+                  });
+                  setReviews((currentReviews) => [review, ...currentReviews]);
+                  setReviewState("created");
+                  setReviewMessage("Review posted.");
+                  form.reset();
+                } catch (error) {
+                  setReviewState("failed");
+                  setReviewMessage(
+                    error instanceof Error
+                      ? error.message
+                      : "Review could not be posted.",
+                  );
+                }
+              }}
+              reviewMessage={reviewMessage}
+              reviewState={reviewState}
+            />
+          ) : null}
+
           <ReviewsList reviews={reviews} />
         </article>
       )}
+    </section>
+  );
+}
+
+function ReviewForm({
+  onSubmit,
+  reviewMessage,
+  reviewState,
+}: {
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  reviewMessage: string | null;
+  reviewState: "idle" | "submitting" | "created" | "failed";
+}) {
+  return (
+    <section aria-labelledby="review-form-heading">
+      <h3 id="review-form-heading">Review this stay</h3>
+      <form className="review-form" onSubmit={onSubmit}>
+        <label>
+          Rating
+          <select
+            data-testid="review-rating"
+            disabled={reviewState === "created"}
+            name="rating"
+            defaultValue="5"
+          >
+            <option value="5">5</option>
+            <option value="4">4</option>
+            <option value="3">3</option>
+            <option value="2">2</option>
+            <option value="1">1</option>
+          </select>
+        </label>
+        <label>
+          Review
+          <textarea
+            data-testid="review-body"
+            disabled={reviewState === "created"}
+            name="body"
+            rows={3}
+          />
+        </label>
+        {reviewMessage ? (
+          <p
+            className={reviewState === "created" ? "form-notice" : "form-error"}
+            role={reviewState === "failed" ? "alert" : undefined}
+          >
+            {reviewMessage}
+          </p>
+        ) : null}
+        <button
+          className="primary-action"
+          data-testid="review-submit"
+          disabled={reviewState === "submitting" || reviewState === "created"}
+          type="submit"
+        >
+          {reviewState === "submitting" ? "Posting..." : "Post review"}
+        </button>
+      </form>
     </section>
   );
 }
