@@ -7,7 +7,10 @@ export default class V1HostBaseController extends V1BaseController {
 
   @BeforeAction()
   protected async loadCurrentHost() {
-    const host = await this.currentUser.associationQuery('host').first()
+    const currentUser = this.requireCurrentUser()
+    if (!currentUser) return
+
+    const host = await currentUser.associationQuery('host').first()
     if (!host) return this.forbidden()
 
     this.currentHost = host

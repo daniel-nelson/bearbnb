@@ -12,6 +12,9 @@ export default class V1MeController extends V1BaseController {
     fastJsonStringify: true,
   })
   public show() {
-    this.ok(this.currentUser)
+    const currentUser = this.requireCurrentUser()
+    if (!currentUser) return
+
+    this.ok(currentUser)
   }
 }
