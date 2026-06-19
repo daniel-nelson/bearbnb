@@ -51,7 +51,8 @@
   margin-top: 48px;
 }
 
-.places-section {
+.places-section,
+.detail-section {
   margin-top: 36px;
 }
 
@@ -86,13 +87,69 @@
 
 .place-row {
   display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
   align-items: center;
   min-height: 48px;
   padding: 14px 16px;
   border: 1px solid var(--border);
   border-radius: 8px;
   color: var(--text-h);
+  text-decoration: none;
   background: var(--panel-bg);
+}
+
+.place-row:hover,
+.back-link:hover {
+  border-color: var(--accent-border);
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 6px 12px;
+  margin-bottom: 18px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-h);
+  font-weight: 700;
+  text-decoration: none;
+  background: var(--button-bg);
+}
+
+.place-detail {
+  display: grid;
+  gap: 24px;
+  padding: 24px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel-bg);
+}
+
+.place-detail h3 {
+  margin: 0 0 12px;
+  color: var(--text-h);
+}
+
+.room-list {
+  display: grid;
+  gap: 10px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.room-list li {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  padding: 12px 0;
+  border-top: 1px solid var(--border);
+}
+
+.room-list span {
+  color: var(--muted);
 }
 
 .auth-panel form,
@@ -202,7 +259,9 @@ button:hover {
     box-sizing: border-box;
   }
 
-  .section-header {
+  .section-header,
+  .place-row,
+  .room-list li {
     grid-template-columns: 1fr;
   }
 }

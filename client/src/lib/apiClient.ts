@@ -71,3 +71,45 @@ export async function listGuestPlaces() {
     "/v1/guest/places",
   );
 }
+
+export type GuestRoom =
+  | {
+      id: string;
+      type: "Kitchen";
+      displayType: string;
+      title: string;
+      appliances: { value: string; label: string }[];
+    }
+  | {
+      id: string;
+      type: "Bathroom";
+      displayType: string;
+      title: string;
+      bathOrShowerStyle: { value: string; label: string } | null;
+    }
+  | {
+      id: string;
+      type: "Bedroom";
+      displayType: string;
+      title: string;
+      bedTypes: { value: string; label: string }[];
+    }
+  | {
+      id: string;
+      type: "Den" | "LivingRoom";
+      displayType: string;
+      title: string;
+    };
+
+export type GuestPlaceDetail = {
+  id: string;
+  title: string;
+  style: string;
+  displayStyle: string;
+  sleeps: number;
+  rooms: GuestRoom[];
+};
+
+export async function getGuestPlace(id: string) {
+  return await getJson<GuestPlaceDetail>(`/v1/guest/places/${id}`);
+}

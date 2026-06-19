@@ -9,12 +9,15 @@ import {
 import {
   apiHost,
   checkApiHealth,
+  getGuestPlace,
   getCurrentUser,
   listGuestPlaces,
   type CurrentUser,
+  type GuestPlaceDetail,
   type GuestPlaceSummary,
 } from "./lib/apiClient";
 import { auth } from "./lib/firebase";
+import { BrowserRouter, Link, Route, Routes, useParams } from "react-router-dom";
 import "./App.css";
 
 const useTestAuth =
@@ -248,40 +251,127 @@ function App() {
         )}
       </section>
 
-      <section className="places-section" aria-labelledby="places-heading">
-        <div className="section-header">
-          <div>
-            <span className="eyebrow">Stay search</span>
-            <h2 id="places-heading">Available places</h2>
-          </div>
-          <span className="result-count">{places.length} listed</span>
-        </div>
-
-        {placesState === "loading" ? (
-          <p className="inline-state">Loading places...</p>
-        ) : placesState === "failed" ? (
-          <p className="inline-state" role="alert">
-            Places are unavailable right now.
-          </p>
-        ) : places.length === 0 ? (
-          <p className="inline-state">No places are listed yet.</p>
-        ) : (
-          <ul className="places-list">
-            {places.map((place) => (
-              <li key={place.id}>
-                <div className="place-row">
-                  <span>{place.title}</span>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+      <BrowserRouter>
+        <Routes>
+          <Route
+            path="/"
+            element={<PlacesIndex places={places} placesState={placesState} />}
+          />
+          <Route path="/places/:placeId" element={<PlaceDetail />} />
+        </Routes>
+      </BrowserRouter>
     </main>
   );
 }
 
 export default App;
+
+function PlacesIndex({
+  places,
+  placesState,
+}: {
+  places: GuestPlaceSummary[];
+  placesState: "loading" | "loaded" | "failed";
+}) {
+  return (
+    <section className="places-section" aria-labelledby="places-heading">
+      <div className="section-header">
+        <div>
+          <span className="eyebrow">Stay search</span>
+          <h2 id="places-heading">Available places</h2>
+        </div>
+        <span className="result-count">{places.length} listed</span>
+      </div>
+
+      {placesState === "loading" ? (
+        <p className="inline-state">Loading places...</p>
+      ) : placesState === "failed" ? (
+        <p className="inline-state" role="alert">
+          Places are unavailable right now.
+        </p>
+      ) : places.length === 0 ? (
+        <p className="inline-state">No places are listed yet.</p>
+      ) : (
+        <ul className="places-list">
+          {places.map((place) => (
+            <li key={place.id}>
+              <Link className="place-row" to={`/places/${place.id}`}>
+                <span>{place.title}</span>
+                <span aria-hidden="true">View</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+function PlaceDetail() {
+  const { placeId } = useParams();
+  const [place, setPlace] = useState<GuestPlaceDetail | null>(null);
+  const [detailState, setDetailState] = useState<
+    "loading" | "loaded" | "failed"
+  >("loading");
+
+  useEffect(() => {
+    if (!placeId) return;
+
+    let active = true;
+
+    getGuestPlace(placeId)
+      .then((place) => {
+        if (!active) return;
+        setPlace(place);
+        setDetailState("loaded");
+      })
+      .catch(() => {
+        if (active) setDetailState("failed");
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [placeId]);
+
+  return (
+    <section className="detail-section" aria-labelledby="place-detail-heading">
+      <Link className="back-link" to="/">
+        Back to places
+      </Link>
+
+      {detailState === "loading" ? (
+        <p className="inline-state">Loading place...</p>
+      ) : !placeId || detailState === "failed" || !place ? (
+        <p className="inline-state" role="alert">
+          This place is unavailable right now.
+        </p>
+      ) : (
+        <article className="place-detail">
+          <div className="section-header">
+            <div>
+              <span className="eyebrow">{place.displayStyle}</span>
+              <h2 id="place-detail-heading">{place.title}</h2>
+            </div>
+            <span className="result-count">Sleeps {place.sleeps}</span>
+          </div>
+
+          <section aria-labelledby="rooms-heading">
+            <h3 id="rooms-heading">Rooms</h3>
+            <ul className="room-list">
+              {place.rooms.map((room) => (
+                <li key={room.id}>
+                  <strong>{room.title}</strong>
+                  <span>{room.displayType}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        </article>
+      )}
+    </section>
+  );
+}
 
 function testAuthToken(email: string) {
   return `test-firebase:${btoa(
