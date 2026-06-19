@@ -36,6 +36,7 @@
 
 .api-status code {
   grid-column: 1 / -1;
+  overflow-wrap: anywhere;
 }
 
 .api-status[data-state="connected"] strong {
@@ -120,11 +121,7 @@
 
 .place-detail {
   display: grid;
-  gap: 24px;
-  padding: 24px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--panel-bg);
+  gap: 28px;
 }
 
 .place-detail h3 {
@@ -181,6 +178,7 @@
   border: 1px solid var(--border);
   border-radius: 8px;
   background: var(--bg);
+  min-width: 0;
 }
 
 .review-list span {
@@ -332,6 +330,18 @@ textarea {
   background: var(--bg);
 }
 
+textarea {
+  resize: vertical;
+}
+
+input:disabled,
+select:disabled,
+textarea:disabled {
+  color: var(--muted);
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
 button {
   min-height: 40px;
   padding: 8px 14px;
@@ -346,6 +356,11 @@ button {
 
 button:hover {
   border-color: var(--accent-border);
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
 }
 
 .primary-action {
