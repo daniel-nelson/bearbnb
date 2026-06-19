@@ -1,5 +1,5 @@
 import { STI } from '@rvoh/dream'
-import { DreamColumn, DreamSerializers } from '@rvoh/dream/types'
+import { DreamSerializers } from '@rvoh/dream/types'
 import Room from '@models/Room.js'
 
 // Uncomment when adding decorators (@deco.BelongsTo, @deco.Validates, etc.):
@@ -15,5 +15,4 @@ export default class Den extends Room {
       forGuests: 'Room/DenForGuestsSerializer',
     }
   }
-
 }

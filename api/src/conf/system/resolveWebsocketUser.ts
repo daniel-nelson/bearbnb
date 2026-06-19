@@ -21,8 +21,7 @@ export default async function resolveWebsocketUser(socket: Socket): Promise<stri
     key: AppEnv.string('APP_ENCRYPTION_KEY'),
   })
 
-  const userId =
-    typeof decrypted === 'string' && (JSON.parse(decrypted) as Record<'userId', string>)?.userId
+  const userId = typeof decrypted === 'string' && (JSON.parse(decrypted) as Record<'userId', string>)?.userId
   if (!userId) return null
 
   /** uncomment after creating User model */

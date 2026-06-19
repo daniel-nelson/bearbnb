@@ -5,12 +5,14 @@ import { PsychicController } from '@rvoh/psychic'
 // import InternalUser from '@models/InternalUser.js'
 
 // eslint-disable-next-line @typescript-eslint/require-await
-export default async function resolveCurrentInternalUser(controller: PsychicController): Promise<string | null> {
+export default async function resolveCurrentInternalUser(
+  controller: PsychicController,
+): Promise<string | null> {
   /** replace previous line with uncommented next line after creating InternalUser model */
   // export default async function resolveCurrentInternalUser(controller: PsychicController): Promise<InternalUser | null> {
   if (!AppEnv.isTest)
     throw new Error(
-      'The current authentication scheme is only for early development. Replace with a production grade authentication scheme.'
+      'The current authentication scheme is only for early development. Replace with a production grade authentication scheme.',
     )
 
   const token = (controller.header('authorization') ?? '').split(' ').at(-1)!

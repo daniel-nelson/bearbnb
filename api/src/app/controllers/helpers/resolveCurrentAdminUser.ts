@@ -10,7 +10,7 @@ export default async function resolveCurrentAdminUser(controller: PsychicControl
   // export default async function resolveCurrentAdminUser(controller: PsychicController): Promise<AdminUser | null> {
   if (!AppEnv.isTest)
     throw new Error(
-      'The current authentication scheme is only for early development. Replace with a production grade authentication scheme.'
+      'The current authentication scheme is only for early development. Replace with a production grade authentication scheme.',
     )
 
   const token = (controller.header('authorization') ?? '').split(' ').at(-1)!

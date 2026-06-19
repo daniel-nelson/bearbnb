@@ -7,9 +7,13 @@ import { visit } from '@rvoh/psychic-spec-helpers'
 describe('guest place detail', () => {
   it('navigates from the places index to a place detail page', async () => {
     const place = await createPlace({ style: 'cabin', sleeps: 4 })
-    await (await place.associationQuery('localizedTexts').firstOrFail()).update({ title: 'Cedar Ridge Cabin' })
+    await (
+      await place.associationQuery('localizedTexts').firstOrFail()
+    ).update({ title: 'Cedar Ridge Cabin' })
     const kitchen = await createKitchen({ place })
-    await (await kitchen.associationQuery('localizedTexts').firstOrFail()).update({ title: 'Breakfast kitchen' })
+    await (
+      await kitchen.associationQuery('localizedTexts').firstOrFail()
+    ).update({ title: 'Breakfast kitchen' })
     const bedroom = await createBedroom({ place })
     await (await bedroom.associationQuery('localizedTexts').firstOrFail()).update({ title: 'Loft bedroom' })
 
