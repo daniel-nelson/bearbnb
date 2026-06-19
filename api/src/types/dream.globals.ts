@@ -67,6 +67,8 @@ export const globalTypeConfig = {
     'HostSummarySerializer',
     'LocalizedTextSerializer',
     'LocalizedTextSummarySerializer',
+    'OccupiedRangeSerializer',
+    'PlaceAvailabilitySerializer',
     'PlaceForGuestsSerializer',
     'PlaceSerializer',
     'PlaceSummaryForGuestsSerializer',

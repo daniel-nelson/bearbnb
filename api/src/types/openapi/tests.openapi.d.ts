@@ -194,6 +194,53 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/guest/places/{id}/availability": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        /** @description Place availability endpoint for Guests */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Success */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PlaceAvailability"];
+                    };
+                };
+                400: components["responses"]["BadRequest"];
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["Forbidden"];
+                404: components["responses"]["NotFound"];
+                409: components["responses"]["Conflict"];
+                422: components["responses"]["ValidationErrors"];
+                500: components["responses"]["InternalServerError"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/host/localized-texts/{id}": {
         parameters: {
             query?: never;
@@ -734,6 +781,12 @@ export interface components {
             email: string;
             id: string;
         };
+        OccupiedRange: {
+            /** Format: date */
+            endsOn: string;
+            /** Format: date */
+            startsOn: string;
+        };
         OpenapiValidationErrors: {
             /** @enum {string} */
             type: "openapi";
@@ -753,6 +806,9 @@ export interface components {
             sleeps: number;
             /** @enum {string} */
             style: "cabin" | "cave" | "cottage" | "dump" | "lean_to" | "tent" | "treehouse";
+        };
+        PlaceAvailability: {
+            occupiedRanges: components["schemas"]["OccupiedRange"][];
         };
         PlaceForGuests: {
             displayStyle: string;

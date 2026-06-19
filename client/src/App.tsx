@@ -12,11 +12,13 @@ import {
   checkApiHealth,
   createGuestBooking,
   getGuestPlace,
+  getGuestPlaceAvailability,
   getCurrentUser,
   listGuestPlaces,
   type CurrentUser,
   type GuestPlaceDetail,
   type GuestPlaceSummary,
+  type OccupiedRange,
 } from "./lib/apiClient";
 import { auth } from "./lib/firebase";
 import { BrowserRouter, Link, Route, Routes, useParams } from "react-router-dom";
@@ -356,16 +358,21 @@ function PlaceDetail({
     "idle" | "submitting" | "booked" | "failed"
   >("idle");
   const [bookingMessage, setBookingMessage] = useState<string | null>(null);
+  const [occupiedRanges, setOccupiedRanges] = useState<OccupiedRange[]>([]);
+  const [calendarSelectionStep, setCalendarSelectionStep] = useState<
+    "start" | "end"
+  >("start");
 
   useEffect(() => {
     if (!placeId) return;
 
     let active = true;
 
-    getGuestPlace(placeId)
-      .then((place) => {
+    Promise.all([getGuestPlace(placeId), getGuestPlaceAvailability(placeId)])
+      .then(([place, availability]) => {
         if (!active) return;
         setPlace(place);
+        setOccupiedRanges(availability.occupiedRanges);
         setDetailState("loaded");
       })
       .catch(() => {
@@ -416,7 +423,25 @@ function PlaceDetail({
             bookingMessage={bookingMessage}
             bookingState={bookingState}
             endsOn={endsOn}
+            occupiedRanges={occupiedRanges}
             onEndsOnChange={setEndsOn}
+            onSelectCalendarDate={(date) => {
+              if (
+                calendarSelectionStep === "start" ||
+                DateTime.fromISO(date).toMillis() <= DateTime.fromISO(startsOn).toMillis()
+              ) {
+                setStartsOn(date);
+                setEndsOn(
+                  DateTime.fromISO(date).plus({ days: 1 }).toFormat("yyyy-MM-dd"),
+                );
+                setCalendarSelectionStep("end");
+              } else {
+                setEndsOn(date);
+                setCalendarSelectionStep("start");
+              }
+              setBookingState("idle");
+              setBookingMessage(null);
+            }}
             onSubmit={async (event) => {
               event.preventDefault();
               setBookingMessage(null);
@@ -437,6 +462,17 @@ function PlaceDetail({
                 setBookingMessage("Choose a checkout date after check-in.");
                 return;
               }
+              if (
+                rangeOverlapsOccupiedNight(
+                  submittedStartsOn,
+                  submittedEndsOn,
+                  occupiedRanges,
+                )
+              ) {
+                setBookingState("failed");
+                setBookingMessage("Choose dates without occupied nights.");
+                return;
+              }
 
               const token = await currentAuthToken();
               if (!token) {
@@ -453,6 +489,10 @@ function PlaceDetail({
                   endsOn: submittedEndsOn,
                   token,
                 });
+                setOccupiedRanges((currentRanges) => [
+                  ...currentRanges,
+                  { startsOn: submittedStartsOn, endsOn: submittedEndsOn },
+                ]);
                 setBookingState("booked");
                 setBookingMessage("Booking confirmed.");
               } catch (error) {
@@ -478,7 +518,9 @@ function BookingForm({
   bookingMessage,
   bookingState,
   endsOn,
+  occupiedRanges,
   onEndsOnChange,
+  onSelectCalendarDate,
   onStartsOnChange,
   onSubmit,
   startsOn,
@@ -487,14 +529,41 @@ function BookingForm({
   bookingMessage: string | null;
   bookingState: "idle" | "submitting" | "booked" | "failed";
   endsOn: string;
+  occupiedRanges: OccupiedRange[];
   onEndsOnChange: (value: string) => void;
+  onSelectCalendarDate: (date: string) => void;
   onStartsOnChange: (value: string) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   startsOn: string;
 }) {
+  const calendarDays = calendarWindow();
+
   return (
     <section aria-labelledby="booking-heading">
       <h3 id="booking-heading">Book this stay</h3>
+      <div className="availability-calendar" aria-label="Availability calendar">
+        {calendarDays.map((day) => {
+          const isoDate = day.toFormat("yyyy-MM-dd");
+          const occupied = isOccupiedNight(isoDate, occupiedRanges);
+          const selected = isoDate === startsOn || isoDate === endsOn;
+
+          return (
+            <button
+              aria-pressed={selected}
+              className="calendar-day"
+              data-testid={`calendar-day-${isoDate}`}
+              data-occupied={occupied}
+              disabled={occupied}
+              key={isoDate}
+              onClick={() => onSelectCalendarDate(isoDate)}
+              type="button"
+            >
+              <span>{day.toFormat("ccc")}</span>
+              <strong>{day.toFormat("d")}</strong>
+            </button>
+          );
+        })}
+      </div>
       <form className="booking-form" onSubmit={onSubmit}>
         <label>
           Check-in
@@ -535,6 +604,41 @@ function BookingForm({
       </form>
     </section>
   );
+}
+
+function calendarWindow() {
+  const firstDay = DateTime.now().startOf("day").plus({ days: 1 });
+  return Array.from({ length: 28 }, (_value, index) =>
+    firstDay.plus({ days: index }),
+  );
+}
+
+function isOccupiedNight(date: string, occupiedRanges: OccupiedRange[]) {
+  const day = DateTime.fromISO(date);
+
+  return occupiedRanges.some((range) => {
+    const startsOn = DateTime.fromISO(range.startsOn);
+    const endsOn = DateTime.fromISO(range.endsOn);
+    return day.toMillis() >= startsOn.toMillis() && day.toMillis() < endsOn.toMillis();
+  });
+}
+
+function rangeOverlapsOccupiedNight(
+  startsOn: string,
+  endsOn: string,
+  occupiedRanges: OccupiedRange[],
+) {
+  const candidateStart = DateTime.fromISO(startsOn);
+  const candidateEnd = DateTime.fromISO(endsOn);
+
+  return occupiedRanges.some((range) => {
+    const occupiedStart = DateTime.fromISO(range.startsOn);
+    const occupiedEnd = DateTime.fromISO(range.endsOn);
+    return (
+      candidateStart.toMillis() < occupiedEnd.toMillis() &&
+      candidateEnd.toMillis() > occupiedStart.toMillis()
+    );
+  });
 }
 
 function testAuthToken(email: string) {

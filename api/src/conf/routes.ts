@@ -2,6 +2,7 @@ import adminRoutes from '@conf/routes.admin.js'
 import internalRoutes from '@conf/routes.internal.js'
 import StatusController from '@controllers/StatusController.js'
 import V1MeController from '@controllers/V1/MeController.js'
+import V1GuestPlacesController from '@controllers/V1/Guest/PlacesController.js'
 import { PsychicRouter } from '@rvoh/psychic'
 
 export default function routes(r: PsychicRouter) {
@@ -12,7 +13,9 @@ export default function routes(r: PsychicRouter) {
 
     r.namespace('guest', r => {
       r.resources('bookings', { only: ['create'] })
-      r.resources('places', { only: ['index', 'show'] })
+      r.resources('places', { only: ['index', 'show'] }, r => {
+        r.get('availability', V1GuestPlacesController, 'availability')
+      })
     })
 
     r.namespace('host', r => {

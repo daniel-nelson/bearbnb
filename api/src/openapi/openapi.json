@@ -237,6 +237,57 @@
         }
       }
     },
+    "/v1/guest/places/{id}/availability": {
+      "parameters": [
+        {
+          "in": "path",
+          "name": "id",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "tags": [
+          "guest-places"
+        ],
+        "description": "Place availability endpoint for Guests",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlaceAvailability"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationErrors"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
     "/v1/host/localized-texts/{id}": {
       "parameters": [
         {
@@ -1195,6 +1246,23 @@
           }
         }
       },
+      "OccupiedRange": {
+        "type": "object",
+        "required": [
+          "endsOn",
+          "startsOn"
+        ],
+        "properties": {
+          "endsOn": {
+            "type": "string",
+            "format": "date"
+          },
+          "startsOn": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
       "OpenapiValidationErrors": {
         "type": "object",
         "required": [
@@ -1279,6 +1347,20 @@
               "tent",
               "treehouse"
             ]
+          }
+        }
+      },
+      "PlaceAvailability": {
+        "type": "object",
+        "required": [
+          "occupiedRanges"
+        ],
+        "properties": {
+          "occupiedRanges": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OccupiedRange"
+            }
           }
         }
       },
