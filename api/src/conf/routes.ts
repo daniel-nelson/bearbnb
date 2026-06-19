@@ -1,12 +1,15 @@
 import adminRoutes from '@conf/routes.admin.js'
 import internalRoutes from '@conf/routes.internal.js'
 import StatusController from '@controllers/StatusController.js'
+import V1MeController from '@controllers/V1/MeController.js'
 import { PsychicRouter } from '@rvoh/psychic'
 
 export default function routes(r: PsychicRouter) {
   r.get('status', StatusController, 'show')
 
   r.namespace('v1', r => {
+    r.get('me', V1MeController, 'show')
+
     r.namespace('guest', r => {
       r.resources('places', { only: ['index', 'show'] })
     })
