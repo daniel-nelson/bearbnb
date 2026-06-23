@@ -175,6 +175,15 @@ export interface Bookings {
   updatedAt: Timestamp
 }
 
+export interface Favorites {
+  createdAt: Timestamp
+  deletedAt: Timestamp | null
+  guestId: string
+  id: Generated<string>
+  placeId: string
+  updatedAt: Timestamp
+}
+
 export interface Guests {
   createdAt: Timestamp
   deletedAt: Timestamp | null
@@ -257,6 +266,7 @@ export interface Users {
 
 export interface DB {
   bookings: Bookings
+  favorites: Favorites
   guests: Guests
   host_places: HostPlaces
   hosts: Hosts
@@ -269,6 +279,7 @@ export interface DB {
 
 export class DBClass {
   bookings: Bookings
+  favorites: Favorites
   guests: Guests
   host_places: HostPlaces
   hosts: Hosts

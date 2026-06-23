@@ -15,6 +15,9 @@ export default class V1GuestPlacesController extends V1GuestBaseController {
     fastJsonStringify: true,
   })
   public async index() {
+    const favoriteIdsByPlaceId = await this.favoriteIdsByPlaceId()
+    this.serializerPassthrough({ favoriteIdsByPlaceId })
+
     const places = await Place.passthrough({ locale: this.locale })
       .preloadFor('summaryForGuests')
       .cursorPaginate({ cursor: this.castParam('cursor', 'string', { allowNull: true }) })
@@ -29,6 +32,9 @@ export default class V1GuestPlacesController extends V1GuestBaseController {
     fastJsonStringify: true,
   })
   public async show() {
+    const favoriteIdsByPlaceId = await this.favoriteIdsByPlaceId()
+    this.serializerPassthrough({ favoriteIdsByPlaceId })
+
     this.ok(
       await Place.passthrough({ locale: this.locale })
         .preloadFor('forGuests')
@@ -54,5 +60,12 @@ export default class V1GuestPlacesController extends V1GuestBaseController {
         })),
       }),
     )
+  }
+
+  private async favoriteIdsByPlaceId() {
+    if (!this.currentGuest) return {}
+
+    const favorites = await this.currentGuest.associationQuery('favorites').all()
+    return Object.fromEntries(favorites.map(favorite => [favorite.placeId, favorite.id]))
   }
 }

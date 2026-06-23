@@ -61,6 +61,8 @@ export const globalTypeConfig = {
     'BookingSerializer',
     'BookingSummarySerializer',
     'CurrentUserSerializer',
+    'FavoriteSerializer',
+    'FavoriteSummarySerializer',
     'GuestSerializer',
     'GuestSummarySerializer',
     'HostSerializer',

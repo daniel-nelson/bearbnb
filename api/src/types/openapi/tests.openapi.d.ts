@@ -95,6 +95,95 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/guest/favorites": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Create a Favorite */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        placeId?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Favorite"];
+                    };
+                };
+                400: components["responses"]["BadRequest"];
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["Forbidden"];
+                404: components["responses"]["NotFound"];
+                409: components["responses"]["Conflict"];
+                422: components["responses"]["ValidationErrors"];
+                500: components["responses"]["InternalServerError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/guest/favorites/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** @description Destroy a Favorite */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Success, no content */
+                204: components["responses"]["NoContent"];
+                400: components["responses"]["BadRequest"];
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["Forbidden"];
+                404: components["responses"]["NotFound"];
+                409: components["responses"]["Conflict"];
+                422: components["responses"]["ValidationErrors"];
+                500: components["responses"]["InternalServerError"];
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/guest/places": {
         parameters: {
             query?: {
@@ -888,6 +977,10 @@ export interface components {
             email: string;
             id: string;
         };
+        Favorite: {
+            id: string;
+            placeId: string;
+        };
         OccupiedRange: {
             /** Format: date */
             endsOn: string;
@@ -919,6 +1012,8 @@ export interface components {
         };
         PlaceForGuests: {
             displayStyle: string;
+            favorited: boolean;
+            favoriteId: string | null;
             id: string;
             rooms: (components["schemas"]["RoomBathroomForGuests"] | components["schemas"]["RoomBedroomForGuests"] | components["schemas"]["RoomDenForGuests"] | components["schemas"]["RoomKitchenForGuests"] | components["schemas"]["RoomLivingRoomForGuests"])[];
             sleeps: number;
@@ -931,6 +1026,8 @@ export interface components {
             name: string;
         };
         PlaceSummaryForGuests: {
+            favorited: boolean;
+            favoriteId: string | null;
             id: string;
             title: string;
         };

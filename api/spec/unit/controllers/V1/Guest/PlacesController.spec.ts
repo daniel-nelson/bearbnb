@@ -3,6 +3,7 @@ import Place from '@models/Place.js'
 import { PsychicServer } from '@rvoh/psychic'
 import { OpenapiSpecRequest } from '@rvoh/psychic-spec-helpers'
 import createBooking from '@spec/factories/BookingFactory.js'
+import createFavorite from '@spec/factories/FavoriteFactory.js'
 import createLocalizedText from '@spec/factories/LocalizedTextFactory.js'
 import createPlace from '@spec/factories/PlaceFactory.js'
 import createBathroom from '@spec/factories/Room/BathroomFactory.js'
@@ -10,7 +11,8 @@ import createBedroom from '@spec/factories/Room/BedroomFactory.js'
 import createDen from '@spec/factories/Room/DenFactory.js'
 import createKitchen from '@spec/factories/Room/KitchenFactory.js'
 import createLivingRoom from '@spec/factories/Room/LivingRoomFactory.js'
-import { SpecRequestType } from '@spec/unit/helpers/authentication.js'
+import createUser from '@spec/factories/UserFactory.js'
+import { firebaseTestBearerToken, SpecRequestType } from '@spec/unit/helpers/authentication.js'
 import { paths as OpenapiPaths } from '@src/types/openapi/tests.openapi.js'
 
 describe('V1/Guest/PlacesController', () => {
@@ -19,15 +21,12 @@ describe('V1/Guest/PlacesController', () => {
   beforeEach(async () => {
     request = new OpenapiSpecRequest<OpenapiPaths>()
     await request.init(PsychicServer)
+    request.setDefaultHeaders({ 'accept-language': 'es-ES' })
   })
 
   describe('GET index', () => {
     const subject = async <StatusCode extends 200 | 400>(expectedStatus: StatusCode) => {
-      return request.get('/v1/guest/places', expectedStatus, {
-        headers: {
-          'accept-language': 'es-ES',
-        },
-      })
+      return request.get('/v1/guest/places', expectedStatus)
     }
 
     it('returns the index of Places', async () => {
@@ -38,8 +37,36 @@ describe('V1/Guest/PlacesController', () => {
 
       expect(body.results).toEqual([
         {
+          favoriteId: null,
+          favorited: false,
           id: place.id,
           title: 'The Spanish title',
+        },
+      ])
+    })
+
+    it('marks places favorited by the current Guest when the request is authenticated', async () => {
+      const user = await createUser()
+      const guest = await user.associationQuery('guest').firstOrFail()
+      const favorite = await createFavorite({ guest })
+      await createLocalizedText({
+        localizable: favorite.place,
+        locale: 'es-ES',
+        title: 'The favorited Spanish title',
+      })
+      const firebaseUid = user.firebaseUid ?? user.id
+      await user.update({ firebaseUid })
+      const authorization = `Bearer ${firebaseTestBearerToken({ uid: firebaseUid, email: user.email })}`
+      request.setDefaultHeaders({ 'accept-language': 'es-ES', authorization })
+
+      const { body } = await subject(200)
+
+      expect(body.results).toEqual([
+        {
+          favoriteId: favorite.id,
+          favorited: true,
+          id: favorite.placeId,
+          title: 'The favorited Spanish title',
         },
       ])
     })
@@ -64,6 +91,8 @@ describe('V1/Guest/PlacesController', () => {
       const { body } = await subject(place, 200)
 
       expect(body).toEqual({
+        favoriteId: null,
+        favorited: false,
         id: place.id,
         sleeps: 3,
         title: 'The Spanish place title',
@@ -122,6 +151,29 @@ describe('V1/Guest/PlacesController', () => {
           },
         ],
       })
+    })
+
+    it('marks the place favorited by the current Guest when the request is authenticated', async () => {
+      const user = await createUser()
+      const guest = await user.associationQuery('guest').firstOrFail()
+      const favorite = await createFavorite({ guest })
+      const place = favorite.place
+      await createLocalizedText({ localizable: place, locale: 'es-ES', title: 'The favorited place detail' })
+      const firebaseUid = user.firebaseUid ?? user.id
+      await user.update({ firebaseUid })
+      const authorization = `Bearer ${firebaseTestBearerToken({ uid: firebaseUid, email: user.email })}`
+      request.setDefaultHeaders({ 'accept-language': 'es-ES', authorization })
+
+      const { body } = await subject(place, 200)
+
+      expect(body).toEqual(
+        expect.objectContaining({
+          favoriteId: favorite.id,
+          favorited: true,
+          id: place.id,
+          title: 'The favorited place detail',
+        }),
+      )
     })
   })
 

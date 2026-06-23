@@ -13,6 +13,7 @@ export default function routes(r: PsychicRouter) {
 
     r.namespace('guest', r => {
       r.resources('bookings', { only: ['create'] })
+      r.resources('favorites', { only: ['create', 'destroy'] })
       r.resources('reviews', { only: ['create'] })
       r.resources('places', { only: ['index', 'show'] }, r => {
         r.get('availability', V1GuestPlacesController, 'availability')

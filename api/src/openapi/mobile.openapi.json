@@ -112,6 +112,107 @@
         }
       }
     },
+    "/v1/guest/favorites": {
+      "parameters": [],
+      "post": {
+        "tags": [
+          "favorites"
+        ],
+        "description": "Create a Favorite",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "placeId": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Favorite"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationErrors"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/v1/guest/favorites/{id}": {
+      "parameters": [
+        {
+          "in": "path",
+          "name": "id",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "delete": {
+        "tags": [
+          "favorites"
+        ],
+        "description": "Destroy a Favorite",
+        "responses": {
+          "204": {
+            "description": "Success, no content",
+            "$ref": "#/components/responses/NoContent"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationErrors"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
     "/v1/guest/places": {
       "parameters": [
         {
@@ -1373,6 +1474,21 @@
           }
         }
       },
+      "Favorite": {
+        "type": "object",
+        "required": [
+          "id",
+          "placeId"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "placeId": {
+            "type": "string"
+          }
+        }
+      },
       "OccupiedRange": {
         "type": "object",
         "required": [
@@ -1487,6 +1603,8 @@
         "type": "object",
         "required": [
           "displayStyle",
+          "favorited",
+          "favoriteId",
           "id",
           "rooms",
           "sleeps",
@@ -1496,6 +1614,15 @@
         "properties": {
           "displayStyle": {
             "type": "string"
+          },
+          "favorited": {
+            "type": "boolean"
+          },
+          "favoriteId": {
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "id": {
             "type": "string"
@@ -1552,10 +1679,21 @@
       "PlaceSummaryForGuests": {
         "type": "object",
         "required": [
+          "favorited",
+          "favoriteId",
           "id",
           "title"
         ],
         "properties": {
+          "favorited": {
+            "type": "boolean"
+          },
+          "favoriteId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "id": {
             "type": "string"
           },

@@ -2,6 +2,7 @@ import { Decorators, DreamConst, SoftDelete } from '@rvoh/dream'
 import { DreamColumn, DreamSerializers } from '@rvoh/dream/types'
 import ApplicationModel from '@models/ApplicationModel.js'
 import Booking from '@models/Booking.js'
+import Favorite from '@models/Favorite.js'
 import Host from '@models/Host.js'
 import HostPlace from '@models/HostPlace.js'
 import LocalizedText from '@models/LocalizedText.js'
@@ -44,6 +45,9 @@ export default class Place extends ApplicationModel {
 
   @deco.HasMany('Booking', { dependent: 'destroy' })
   public bookings: Booking[]
+
+  @deco.HasMany('Favorite', { dependent: 'destroy' })
+  public favorites: Favorite[]
 
   @deco.HasMany('Review', { through: 'bookings', source: 'review' })
   public reviews: Review[]
