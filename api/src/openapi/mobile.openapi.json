@@ -817,10 +817,183 @@
           }
         }
       }
+    },
+    "/v1/visitor/places": {
+      "parameters": [
+        {
+          "in": "query",
+          "required": false,
+          "name": "cursor",
+          "description": "Pagination cursor",
+          "allowReserved": true,
+          "schema": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      ],
+      "get": {
+        "tags": [
+          "visitor-places"
+        ],
+        "description": "Place index endpoint for Visitors",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "cursor",
+                    "results"
+                  ],
+                  "properties": {
+                    "cursor": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "results": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/PlaceSummaryForVisitors"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationErrors"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/v1/visitor/places/{id}": {
+      "parameters": [
+        {
+          "in": "path",
+          "name": "id",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "tags": [
+          "visitor-places"
+        ],
+        "description": "Place show endpoint for Visitors",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlaceForVisitors"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationErrors"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
+      "Appliance": {
+        "type": "object",
+        "required": [
+          "label",
+          "value"
+        ],
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string",
+            "description": "\nThe following values will be allowed:\n  dishwasher,\n  microwave,\n  oven,\n  stove"
+          }
+        }
+      },
+      "BathOrShowerStyle": {
+        "type": "object",
+        "required": [
+          "label",
+          "value"
+        ],
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string",
+            "description": "\nThe following values will be allowed:\n  bath,\n  bath_and_shower,\n  none,\n  shower"
+          }
+        }
+      },
+      "BedType": {
+        "type": "object",
+        "required": [
+          "label",
+          "value"
+        ],
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string",
+            "description": "\nThe following values will be allowed:\n  bunk,\n  cot,\n  king,\n  queen,\n  sofabed,\n  twin"
+          }
+        }
+      },
       "OpenapiValidationErrors": {
         "type": "object",
         "required": [
@@ -900,6 +1073,57 @@
           }
         }
       },
+      "PlaceForVisitors": {
+        "type": "object",
+        "required": [
+          "displayStyle",
+          "id",
+          "rooms",
+          "sleeps",
+          "style",
+          "title"
+        ],
+        "properties": {
+          "displayStyle": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "rooms": {
+            "type": "array",
+            "items": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/RoomBathroomForVisitors"
+                },
+                {
+                  "$ref": "#/components/schemas/RoomBedroomForVisitors"
+                },
+                {
+                  "$ref": "#/components/schemas/RoomDenForVisitors"
+                },
+                {
+                  "$ref": "#/components/schemas/RoomKitchenForVisitors"
+                },
+                {
+                  "$ref": "#/components/schemas/RoomLivingRoomForVisitors"
+                }
+              ]
+            }
+          },
+          "sleeps": {
+            "type": "integer"
+          },
+          "style": {
+            "type": "string",
+            "description": "The following values will be allowed:\n  cabin,\n  cave,\n  cottage,\n  dump,\n  lean_to,\n  tent,\n  treehouse"
+          },
+          "title": {
+            "type": "string"
+          }
+        }
+      },
       "PlaceSummary": {
         "type": "object",
         "required": [
@@ -911,6 +1135,21 @@
             "type": "string"
           },
           "name": {
+            "type": "string"
+          }
+        }
+      },
+      "PlaceSummaryForVisitors": {
+        "type": "object",
+        "required": [
+          "id",
+          "title"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
             "type": "string"
           }
         }
@@ -939,6 +1178,34 @@
               "integer",
               "null"
             ]
+          },
+          "type": {
+            "type": "string",
+            "description": "The following values will be allowed:\n  Bathroom"
+          }
+        }
+      },
+      "RoomBathroomForVisitors": {
+        "type": "object",
+        "required": [
+          "bathOrShowerStyle",
+          "displayType",
+          "id",
+          "title",
+          "type"
+        ],
+        "properties": {
+          "bathOrShowerStyle": {
+            "$ref": "#/components/schemas/BathOrShowerStyle"
+          },
+          "displayType": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
           },
           "type": {
             "type": "string",
@@ -1000,6 +1267,37 @@
           }
         }
       },
+      "RoomBedroomForVisitors": {
+        "type": "object",
+        "required": [
+          "bedTypes",
+          "displayType",
+          "id",
+          "title",
+          "type"
+        ],
+        "properties": {
+          "bedTypes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BedType"
+            }
+          },
+          "displayType": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "description": "The following values will be allowed:\n  Bedroom"
+          }
+        }
+      },
       "RoomBedroomSummary": {
         "type": "object",
         "required": [
@@ -1039,6 +1337,30 @@
               "integer",
               "null"
             ]
+          },
+          "type": {
+            "type": "string",
+            "description": "The following values will be allowed:\n  Den"
+          }
+        }
+      },
+      "RoomDenForVisitors": {
+        "type": "object",
+        "required": [
+          "displayType",
+          "id",
+          "title",
+          "type"
+        ],
+        "properties": {
+          "displayType": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
           },
           "type": {
             "type": "string",
@@ -1100,6 +1422,37 @@
           }
         }
       },
+      "RoomKitchenForVisitors": {
+        "type": "object",
+        "required": [
+          "appliances",
+          "displayType",
+          "id",
+          "title",
+          "type"
+        ],
+        "properties": {
+          "appliances": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Appliance"
+            }
+          },
+          "displayType": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "description": "The following values will be allowed:\n  Kitchen"
+          }
+        }
+      },
       "RoomKitchenSummary": {
         "type": "object",
         "required": [
@@ -1139,6 +1492,30 @@
               "integer",
               "null"
             ]
+          },
+          "type": {
+            "type": "string",
+            "description": "The following values will be allowed:\n  LivingRoom"
+          }
+        }
+      },
+      "RoomLivingRoomForVisitors": {
+        "type": "object",
+        "required": [
+          "displayType",
+          "id",
+          "title",
+          "type"
+        ],
+        "properties": {
+          "displayType": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
           },
           "type": {
             "type": "string",
