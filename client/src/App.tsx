@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { DateTime } from "luxon";
 import {
   onAuthStateChanged,
@@ -11,7 +11,9 @@ import {
   apiHost,
   checkApiHealth,
   createGuestBooking,
+  createGuestFavorite,
   createGuestReview,
+  deleteGuestFavorite,
   getGuestPlace,
   getGuestPlaceAvailability,
   getCurrentUser,
@@ -49,6 +51,14 @@ function App() {
   const [placesState, setPlacesState] = useState<
     "loading" | "loaded" | "failed"
   >("loading");
+  const [placesLoadedForAuthState, setPlacesLoadedForAuthState] = useState<
+    "checking" | "signed-out" | "signed-in" | null
+  >(null);
+
+  const currentAuthToken = useCallback(async () => {
+    if (useTestAuth) return testToken;
+    return (await auth.currentUser?.getIdToken()) ?? null;
+  }, [testToken]);
 
   useEffect(() => {
     let active = true;
@@ -69,11 +79,13 @@ function App() {
   useEffect(() => {
     let active = true;
 
-    listGuestPlaces()
+    currentAuthToken()
+      .then((token) => listGuestPlaces(token))
       .then(({ results }) => {
         if (!active) return;
         setPlaces(results);
         setPlacesState("loaded");
+        setPlacesLoadedForAuthState(authState);
       })
       .catch(() => {
         if (active) setPlacesState("failed");
@@ -82,7 +94,7 @@ function App() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [authState, currentAuthToken, currentUser]);
 
   useEffect(() => {
     if (useTestAuth) {
@@ -91,6 +103,7 @@ function App() {
 
     return onAuthStateChanged(auth, async (firebaseUser) => {
       setErrorMessage(null);
+      setPlacesLoadedForAuthState(null);
 
       if (!firebaseUser) {
         setCurrentUser(null);
@@ -148,6 +161,8 @@ function App() {
   }
 
   async function signOutUser() {
+    setPlacesLoadedForAuthState(null);
+
     if (useTestAuth) {
       setCurrentUser(null);
       setAuthState("signed-out");
@@ -159,17 +174,13 @@ function App() {
   }
 
   async function signInWithTestToken(email: string) {
+    setPlacesLoadedForAuthState(null);
     const token = testAuthToken(email);
     const user = await getCurrentUser(token);
     setCurrentUser(user);
     setAuthState("signed-in");
     setNoticeMessage(null);
     setTestToken(token);
-  }
-
-  async function currentAuthToken() {
-    if (useTestAuth) return testToken;
-    return (await auth.currentUser?.getIdToken()) ?? null;
   }
 
   return (
@@ -279,7 +290,22 @@ function App() {
         <Routes>
           <Route
             path="/"
-            element={<PlacesIndex places={places} placesState={placesState} />}
+            element={
+              <PlacesIndex
+                authState={authState}
+                currentAuthToken={currentAuthToken}
+                onFavoriteChange={(updatedPlace) => {
+                  setPlaces((currentPlaces) =>
+                    currentPlaces.map((place) =>
+                      place.id === updatedPlace.id ? updatedPlace : place,
+                    ),
+                  );
+                }}
+                places={places}
+                placesLoadedForAuthState={placesLoadedForAuthState}
+                placesState={placesState}
+              />
+            }
           />
           <Route
             path="/places/:placeId"
@@ -299,12 +325,52 @@ function App() {
 export default App;
 
 function PlacesIndex({
+  authState,
+  currentAuthToken,
+  onFavoriteChange,
   places,
+  placesLoadedForAuthState,
   placesState,
 }: {
+  authState: "checking" | "signed-out" | "signed-in";
+  currentAuthToken: () => Promise<string | null>;
+  onFavoriteChange: (place: GuestPlaceSummary) => void;
   places: GuestPlaceSummary[];
+  placesLoadedForAuthState: "checking" | "signed-out" | "signed-in" | null;
   placesState: "loading" | "loaded" | "failed";
 }) {
+  const [pendingFavoritePlaceId, setPendingFavoritePlaceId] = useState<string | null>(null);
+  const [favoriteMessage, setFavoriteMessage] = useState<string | null>(null);
+  const signedInPlacesLoaded = authState === "signed-in" && placesLoadedForAuthState === "signed-in";
+
+  async function toggleFavorite(place: GuestPlaceSummary) {
+    const token = await currentAuthToken();
+    if (!token) {
+      setFavoriteMessage("Sign in before saving favorite places.");
+      return;
+    }
+
+    setPendingFavoritePlaceId(place.id);
+    setFavoriteMessage(null);
+    try {
+      if (place.favorited) {
+        if (!place.favoriteId) {
+          setFavoriteMessage("Favorite could not be updated.");
+          return;
+        }
+        await deleteGuestFavorite({ favoriteId: place.favoriteId, token });
+        onFavoriteChange({ ...place, favoriteId: null, favorited: false });
+      } else {
+        const favorite = await createGuestFavorite({ placeId: place.id, token });
+        onFavoriteChange({ ...place, favoriteId: favorite.id, favorited: true });
+      }
+    } catch (error) {
+      setFavoriteMessage(error instanceof Error ? error.message : "Favorite could not be updated.");
+    } finally {
+      setPendingFavoritePlaceId(null);
+    }
+  }
+
   return (
     <section className="places-section" aria-labelledby="places-heading">
       <div className="section-header">
@@ -314,6 +380,11 @@ function PlacesIndex({
         </div>
         <span className="result-count">{places.length} listed</span>
       </div>
+      {favoriteMessage ? (
+        <p className="form-error" role="alert">
+          {favoriteMessage}
+        </p>
+      ) : null}
 
       {placesState === "loading" ? (
         <p className="inline-state">Loading places...</p>
@@ -326,11 +397,23 @@ function PlacesIndex({
       ) : (
         <ul className="places-list">
           {places.map((place) => (
-            <li key={place.id}>
-              <Link className="place-row" to={`/places/${place.id}`}>
+            <li className="place-row" key={place.id}>
+              <Link className="place-link" to={`/places/${place.id}`}>
                 <span>{place.title}</span>
                 <span aria-hidden="true">View</span>
               </Link>
+              {signedInPlacesLoaded ? (
+                <button
+                  aria-pressed={place.favorited}
+                  className="favorite-toggle"
+                  data-testid={`favorite-toggle-${place.id}`}
+                  disabled={pendingFavoritePlaceId === place.id}
+                  onClick={() => void toggleFavorite(place)}
+                  type="button"
+                >
+                  {place.favorited ? "Saved" : "Save"}
+                </button>
+              ) : null}
             </li>
           ))}
         </ul>

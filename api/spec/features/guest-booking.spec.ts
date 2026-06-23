@@ -19,6 +19,7 @@ describe('guest booking', () => {
 
     await page.click('[data-testid="test-auth-submit"]')
     await expect(page).toMatchTextContent(email)
+    await page.waitForSelector(`a[href="/places/${place.id}"]`)
     await page.click(`a[href="/places/${place.id}"]`)
 
     await page.waitForSelector('[data-testid="booking-starts-on"]')
@@ -52,6 +53,7 @@ describe('guest booking', () => {
 
     await page.click('[data-testid="test-auth-submit"]')
     await expect(page).toMatchTextContent('guest@example.com')
+    await page.waitForSelector(`a[href="/places/${place.id}"]`)
     await page.click(`a[href="/places/${place.id}"]`)
 
     await page.waitForSelector(calendarDaySelector(existingStartsOn))

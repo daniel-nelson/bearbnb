@@ -70,6 +70,28 @@ export async function postJson<T>(
   throw new ApiError("The API request failed.", response.status);
 }
 
+export async function deleteJson(
+  path: string,
+  { token }: RequestOptions = {},
+): Promise<void> {
+  const response = await fetch(new URL(path, apiHost), {
+    method: "DELETE",
+    headers: {
+      Accept: "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  });
+
+  if (response.ok) return;
+
+  if (response.status === 401)
+    throw new ApiError("Sign in before continuing.", response.status);
+  if (response.status === 404)
+    throw new ApiError("The requested record was not found.", response.status);
+
+  throw new ApiError("The API request failed.", response.status);
+}
+
 export async function checkApiHealth(): Promise<void> {
   const response = await fetch(new URL("/status", apiHost), {
     headers: { Accept: "application/json" },
@@ -89,13 +111,16 @@ export async function getCurrentUser(token: string) {
 }
 
 export type GuestPlaceSummary = {
+  favoriteId: string | null;
+  favorited: boolean;
   id: string;
   title: string;
 };
 
-export async function listGuestPlaces() {
+export async function listGuestPlaces(token?: string | null) {
   return await getJson<CursorPaginatedResponse<GuestPlaceSummary>>(
     "/v1/guest/places",
+    { token: token ?? undefined },
   );
 }
 
@@ -208,4 +233,33 @@ export async function createGuestReview({
     { bookingId, rating, body },
     { token, badRequestMessage: "That review could not be posted." },
   );
+}
+
+export type GuestFavorite = {
+  id: string;
+  placeId: string;
+};
+
+export async function createGuestFavorite({
+  placeId,
+  token,
+}: {
+  placeId: string;
+  token: string;
+}) {
+  return await postJson<GuestFavorite>(
+    "/v1/guest/favorites",
+    { placeId },
+    { token },
+  );
+}
+
+export async function deleteGuestFavorite({
+  favoriteId,
+  token,
+}: {
+  favoriteId: string;
+  token: string;
+}) {
+  await deleteJson(`/v1/guest/favorites/${favoriteId}`, { token });
 }
