@@ -3,17 +3,26 @@ import { Link, useParams } from "react-router-dom";
 import { getV1VisitorPlacesById } from "../api/backend/generated";
 import type { PlaceForVisitors } from "../api/backend/generated";
 import { AppShell } from "../components/AppShell";
+import { FavoriteToggle } from "../components/FavoriteToggle";
 import { SiteHeader } from "../components/SiteHeader";
+import { useAuth } from "../lib/authContext";
 
 type Room = PlaceForVisitors["rooms"][number];
 
 export default function PlaceDetail() {
+  const { user, ready } = useAuth();
+  const authUid = user?.uid ?? null;
   const { id } = useParams();
   const [place, setPlace] = useState<PlaceForVisitors | null>(null);
   const [status, setStatus] = useState("Loading place...");
 
+  // Wait for Firebase auth to resolve before fetching, and refetch when the
+  // signed-in guest changes, so the place's guest-scoped `favorited`/`favoriteId`
+  // reflect the current guest instead of a stale pre-auth fetch. `AuthProvider`
+  // sets the bearer before exposing the new `user`, so the token is current by
+  // the time `authUid` changes here.
   useEffect(() => {
-    if (!id) return;
+    if (!id || !ready) return;
 
     let active = true;
 
@@ -38,7 +47,7 @@ export default function PlaceDetail() {
     return () => {
       active = false;
     };
-  }, [id]);
+  }, [id, ready, authUid]);
 
   return (
     <AppShell>
@@ -117,6 +126,19 @@ export default function PlaceDetail() {
                 </dd>
               </div>
             </dl>
+            {user && (
+              <div className="border-t border-[#deded8] p-4">
+                <FavoriteToggle
+                  className="w-full justify-center"
+                  place={place}
+                  onChange={(next) =>
+                    setPlace((current) =>
+                      current ? { ...current, ...next } : current,
+                    )
+                  }
+                />
+              </div>
+            )}
           </aside>
         </section>
       ) : null}
