@@ -1,4 +1,5 @@
 import Place from '@models/Place.js'
+import { ops } from '@rvoh/dream'
 import { OpenAPI } from '@rvoh/psychic'
 import VisitorBaseController from './BaseController.js'
 
@@ -12,11 +13,18 @@ export default class VisitorPlacesController extends VisitorBaseController {
     cursorPaginate: true,
     serializerKey: 'summaryForVisitors',
     fastJsonStringify: true,
+    query: {
+      q: { required: false, schema: 'string' },
+    },
   })
   public async index() {
-    const places = await Place.passthrough({ locale: this.locale })
-      .preloadFor('summaryForVisitors')
-      .cursorPaginate({ cursor: this.castParam('cursor', 'string', { allowNull: true }) })
+    const q = this.castParam('q', 'string', { allowNull: true })?.trim()
+    const query = Place.passthrough({ locale: this.locale }).preloadFor('summaryForVisitors')
+    const places = await (
+      q ? query.where({ name: ops.ilike(`%${ops.like.escape(q)}%`) }) : query
+    ).cursorPaginate({
+      cursor: this.castParam('cursor', 'string', { allowNull: true }),
+    })
     this.ok(places)
   }
 
