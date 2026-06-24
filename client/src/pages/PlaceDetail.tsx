@@ -4,12 +4,14 @@ import { Link, useParams } from "react-router-dom";
 import {
   getV1VisitorPlacesById,
   getV1VisitorPlacesByIdAvailability,
+  getV1VisitorPlacesByPlaceIdReviews,
   postV1GuestBookings,
 } from "../api/backend/generated";
 import type {
   PlaceAvailability,
   PlaceForVisitors,
   PlaceOccupiedRange,
+  ReviewVisitorSummary,
 } from "../api/backend/generated";
 import { AppShell } from "../components/AppShell";
 import { BookingCalendar } from "../components/BookingCalendar";
@@ -19,6 +21,7 @@ import { rangeOverlapsOccupiedNights } from "../lib/availability";
 import { useAuth } from "../lib/authContext";
 
 type BookingSubmitState = "idle" | "submitting" | "confirmed";
+type ReviewsState = "loading" | "loaded" | "failed";
 
 type Room = PlaceForVisitors["rooms"][number];
 
@@ -30,6 +33,8 @@ export default function PlaceDetail() {
     null,
   );
   const [status, setStatus] = useState("Loading place...");
+  const [reviews, setReviews] = useState<ReviewVisitorSummary[]>([]);
+  const [reviewsState, setReviewsState] = useState<ReviewsState>("loading");
 
   useEffect(() => {
     if (!id) return;
@@ -62,8 +67,25 @@ export default function PlaceDetail() {
       setAvailability(data);
     }
 
+    async function loadReviews(placeId: string) {
+      const { data, error } = await getV1VisitorPlacesByPlaceIdReviews({
+        path: { placeId },
+      });
+
+      if (!active) return;
+
+      if (error || !data) {
+        setReviewsState("failed");
+        return;
+      }
+
+      setReviews(data.results);
+      setReviewsState("loaded");
+    }
+
     void loadPlace(id);
     void loadAvailability(id);
+    void loadReviews(id);
 
     return () => {
       active = false;
@@ -126,6 +148,8 @@ export default function PlaceDetail() {
                 </div>
               </section>
             )}
+
+            <ReviewsSection reviews={reviews} state={reviewsState} />
           </div>
 
           <aside className="mt-8 self-start border border-[#deded8] bg-white lg:sticky lg:top-6 lg:mt-0">
@@ -313,6 +337,67 @@ function BookingForm({
         </p>
       )}
     </form>
+  );
+}
+
+function ReviewsSection({
+  reviews,
+  state,
+}: {
+  reviews: ReviewVisitorSummary[];
+  state: ReviewsState;
+}) {
+  return (
+    <section className="mt-10 border-t border-[#deded8] pt-8">
+      <div className="mb-6">
+        <p className="text-sm font-medium uppercase tracking-[0.14em] text-[#707069]">
+          Reviews
+        </p>
+        <h2 className="mt-2 text-3xl font-semibold tracking-normal text-[#111113]">
+          Guest notes
+        </h2>
+      </div>
+
+      {state === "loading" ? (
+        <p
+          className="border border-[#deded8] bg-white px-4 py-5 text-sm text-[#62625c]"
+          data-testid="reviews-status"
+        >
+          Loading reviews...
+        </p>
+      ) : state === "failed" ? (
+        <p
+          className="border border-[#deded8] bg-white px-4 py-5 text-sm text-[#62625c]"
+          data-testid="reviews-status"
+          role="alert"
+        >
+          Reviews are unavailable right now.
+        </p>
+      ) : reviews.length === 0 ? (
+        <p
+          className="border border-[#deded8] bg-white px-4 py-5 text-sm text-[#62625c]"
+          data-testid="reviews-status"
+        >
+          No reviews yet.
+        </p>
+      ) : (
+        <div className="grid gap-3 md:grid-cols-2">
+          {reviews.map((review) => (
+            <article
+              className="border border-[#deded8] bg-white p-4"
+              key={review.id}
+            >
+              <p className="text-sm font-medium uppercase tracking-[0.12em] text-[#707069]">
+                {review.rating} out of 5
+              </p>
+              <p className="mt-3 text-base leading-7 text-[#2f2f2c]">
+                {review.body}
+              </p>
+            </article>
+          ))}
+        </div>
+      )}
+    </section>
   );
 }
 
