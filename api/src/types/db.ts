@@ -164,6 +164,15 @@ export const RoomTypesEnumValues = [
 
 export type Timestamp = ColumnType<DateTime | CalendarDate>
 
+export interface Favorites {
+  createdAt: Timestamp
+  deletedAt: Timestamp | null
+  guestId: string
+  id: Generated<string>
+  placeId: string
+  updatedAt: Timestamp
+}
+
 export interface Guests {
   createdAt: Timestamp
   deletedAt: Timestamp | null
@@ -237,6 +246,7 @@ export interface Users {
 }
 
 export interface DB {
+  favorites: Favorites
   guests: Guests
   host_places: HostPlaces
   hosts: Hosts
@@ -247,6 +257,7 @@ export interface DB {
 }
 
 export class DBClass {
+  favorites: Favorites
   guests: Guests
   host_places: HostPlaces
   hosts: Hosts
