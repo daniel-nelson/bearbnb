@@ -6,6 +6,7 @@ import {
   getV1VisitorPlacesByIdAvailability,
   getV1VisitorPlacesByPlaceIdReviews,
   postV1GuestBookings,
+  postV1GuestReviews,
 } from "../api/backend/generated";
 import type {
   PlaceAvailability,
@@ -21,6 +22,7 @@ import { rangeOverlapsOccupiedNights } from "../lib/availability";
 import { useAuth } from "../lib/authContext";
 
 type BookingSubmitState = "idle" | "submitting" | "confirmed";
+type ReviewSubmitState = "idle" | "submitting" | "confirmed";
 type ReviewsState = "loading" | "loaded" | "failed";
 
 type Room = PlaceForVisitors["rooms"][number];
@@ -35,6 +37,7 @@ export default function PlaceDetail() {
   const [status, setStatus] = useState("Loading place...");
   const [reviews, setReviews] = useState<ReviewVisitorSummary[]>([]);
   const [reviewsState, setReviewsState] = useState<ReviewsState>("loading");
+  const [confirmedBookingId, setConfirmedBookingId] = useState("");
 
   useEffect(() => {
     if (!id) return;
@@ -176,6 +179,7 @@ export default function PlaceDetail() {
               <BookingForm
                 placeId={place.id}
                 occupiedRanges={availability?.occupiedRanges ?? []}
+                onBookingConfirmed={setConfirmedBookingId}
               />
             ) : (
               <div className="p-4">
@@ -195,6 +199,17 @@ export default function PlaceDetail() {
                   to request these dates.
                 </p>
               </div>
+            )}
+
+            {user && confirmedBookingId && (
+              <ReviewForm
+                bookingId={confirmedBookingId}
+                placeTitle={place.title}
+                onReviewCreated={(review) => {
+                  setReviews((current) => [review, ...current]);
+                  setReviewsState("loaded");
+                }}
+              />
             )}
 
             {user && (
@@ -220,9 +235,11 @@ export default function PlaceDetail() {
 function BookingForm({
   placeId,
   occupiedRanges,
+  onBookingConfirmed,
 }: {
   placeId: string;
   occupiedRanges: PlaceOccupiedRange[];
+  onBookingConfirmed: (bookingId: string) => void;
 }) {
   const [selectedStartsOn, setSelectedStartsOn] = useState("");
   const [selectedEndsOn, setSelectedEndsOn] = useState("");
@@ -286,6 +303,7 @@ function BookingForm({
       return;
     }
 
+    onBookingConfirmed(data.id);
     setSubmitState("confirmed");
     setMessage(`Booked ${data.startsOn} through ${data.endsOn}.`);
   }
@@ -332,6 +350,131 @@ function BookingForm({
           className="border border-[#e4e4de] bg-[#fafaf8] px-3 py-2 text-sm text-[#4f4f4a]"
           data-testid="booking-message"
           role={submitState === "confirmed" ? "status" : "alert"}
+        >
+          {message}
+        </p>
+      )}
+    </form>
+  );
+}
+
+function ReviewForm({
+  bookingId,
+  placeTitle,
+  onReviewCreated,
+}: {
+  bookingId: string;
+  placeTitle: string;
+  onReviewCreated: (review: ReviewVisitorSummary) => void;
+}) {
+  const [rating, setRating] = useState("");
+  const [body, setBody] = useState("");
+  const [submitState, setSubmitState] = useState<ReviewSubmitState>("idle");
+  const [message, setMessage] = useState("");
+
+  async function submitReview(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setMessage("");
+
+    const parsedRating = Number(rating);
+    if (
+      !Number.isInteger(parsedRating) ||
+      parsedRating < 1 ||
+      parsedRating > 5
+    ) {
+      setMessage("Choose a rating from 1 to 5.");
+      return;
+    }
+
+    const trimmedBody = body.trim();
+    if (!trimmedBody) {
+      setMessage("Write a short review.");
+      return;
+    }
+
+    setSubmitState("submitting");
+    const { data, error, response } = await postV1GuestReviews({
+      body: {
+        bookingId,
+        rating: parsedRating,
+        body: trimmedBody,
+      },
+    });
+
+    if (error || !data) {
+      setSubmitState("idle");
+      setMessage(
+        response?.status === 409
+          ? "This booking already has a review."
+          : "We could not save this review.",
+      );
+      return;
+    }
+
+    onReviewCreated(data);
+    setSubmitState("confirmed");
+    setMessage(`Reviewed ${placeTitle}.`);
+  }
+
+  const hasSavedReview = submitState === "confirmed";
+
+  return (
+    <form
+      className="space-y-4 border-t border-[#deded8] p-4"
+      onSubmit={(event) => void submitReview(event)}
+    >
+      <div>
+        <p className="text-sm font-medium uppercase tracking-[0.12em] text-[#707069]">
+          Review
+        </p>
+        <h2 className="mt-2 text-2xl font-semibold tracking-normal text-[#151516]">
+          Review this place
+        </h2>
+      </div>
+
+      <label className="block">
+        <span className="text-sm font-medium text-[#4f4f4a]">Rating</span>
+        <input
+          className="mt-2 h-11 w-full border border-[#d9d9d2] bg-white px-3 text-base text-[#171717] outline-none transition focus:border-[#1d1d1f]"
+          data-testid="review-rating"
+          disabled={hasSavedReview}
+          max="5"
+          min="1"
+          onChange={(event) => setRating(event.target.value)}
+          type="number"
+          value={rating}
+        />
+      </label>
+
+      <label className="block">
+        <span className="text-sm font-medium text-[#4f4f4a]">Notes</span>
+        <textarea
+          className="mt-2 min-h-24 w-full resize-y border border-[#d9d9d2] bg-white px-3 py-2 text-base text-[#171717] outline-none transition focus:border-[#1d1d1f]"
+          data-testid="review-body"
+          disabled={hasSavedReview}
+          onChange={(event) => setBody(event.target.value)}
+          value={body}
+        />
+      </label>
+
+      <button
+        className="h-11 w-full bg-[#1d1d1f] px-4 text-sm font-semibold text-white transition hover:bg-[#333336] disabled:cursor-not-allowed disabled:bg-[#9a9a93]"
+        data-testid="review-submit"
+        disabled={submitState === "submitting" || hasSavedReview}
+        type="submit"
+      >
+        {submitState === "submitting"
+          ? "Saving..."
+          : hasSavedReview
+            ? "Review saved"
+            : "Save review"}
+      </button>
+
+      {message && (
+        <p
+          className="border border-[#e4e4de] bg-[#fafaf8] px-3 py-2 text-sm text-[#4f4f4a]"
+          data-testid="review-message"
+          role={hasSavedReview ? "status" : "alert"}
         >
           {message}
         </p>
