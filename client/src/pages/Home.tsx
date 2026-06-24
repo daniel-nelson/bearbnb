@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { getV1VisitorPlaces } from "../api/backend/generated";
 import type { PlaceSummaryForVisitors } from "../api/backend/generated";
 import { AppShell } from "../components/AppShell";
+import { FavoriteToggle } from "../components/FavoriteToggle";
 import { SiteHeader } from "../components/SiteHeader";
 import { useAuth, initialsFor, displayNameFor } from "../lib/authContext";
 import type { User } from "firebase/auth";
@@ -193,15 +194,35 @@ export default function Home() {
           <>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {places.map((place) => (
-                <Link
-                  className="block border border-[#deded8] bg-white p-3 transition hover:border-[#b9b9b1] focus-visible:border-[#1d1d1f] focus-visible:outline-none sm:p-4"
-                  to={`/places/${place.id}`}
+                <div
+                  className="flex flex-col border border-[#deded8] bg-white transition hover:border-[#b9b9b1]"
                   key={place.id}
                 >
-                  <p className="text-lg font-semibold text-[#171719]">
-                    {place.title}
-                  </p>
-                </Link>
+                  <Link
+                    className="block flex-1 p-3 focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[#1d1d1f] sm:p-4"
+                    to={`/places/${place.id}`}
+                  >
+                    <p className="text-lg font-semibold text-[#171719]">
+                      {place.title}
+                    </p>
+                  </Link>
+                  {user && (
+                    <div className="border-t border-[#deded8] p-3 sm:px-4">
+                      <FavoriteToggle
+                        place={place}
+                        onChange={(next) =>
+                          setPlaces((current) =>
+                            current.map((entry) =>
+                              entry.id === place.id
+                                ? { ...entry, ...next }
+                                : entry,
+                            ),
+                          )
+                        }
+                      />
+                    </div>
+                  )}
+                </div>
               ))}
             </div>
             {(nextCursor || paginationStatus) && (
