@@ -1413,6 +1413,54 @@
           }
         }
       }
+    },
+    "/v1/visitor/places/{id}/availability": {
+      "parameters": [
+        {
+          "in": "path",
+          "name": "id",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "tags": [
+          "visitor-places"
+        ],
+        "description": "Place availability endpoint for Visitors",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlaceAvailability"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1639,6 +1687,24 @@
           }
         }
       },
+      "PlaceAvailability": {
+        "type": "object",
+        "required": [
+          "occupiedRanges",
+          "placeId"
+        ],
+        "properties": {
+          "occupiedRanges": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlaceOccupiedRange"
+            }
+          },
+          "placeId": {
+            "type": "string"
+          }
+        }
+      },
       "PlaceForVisitors": {
         "type": "object",
         "required": [
@@ -1698,6 +1764,23 @@
           },
           "title": {
             "type": "string"
+          }
+        }
+      },
+      "PlaceOccupiedRange": {
+        "type": "object",
+        "required": [
+          "endsOn",
+          "startsOn"
+        ],
+        "properties": {
+          "endsOn": {
+            "type": "string",
+            "format": "date"
+          },
+          "startsOn": {
+            "type": "string",
+            "format": "date"
           }
         }
       },
