@@ -57,6 +57,8 @@ export type Place = {
 
 export type PlaceForVisitors = {
     displayStyle: string;
+    favorited: boolean;
+    favoriteId: string | null;
     id: string;
     rooms: Array<RoomBathroomForVisitors | RoomBedroomForVisitors | RoomDenForVisitors | RoomKitchenForVisitors | RoomLivingRoomForVisitors>;
     sleeps: number;
@@ -70,6 +72,8 @@ export type PlaceSummary = {
 };
 
 export type PlaceSummaryForVisitors = {
+    favorited: boolean;
+    favoriteId: string | null;
     id: string;
     title: string;
 };

@@ -879,6 +879,8 @@ export interface components {
         };
         PlaceForVisitors: {
             displayStyle: string;
+            favorited: boolean;
+            favoriteId: string | null;
             id: string;
             rooms: (components["schemas"]["RoomBathroomForVisitors"] | components["schemas"]["RoomBedroomForVisitors"] | components["schemas"]["RoomDenForVisitors"] | components["schemas"]["RoomKitchenForVisitors"] | components["schemas"]["RoomLivingRoomForVisitors"])[];
             sleeps: number;
@@ -891,6 +893,8 @@ export interface components {
             name: string;
         };
         PlaceSummaryForVisitors: {
+            favorited: boolean;
+            favoriteId: string | null;
             id: string;
             title: string;
         };
