@@ -80,6 +80,118 @@ import {
 } from './db.js'
 
 export const schema = {
+  bookings: {
+    serializerKeys: ['default', 'summary'],
+    scopes: {
+      default: ['dream:SoftDelete'],
+      named: [],
+    },
+    nonJsonColumnNames: [
+      'createdAt',
+      'deletedAt',
+      'endsOn',
+      'guestId',
+      'id',
+      'placeId',
+      'startsOn',
+      'updatedAt',
+    ],
+    columns: {
+      createdAt: {
+        coercedType: {} as DateTime,
+        enumType: null,
+        enumArrayType: null,
+        enumValues: null,
+        dbType: 'timestamp without time zone',
+        allowNull: false,
+        isArray: false,
+      },
+      deletedAt: {
+        coercedType: {} as DateTime | null,
+        enumType: null,
+        enumArrayType: null,
+        enumValues: null,
+        dbType: 'timestamp without time zone',
+        allowNull: true,
+        isArray: false,
+      },
+      endsOn: {
+        coercedType: {} as CalendarDate,
+        enumType: null,
+        enumArrayType: null,
+        enumValues: null,
+        dbType: 'date',
+        allowNull: false,
+        isArray: false,
+      },
+      guestId: {
+        coercedType: {} as string,
+        enumType: null,
+        enumArrayType: null,
+        enumValues: null,
+        dbType: 'uuid',
+        allowNull: false,
+        isArray: false,
+      },
+      id: {
+        coercedType: {} as string,
+        enumType: null,
+        enumArrayType: null,
+        enumValues: null,
+        dbType: 'uuid',
+        allowNull: false,
+        isArray: false,
+      },
+      placeId: {
+        coercedType: {} as string,
+        enumType: null,
+        enumArrayType: null,
+        enumValues: null,
+        dbType: 'uuid',
+        allowNull: false,
+        isArray: false,
+      },
+      startsOn: {
+        coercedType: {} as CalendarDate,
+        enumType: null,
+        enumArrayType: null,
+        enumValues: null,
+        dbType: 'date',
+        allowNull: false,
+        isArray: false,
+      },
+      updatedAt: {
+        coercedType: {} as DateTime,
+        enumType: null,
+        enumArrayType: null,
+        enumValues: null,
+        dbType: 'timestamp without time zone',
+        allowNull: false,
+        isArray: false,
+      },
+    },
+    virtualColumns: [],
+    associations: {
+      guest: {
+        type: 'BelongsTo',
+        foreignKey: 'guestId',
+        foreignKeyTypeColumn: null,
+        tables: ['guests'],
+        optional: false,
+        requiredAndClauses: null,
+        passthroughAndClauses: null,
+      },
+      place: {
+        type: 'BelongsTo',
+        foreignKey: 'placeId',
+        foreignKeyTypeColumn: null,
+        tables: ['places'],
+        optional: false,
+        requiredAndClauses: null,
+        passthroughAndClauses: null,
+      },
+    },
+  },
   favorites: {
     serializerKeys: ['default', 'summary'],
     scopes: {
@@ -228,6 +340,15 @@ export const schema = {
     },
     virtualColumns: [],
     associations: {
+      bookings: {
+        type: 'HasMany',
+        foreignKey: 'guestId',
+        foreignKeyTypeColumn: null,
+        tables: ['bookings'],
+        optional: null,
+        requiredAndClauses: null,
+        passthroughAndClauses: null,
+      },
       favoritePlaces: {
         type: 'HasMany',
         foreignKey: null,
@@ -647,6 +768,15 @@ export const schema = {
     },
     virtualColumns: [],
     associations: {
+      bookings: {
+        type: 'HasMany',
+        foreignKey: 'placeId',
+        foreignKeyTypeColumn: null,
+        tables: ['bookings'],
+        optional: null,
+        requiredAndClauses: null,
+        passthroughAndClauses: null,
+      },
       currentFavorite: {
         type: 'HasOne',
         foreignKey: 'placeId',
@@ -982,6 +1112,7 @@ export const connectionTypeConfig = {
   allDefaultScopeNames: ['dream:STI', 'dream:SoftDelete'],
   globalNames: {
     models: {
+      Booking: 'bookings',
       Favorite: 'favorites',
       Guest: 'guests',
       Host: 'hosts',
