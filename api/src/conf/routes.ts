@@ -1,6 +1,7 @@
 import adminRoutes from '@conf/routes.admin.js'
 import internalRoutes from '@conf/routes.internal.js'
 import StatusController from '@controllers/StatusController.js'
+import V1MeController from '@controllers/V1/MeController.js'
 import VisitorPlacesController from '@controllers/Visitor/PlacesController.js'
 import { PsychicRouter } from '@rvoh/psychic'
 
@@ -8,6 +9,8 @@ export default function routes(r: PsychicRouter) {
   r.get('status', StatusController, 'show')
 
   r.namespace('v1', r => {
+    r.get('me', V1MeController, 'show')
+
     r.namespace('visitor', r => {
       r.get('places', VisitorPlacesController, 'index')
       r.get('places/:id', VisitorPlacesController, 'show')

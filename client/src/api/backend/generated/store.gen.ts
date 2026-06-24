@@ -44,5 +44,6 @@ export const usePostV1HostPlacesByPlaceIdRooms = createSdkStore(sdk.postV1HostPl
 export const useDeleteV1HostPlacesByPlaceIdRoomsById = createSdkStore(sdk.deleteV1HostPlacesByPlaceIdRoomsById)
 export const useGetV1HostPlacesByPlaceIdRoomsById = createSdkStore(sdk.getV1HostPlacesByPlaceIdRoomsById)
 export const usePatchV1HostPlacesByPlaceIdRoomsById = createSdkStore(sdk.patchV1HostPlacesByPlaceIdRoomsById)
+export const useGetV1Me = createSdkStore(sdk.getV1Me)
 export const useGetV1VisitorPlaces = createSdkStore(sdk.getV1VisitorPlaces)
 export const useGetV1VisitorPlacesById = createSdkStore(sdk.getV1VisitorPlacesById)
