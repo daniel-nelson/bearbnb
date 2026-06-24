@@ -3,19 +3,22 @@ import { DateTime } from "luxon";
 import { Link, useParams } from "react-router-dom";
 import {
   getV1VisitorPlacesById,
+  getV1VisitorPlacesByIdAvailability,
   postV1GuestBookings,
 } from "../api/backend/generated";
-import type { PlaceForVisitors } from "../api/backend/generated";
+import type {
+  PlaceAvailability,
+  PlaceForVisitors,
+  PlaceOccupiedRange,
+} from "../api/backend/generated";
 import { AppShell } from "../components/AppShell";
+import { BookingCalendar } from "../components/BookingCalendar";
 import { FavoriteToggle } from "../components/FavoriteToggle";
 import { SiteHeader } from "../components/SiteHeader";
+import { rangeOverlapsOccupiedNights } from "../lib/availability";
 import { useAuth } from "../lib/authContext";
 
 type BookingSubmitState = "idle" | "submitting" | "confirmed";
-
-function dateInputValue(date: DateTime) {
-  return date.toISODate() ?? "";
-}
 
 type Room = PlaceForVisitors["rooms"][number];
 
@@ -23,6 +26,9 @@ export default function PlaceDetail() {
   const { user } = useAuth();
   const { id } = useParams();
   const [place, setPlace] = useState<PlaceForVisitors | null>(null);
+  const [availability, setAvailability] = useState<PlaceAvailability | null>(
+    null,
+  );
   const [status, setStatus] = useState("Loading place...");
 
   useEffect(() => {
@@ -46,7 +52,18 @@ export default function PlaceDetail() {
       setStatus("");
     }
 
+    async function loadAvailability(placeId: string) {
+      const { data, error } = await getV1VisitorPlacesByIdAvailability({
+        path: { id: placeId },
+      });
+
+      if (!active || error || !data) return;
+
+      setAvailability(data);
+    }
+
     void loadPlace(id);
+    void loadAvailability(id);
 
     return () => {
       active = false;
@@ -132,7 +149,10 @@ export default function PlaceDetail() {
             </dl>
 
             {user ? (
-              <BookingForm placeId={place.id} />
+              <BookingForm
+                placeId={place.id}
+                occupiedRanges={availability?.occupiedRanges ?? []}
+              />
             ) : (
               <div className="p-4">
                 <p className="text-sm font-medium uppercase tracking-[0.12em] text-[#707069]">
@@ -173,11 +193,17 @@ export default function PlaceDetail() {
   );
 }
 
-function BookingForm({ placeId }: { placeId: string }) {
-  const defaultCheckIn = DateTime.local().plus({ days: 1 }).startOf("day");
-  const [startsOn, setStartsOn] = useState(dateInputValue(defaultCheckIn));
-  const [endsOn, setEndsOn] = useState(
-    dateInputValue(defaultCheckIn.plus({ days: 2 })),
+function BookingForm({
+  placeId,
+  occupiedRanges,
+}: {
+  placeId: string;
+  occupiedRanges: PlaceOccupiedRange[];
+}) {
+  const [selectedStartsOn, setSelectedStartsOn] = useState("");
+  const [selectedEndsOn, setSelectedEndsOn] = useState("");
+  const [visibleMonth, setVisibleMonth] = useState(
+    () => DateTime.local().startOf("month").toISODate() ?? "",
   );
   const [submitState, setSubmitState] = useState<BookingSubmitState>("idle");
   const [message, setMessage] = useState("");
@@ -186,8 +212,13 @@ function BookingForm({ placeId }: { placeId: string }) {
     event.preventDefault();
     setMessage("");
 
-    const checkIn = DateTime.fromISO(startsOn);
-    const checkout = DateTime.fromISO(endsOn);
+    if (!selectedStartsOn || !selectedEndsOn) {
+      setMessage("Choose available check-in and checkout dates.");
+      return;
+    }
+
+    const checkIn = DateTime.fromISO(selectedStartsOn);
+    const checkout = DateTime.fromISO(selectedEndsOn);
     const today = DateTime.local().startOf("day");
 
     if (!checkIn.isValid || !checkout.isValid) {
@@ -205,12 +236,19 @@ function BookingForm({ placeId }: { placeId: string }) {
       return;
     }
 
+    if (
+      rangeOverlapsOccupiedNights(selectedStartsOn, selectedEndsOn, occupiedRanges)
+    ) {
+      setMessage("Those dates are unavailable.");
+      return;
+    }
+
     setSubmitState("submitting");
     const { data, error, response } = await postV1GuestBookings({
       body: {
         placeId,
-        startsOn: dateInputValue(checkIn),
-        endsOn: dateInputValue(checkout),
+        startsOn: selectedStartsOn,
+        endsOn: selectedEndsOn,
       },
     });
 
@@ -239,36 +277,23 @@ function BookingForm({ placeId }: { placeId: string }) {
         </h2>
       </div>
 
-      <label className="block">
-        <span className="text-sm font-medium text-[#4f4f4a]">Check-in</span>
-        <input
-          className="mt-2 h-11 w-full border border-[#d9d9d2] bg-white px-3 text-base text-[#171717] outline-none transition focus:border-[#1d1d1f]"
-          data-testid="booking-starts-on"
-          name="startsOn"
-          onChange={(event) => setStartsOn(event.target.value)}
-          required
-          type="date"
-          value={startsOn}
-        />
-      </label>
-
-      <label className="block">
-        <span className="text-sm font-medium text-[#4f4f4a]">Checkout</span>
-        <input
-          className="mt-2 h-11 w-full border border-[#d9d9d2] bg-white px-3 text-base text-[#171717] outline-none transition focus:border-[#1d1d1f]"
-          data-testid="booking-ends-on"
-          name="endsOn"
-          onChange={(event) => setEndsOn(event.target.value)}
-          required
-          type="date"
-          value={endsOn}
-        />
-      </label>
+      <BookingCalendar
+        occupiedRanges={occupiedRanges}
+        selectedEndsOn={selectedEndsOn}
+        selectedStartsOn={selectedStartsOn}
+        setBookingStatus={setMessage}
+        setSelectedEndsOn={setSelectedEndsOn}
+        setSelectedStartsOn={setSelectedStartsOn}
+        setVisibleMonth={setVisibleMonth}
+        visibleMonth={visibleMonth}
+      />
 
       <button
         className="h-11 w-full bg-[#1d1d1f] px-4 text-sm font-semibold text-white transition hover:bg-[#333336] disabled:cursor-not-allowed disabled:bg-[#9a9a93]"
         data-testid="booking-submit"
-        disabled={submitState === "submitting"}
+        disabled={
+          submitState === "submitting" || !selectedStartsOn || !selectedEndsOn
+        }
         type="submit"
       >
         {submitState === "submitting"

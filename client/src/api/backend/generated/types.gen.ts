@@ -69,6 +69,11 @@ export type Place = {
     style: 'cabin' | 'cave' | 'cottage' | 'dump' | 'lean_to' | 'tent' | 'treehouse';
 };
 
+export type PlaceAvailability = {
+    occupiedRanges: Array<PlaceOccupiedRange>;
+    placeId: string;
+};
+
 export type PlaceForVisitors = {
     displayStyle: string;
     favorited: boolean;
@@ -78,6 +83,11 @@ export type PlaceForVisitors = {
     sleeps: number;
     style: 'cabin' | 'cave' | 'cottage' | 'dump' | 'lean_to' | 'tent' | 'treehouse';
     title: string;
+};
+
+export type PlaceOccupiedRange = {
+    endsOn: string;
+    startsOn: string;
 };
 
 export type PlaceSummary = {
@@ -1507,3 +1517,54 @@ export type GetV1VisitorPlacesByIdResponses = {
 };
 
 export type GetV1VisitorPlacesByIdResponse = GetV1VisitorPlacesByIdResponses[keyof GetV1VisitorPlacesByIdResponses];
+
+export type GetV1VisitorPlacesByIdAvailabilityData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/v1/visitor/places/{id}/availability';
+};
+
+export type GetV1VisitorPlacesByIdAvailabilityErrors = {
+    /**
+     * The server would not process the request due to something the server considered to be a client error
+     */
+    400: unknown;
+    /**
+     * The request was not successful because it lacks valid authentication credentials for the requested resource
+     */
+    401: unknown;
+    /**
+     * Understood the request, but refused to process it
+     */
+    403: unknown;
+    /**
+     * The specified resource was not found
+     */
+    404: unknown;
+    /**
+     * The request failed because a conflict was detected with the given request params
+     */
+    409: unknown;
+    /**
+     * The request failed to process due to validation errors with the provided values
+     */
+    422: ValidationErrors;
+    /**
+     * the server encountered an unexpected condition that prevented it from fulfilling the request
+     */
+    500: unknown;
+};
+
+export type GetV1VisitorPlacesByIdAvailabilityError = GetV1VisitorPlacesByIdAvailabilityErrors[keyof GetV1VisitorPlacesByIdAvailabilityErrors];
+
+export type GetV1VisitorPlacesByIdAvailabilityResponses = {
+    /**
+     * Success
+     */
+    200: PlaceAvailability;
+};
+
+export type GetV1VisitorPlacesByIdAvailabilityResponse = GetV1VisitorPlacesByIdAvailabilityResponses[keyof GetV1VisitorPlacesByIdAvailabilityResponses];
