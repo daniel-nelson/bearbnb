@@ -44,6 +44,12 @@ export default class Place extends ApplicationModel {
   @deco.HasMany('Favorite', { dependent: 'destroy' })
   public favorites: Favorite[]
 
+  @deco.HasOne('Favorite', {
+    on: 'placeId',
+    and: { guestId: DreamConst.passthrough },
+  })
+  public currentFavorite: Favorite
+
   @deco.HasMany('LocalizedText', { polymorphic: true, on: 'localizableId', dependent: 'destroy' })
   public localizedTexts: LocalizedText[]
 
