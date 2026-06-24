@@ -988,6 +988,10 @@ export type GetV1VisitorPlacesData = {
     path?: never;
     query?: {
         /**
+         * q
+         */
+        q?: string;
+        /**
          * Pagination cursor
          */
         cursor?: string | null;
