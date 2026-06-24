@@ -1,6 +1,7 @@
 import { Decorators, SoftDelete } from '@rvoh/dream'
 import { DreamColumn, DreamSerializers } from '@rvoh/dream/types'
 import ApplicationModel from '@models/ApplicationModel.js'
+import Booking from '@models/Booking.js'
 import Favorite from '@models/Favorite.js'
 import Place from '@models/Place.js'
 import User from '@models/User.js'
@@ -34,4 +35,7 @@ export default class Guest extends ApplicationModel {
 
   @deco.HasMany('Place', { through: 'favorites' })
   public favoritePlaces: Place[]
+
+  @deco.HasMany('Booking', { dependent: 'destroy' })
+  public bookings: Booking[]
 }
