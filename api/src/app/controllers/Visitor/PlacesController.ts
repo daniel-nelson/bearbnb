@@ -19,7 +19,10 @@ export default class VisitorPlacesController extends VisitorBaseController {
   })
   public async index() {
     const q = this.castParam('q', 'string', { allowNull: true })?.trim()
-    const query = Place.passthrough({ locale: this.locale }).preloadFor('summaryForVisitors')
+    const query = Place.passthrough({
+      locale: this.locale,
+      guestId: this.currentGuest?.id ?? null,
+    }).preloadFor('summaryForVisitors')
     const places = await (
       q ? query.where({ name: ops.ilike(`%${ops.like.escape(q)}%`) }) : query
     ).cursorPaginate({
@@ -37,7 +40,7 @@ export default class VisitorPlacesController extends VisitorBaseController {
   })
   public async show() {
     this.ok(
-      await Place.passthrough({ locale: this.locale })
+      await Place.passthrough({ locale: this.locale, guestId: this.currentGuest?.id ?? null })
         .preloadFor('forVisitors')
         .findOrFail(this.castParam('id', 'uuid')),
     )
