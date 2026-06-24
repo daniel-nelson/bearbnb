@@ -1,3 +1,4 @@
+import { getBackendBearerToken } from "../../lib/backendAuth";
 import { client } from "./generated/client.gen";
 
 const apiHost =
@@ -7,6 +8,7 @@ const apiHost =
     : "http://localhost:7777");
 
 client.setConfig({
+  auth: getBackendBearerToken,
   baseUrl: apiHost,
   credentials: "omit",
 });

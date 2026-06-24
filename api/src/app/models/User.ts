@@ -14,6 +14,7 @@ export default class User extends ApplicationModel {
 
   public id: DreamColumn<User, 'id'>
   public email: DreamColumn<User, 'email'>
+  public firebaseUid: DreamColumn<User, 'firebaseUid'>
   public createdAt: DreamColumn<User, 'createdAt'>
   public updatedAt: DreamColumn<User, 'updatedAt'>
   public deletedAt: DreamColumn<User, 'deletedAt'>
