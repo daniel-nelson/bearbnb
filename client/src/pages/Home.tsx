@@ -202,7 +202,7 @@ export default function Home() {
                     className="block flex-1 p-3 focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[#1d1d1f] sm:p-4"
                     to={`/places/${place.id}`}
                   >
-                    <p className="text-lg font-semibold text-[#171719]">
+                    <p className="break-words text-lg font-semibold text-[#171719]">
                       {place.title}
                     </p>
                   </Link>
