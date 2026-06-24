@@ -231,6 +231,16 @@ export interface Places {
   updatedAt: Timestamp
 }
 
+export interface Reviews {
+  body: string
+  bookingId: string
+  createdAt: Timestamp
+  deletedAt: Timestamp | null
+  id: Generated<string>
+  rating: number
+  updatedAt: Timestamp
+}
+
 export interface Rooms {
   appliances: Generated<ArrayType<ApplianceTypesEnum>>
   bathOrShowerStyle: BathOrShowerStylesEnum | null
@@ -264,6 +274,7 @@ export interface DB {
   hosts: Hosts
   localized_texts: LocalizedTexts
   places: Places
+  reviews: Reviews
   rooms: Rooms
   users: Users
 }
@@ -276,6 +287,7 @@ export class DBClass {
   hosts: Hosts
   localized_texts: LocalizedTexts
   places: Places
+  reviews: Reviews
   rooms: Rooms
   users: Users
 }
