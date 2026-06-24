@@ -160,7 +160,7 @@ export default function PlaceDetail() {
         <section className="py-10 lg:grid lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-10 lg:py-14">
           <div className="min-w-0">
             <h1
-              className="mt-4 max-w-3xl text-4xl font-semibold leading-[1.06] tracking-normal text-[#111113] sm:text-6xl"
+              className="mt-4 max-w-3xl break-words text-4xl font-semibold leading-[1.06] tracking-normal text-[#111113] sm:text-6xl"
               data-testid="place-detail-title"
             >
               {place.title}
@@ -183,7 +183,7 @@ export default function PlaceDetail() {
                       <p className="text-sm font-medium uppercase tracking-[0.12em] text-[#707069]">
                         {room.displayType}
                       </p>
-                      <h3 className="mt-2 text-xl font-semibold text-[#171719]">
+                      <h3 className="mt-2 break-words text-xl font-semibold text-[#171719]">
                         {room.title}
                       </h3>
                       <RoomDetails room={room} />
@@ -574,7 +574,7 @@ function ReviewsSection({
               <p className="text-sm font-medium uppercase tracking-[0.12em] text-[#707069]">
                 {review.rating} out of 5
               </p>
-              <p className="mt-3 text-base leading-7 text-[#2f2f2c]">
+              <p className="mt-3 break-words text-base leading-7 text-[#2f2f2c]">
                 {review.body}
               </p>
             </article>
