@@ -1,4 +1,47 @@
 export interface paths {
+    "/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description API status endpoint for frontend connectivity checks */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Success */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Status"];
+                    };
+                };
+                400: components["responses"]["BadRequest"];
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["Forbidden"];
+                404: components["responses"]["NotFound"];
+                409: components["responses"]["Conflict"];
+                422: components["responses"]["ValidationErrors"];
+                500: components["responses"]["InternalServerError"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/host/localized-texts/{id}": {
         parameters: {
             query?: never;
@@ -722,6 +765,9 @@ export interface components {
             position: number | null;
             /** @enum {string} */
             type: "LivingRoom";
+        };
+        Status: {
+            status: string;
         };
         ValidationErrors: {
             /** @enum {string} */
