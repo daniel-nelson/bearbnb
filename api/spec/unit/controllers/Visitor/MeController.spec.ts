@@ -39,8 +39,8 @@ describe('Visitor/MeController', () => {
       await request.setDefaultHeaders({ Authorization: 'Bearer test-firebase:not-json' }).get('/v1/me', 401)
     })
 
-    it('rejects Firebase tokens without verified email', async () => {
-      await request
+    it('provisions Firebase users whose email is not yet verified', async () => {
+      const { body } = await request
         .setDefaultHeaders({
           Authorization: `Bearer ${firebaseTestBearerToken({
             uid: 'unverified-firebase-user',
@@ -48,9 +48,13 @@ describe('Visitor/MeController', () => {
             emailVerified: false,
           })}`,
         })
-        .get('/v1/me', 401)
+        .get('/v1/me', 200)
 
-      expect(await User.where({ firebaseUid: 'unverified-firebase-user' }).exists()).toBe(false)
+      const provisionedUser = await User.findOrFailBy({ firebaseUid: 'unverified-firebase-user' })
+      expect(body).toEqual({
+        id: provisionedUser.id,
+        email: 'unverified@example.com',
+      })
     })
 
     it('does not claim an existing unlinked user by email', async () => {
