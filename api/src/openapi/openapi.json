@@ -902,6 +902,48 @@
         }
       }
     },
+    "/v1/sign-up": {
+      "parameters": [],
+      "post": {
+        "tags": [
+          "v1-sign-up"
+        ],
+        "description": "Provision the current Firebase-authenticated user and record terms-of-service consent",
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CurrentUser"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationErrors"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
     "/v1/visitor/places": {
       "parameters": [
         {
@@ -1029,6 +1071,12 @@
     }
   },
   "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    },
     "schemas": {
       "Appliance": {
         "type": "object",
@@ -1795,5 +1843,10 @@
         "description": "the server encountered an unexpected condition that prevented it from fulfilling the request"
       }
     }
-  }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ]
 }

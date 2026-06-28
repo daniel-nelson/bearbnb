@@ -934,6 +934,55 @@ export type GetV1MeResponses = {
 
 export type GetV1MeResponse = GetV1MeResponses[keyof GetV1MeResponses];
 
+export type PostV1SignUpData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/v1/sign-up';
+};
+
+export type PostV1SignUpErrors = {
+    /**
+     * The server would not process the request due to something the server considered to be a client error
+     */
+    400: unknown;
+    /**
+     * The request was not successful because it lacks valid authentication credentials for the requested resource
+     */
+    401: unknown;
+    /**
+     * Understood the request, but refused to process it
+     */
+    403: unknown;
+    /**
+     * The specified resource was not found
+     */
+    404: unknown;
+    /**
+     * The request failed because a conflict was detected with the given request params
+     */
+    409: unknown;
+    /**
+     * The request failed to process due to validation errors with the provided values
+     */
+    422: ValidationErrors;
+    /**
+     * the server encountered an unexpected condition that prevented it from fulfilling the request
+     */
+    500: unknown;
+};
+
+export type PostV1SignUpError = PostV1SignUpErrors[keyof PostV1SignUpErrors];
+
+export type PostV1SignUpResponses = {
+    /**
+     * Created
+     */
+    201: CurrentUser;
+};
+
+export type PostV1SignUpResponse = PostV1SignUpResponses[keyof PostV1SignUpResponses];
+
 export type GetV1VisitorPlacesData = {
     body?: never;
     path?: never;
