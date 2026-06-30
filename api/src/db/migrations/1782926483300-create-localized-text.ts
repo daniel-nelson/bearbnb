@@ -2,44 +2,30 @@ import { Kysely, sql } from 'kysely'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function up(db: Kysely<any>): Promise<void> {
-  await db.schema
-    .createType('localized_types_enum')
-    .asEnum([
-      'Host',
-      'Place',
-      'Room'
-    ])
-    .execute()
+  await db.schema.createType('localized_types_enum').asEnum(['Host', 'Place', 'Room']).execute()
 
-  await db.schema
-    .createType('locales_enum')
-    .asEnum([
-      'en-US',
-      'es-ES'
-    ])
-    .execute()
+  await db.schema.createType('locales_enum').asEnum(['en-US', 'es-ES']).execute()
 
   await db.schema
     .createTable('localized_texts')
-    .addColumn('id', 'uuid', col =>
-      col
-        .primaryKey()
-        .defaultTo(sql`uuidv7()`),
-    )
+    .addColumn('id', 'uuid', col => col.primaryKey().defaultTo(sql`uuidv7()`))
     .addColumn('localizable_type', sql`localized_types_enum`, col => col.notNull())
     .addColumn('localizable_id', 'uuid', col => col.notNull())
     .addColumn('locale', sql`locales_enum`, col => col.notNull())
-    .addColumn('title', 'varchar(255)', col => col.notNull())
-    .addColumn('markdown', 'text', col => col.notNull())
+    .addColumn('title', 'varchar(255)')
+    .addColumn('markdown', 'text')
     .addColumn('created_at', 'timestamp', col => col.notNull())
     .addColumn('updated_at', 'timestamp', col => col.notNull())
     .addColumn('deleted_at', 'timestamp')
     .execute()
 
+  await db.schema.createIndex('localized_texts_deleted_at').on('localized_texts').column('deleted_at').execute()
+
   await db.schema
-    .createIndex('localized_texts_deleted_at')
+    .createIndex('localized_texts_localizable_for_locale')
     .on('localized_texts')
-    .column('deleted_at')
+    .columns(['localizable_type', 'localizable_id', 'locale'])
+    .unique()
     .execute()
 }
 

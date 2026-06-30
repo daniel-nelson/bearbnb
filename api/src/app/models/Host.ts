@@ -2,6 +2,7 @@ import { Decorators, SoftDelete } from '@rvoh/dream'
 import { DreamColumn, DreamSerializers } from '@rvoh/dream/types'
 import ApplicationModel from '@models/ApplicationModel.js'
 import HostPlace from '@models/HostPlace.js'
+import LocalizedText from '@models/LocalizedText.js'
 import Place from '@models/Place.js'
 import User from '@models/User.js'
 
@@ -34,4 +35,12 @@ export default class Host extends ApplicationModel {
 
   @deco.HasMany('Place', { through: 'hostPlaces' })
   public places: Place[]
+
+  @deco.HasMany('LocalizedText', { polymorphic: true, on: 'localizableId', dependent: 'destroy' })
+  public localizedTexts: LocalizedText[]
+
+  @deco.AfterCreate()
+  public async createDefaultLocalizedText(this: Host) {
+    await this.createAssociation('localizedTexts', { locale: 'en-US' })
+  }
 }
