@@ -11,6 +11,8 @@ export default function routes(r: PsychicRouter) {
 
   r.namespace('v1', r => {
     r.namespace('guest', r => {
+      r.resources('bookings', { only: ['index', 'create', 'update', 'destroy'] })
+
       r.resources('favorites', { only: ['index', 'create', 'destroy'] })
     })
 
