@@ -1,7 +1,6 @@
 import AppEnv from '@conf/AppEnv.js'
 import User from '@models/User.js'
 import { Dream } from '@rvoh/dream'
-import { Encrypt } from '@rvoh/dream/utils'
 import { PsychicServer } from '@rvoh/psychic'
 import { OpenapiRequestBody, OpenapiRequestQuery, OpenapiSpecRequest } from '@rvoh/psychic-spec-helpers'
 import { paths as OpenapiPaths } from '@src/types/openapi/tests.openapi.js'
@@ -20,40 +19,47 @@ export type RequestQuery<HttpMethod extends 'get' | 'post' | 'patch' | 'delete',
   Uri
 >
 
-// eslint-disable-next-line @typescript-eslint/require-await
 async function userBearerToken(user: User): Promise<string> {
-  /**
-   * The current authentication scheme is only for early development.
-   * Replace with a production grade authentication scheme.
-   */
-  return Encrypt.encrypt(JSON.stringify({ userId: user.primaryKeyValue() }), {
-    algorithm: 'aes-256-gcm',
-    key: AppEnv.string('APP_ENCRYPTION_KEY'),
+  const firebaseUid = user.firebaseUid ?? user.id
+  if (!user.firebaseUid) await user.update({ firebaseUid })
+
+  return firebaseTestBearerToken({
+    uid: firebaseUid,
+    email: user.email,
   })
 }
 
 // eslint-disable-next-line @typescript-eslint/require-await
 async function adminUserBearerToken(adminUser: Dream): Promise<string> {
-  /**
-   * The current authentication scheme is only for early development.
-   * Replace with a production grade authentication scheme.
-   */
-  return Encrypt.encrypt(JSON.stringify({ adminUserId: adminUser.primaryKeyValue() }), {
-    algorithm: 'aes-256-gcm',
-    key: AppEnv.string('APP_ENCRYPTION_KEY'),
+  const uid = String(adminUser.primaryKeyValue())
+
+  return firebaseTestBearerToken({
+    uid,
+    email: `${uid}@admin.example.com`,
   })
 }
 
 // eslint-disable-next-line @typescript-eslint/require-await
 async function internalUserBearerToken(internalUser: Dream): Promise<string> {
-  /**
-   * The current authentication scheme is only for early development.
-   * Replace with a production grade authentication scheme.
-   */
-  return Encrypt.encrypt(JSON.stringify({ internalUserId: internalUser.primaryKeyValue() }), {
-    algorithm: 'aes-256-gcm',
-    key: AppEnv.string('APP_ENCRYPTION_KEY'),
+  const uid = String(internalUser.primaryKeyValue())
+
+  return firebaseTestBearerToken({
+    uid,
+    email: `${uid}@internal.example.com`,
   })
+}
+
+export function firebaseTestBearerToken({
+  uid,
+  email,
+  emailVerified = true,
+}: {
+  uid: string
+  email: string
+  emailVerified?: boolean
+}) {
+  AppEnv.string('FIREBASE_PROJECT_ID')
+  return `test-firebase:${Buffer.from(JSON.stringify({ uid, email, emailVerified })).toString('base64url')}`
 }
 
 export async function session(user: Dream) {
