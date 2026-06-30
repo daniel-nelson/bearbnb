@@ -164,9 +164,9 @@ any temp/log paths):
 services:
   api:
     read_only: true
-    tmpfs: ["/tmp"]
-    security_opt: ["no-new-privileges:true"]
-    cap_drop: ["ALL"]
+    tmpfs: ['/tmp']
+    security_opt: ['no-new-privileges:true']
+    cap_drop: ['ALL']
 ```
 
 Restrict egress with a Kubernetes NetworkPolicy so a compromised dependency can
@@ -181,7 +181,7 @@ metadata:
 spec:
   podSelector:
     matchLabels: { app: api }
-  policyTypes: ["Egress"]
+  policyTypes: ['Egress']
   egress:
     - to: [{ podSelector: { matchLabels: { app: postgres } } }]
     - to: [{ podSelector: { matchLabels: { app: redis } } }]

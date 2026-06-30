@@ -1,5 +1,5 @@
 import { STI } from '@rvoh/dream'
-import { DreamColumn, DreamSerializers } from '@rvoh/dream/types'
+import { DreamSerializers } from '@rvoh/dream/types'
 import Room from '@models/Room.js'
 
 @STI(Room)
@@ -11,5 +11,4 @@ export default class LivingRoom extends Room {
       forVisitors: 'Room/LivingRoomForVisitorsSerializer',
     }
   }
-
 }
