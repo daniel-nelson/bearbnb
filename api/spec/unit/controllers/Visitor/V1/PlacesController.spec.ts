@@ -1,7 +1,9 @@
 import Place from '@models/Place.js'
 import User from '@models/User.js'
+import { CalendarDate } from '@rvoh/dream'
 import { PsychicServer } from '@rvoh/psychic'
 import { OpenapiSpecRequest } from '@rvoh/psychic-spec-helpers'
+import createBooking from '@spec/factories/BookingFactory.js'
 import createFavorite from '@spec/factories/FavoriteFactory.js'
 import createLocalizedText from '@spec/factories/LocalizedTextFactory.js'
 import createPlace from '@spec/factories/PlaceFactory.js'
@@ -142,6 +144,42 @@ describe('Visitor/V1/PlacesController', () => {
         )
       })
     })
+
+    describe('GET availability', () => {
+      const subject = async <StatusCode extends 200 | 400 | 404>(
+        place: Place,
+        expectedStatus: StatusCode,
+      ) => {
+        return request.get('/v1/visitor/places/{id}/availability', expectedStatus, {
+          id: place.id,
+        })
+      }
+
+      it('returns occupied booking ranges with exclusive checkout dates', async () => {
+        const place = await createPlace()
+        const startsOn = CalendarDate.today().plus({ days: 2 })
+        const checkoutOn = startsOn.plus({ days: 3 })
+        await createBooking({ place, startsOn, endsOn: checkoutOn })
+        await createBooking({ place, startsOn: checkoutOn, endsOn: checkoutOn.plus({ days: 2 }) })
+        await createBooking()
+
+        const { body } = await subject(place, 200)
+
+        expect(body).toEqual({
+          placeId: place.id,
+          occupiedRanges: [
+            {
+              startsOn: startsOn.toISO(),
+              endsOn: checkoutOn.toISO(),
+            },
+            {
+              startsOn: checkoutOn.toISO(),
+              endsOn: checkoutOn.plus({ days: 2 }).toISO(),
+            },
+          ],
+        })
+      })
+    })
   })
 
   describe('unauthenticated', () => {
@@ -219,6 +257,37 @@ describe('Visitor/V1/PlacesController', () => {
         const { body } = await subject(place, 200)
 
         expect(body).toEqual(expectedShowBody({ place, kitchen, bathroom, bedroom, den, livingRoom }))
+      })
+    })
+
+    describe('GET availability', () => {
+      const subject = async <StatusCode extends 200 | 400 | 404>(
+        place: Place,
+        expectedStatus: StatusCode,
+      ) => {
+        return request.get('/v1/visitor/places/{id}/availability', expectedStatus, {
+          id: place.id,
+        })
+      }
+
+      it('returns occupied booking ranges', async () => {
+        const place = await createPlace()
+        const startsOn = CalendarDate.today().plus({ days: 2 })
+        const endsOn = startsOn.plus({ days: 3 })
+        await createBooking({ place, startsOn, endsOn })
+        await createBooking()
+
+        const { body } = await subject(place, 200)
+
+        expect(body).toEqual({
+          placeId: place.id,
+          occupiedRanges: [
+            {
+              startsOn: startsOn.toISO(),
+              endsOn: endsOn.toISO(),
+            },
+          ],
+        })
       })
     })
   })
