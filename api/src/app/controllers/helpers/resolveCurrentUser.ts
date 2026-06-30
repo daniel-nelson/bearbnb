@@ -10,6 +10,7 @@ export default async function resolveCurrentUser(controller: PsychicController):
     )
 
   const token = (controller.header('authorization') ?? '').split(' ').at(-1)!
+  if (!token) return null
 
   const decrypted = Encrypt.decrypt(token, {
     algorithm: 'aes-256-gcm',
