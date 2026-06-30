@@ -18,4 +18,13 @@ describe('Room', () => {
       expect(localizedText.locale).toEqual('en-US')
     })
   })
+
+  it('has one currentLocalizedText', async () => {
+    let room = await createDen()
+    const esLocalizedText = await createLocalizedText({ localizable: room, locale: 'es-ES' })
+
+    room = await room.passthrough({ locale: 'es-ES' }).load('currentLocalizedText').execute()
+
+    expect(room.currentLocalizedText).toMatchDreamModel(esLocalizedText)
+  })
 })
