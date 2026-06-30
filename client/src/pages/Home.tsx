@@ -1,12 +1,129 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
+import { getV1VisitorPlaces } from "../api/backend/generated";
+import type { PlaceSummaryForVisitors } from "../api/backend/generated";
 import { AppShell } from "../components/AppShell";
 import { SiteHeader } from "../components/SiteHeader";
 import { useAuth, initialsFor, displayNameFor } from "../lib/authContext";
 import type { User } from "firebase/auth";
 
+type PlacesIndexResponse = {
+  cursor: string | null;
+  results: PlaceSummaryForVisitors[];
+};
+
 export default function Home() {
   const { user } = useAuth();
+  const [places, setPlaces] = useState<PlaceSummaryForVisitors[]>([]);
+  const [searchInput, setSearchInput] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [placesStatus, setPlacesStatus] = useState("Loading places...");
+  const [paginationStatus, setPaginationStatus] = useState("");
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+
+  const requestPlaces = useCallback(
+    async (cursor: string | null = null): Promise<PlacesIndexResponse | null> => {
+      const { data, error } = await getV1VisitorPlaces({
+        query: {
+          ...(searchQuery ? { q: searchQuery } : {}),
+          ...(cursor ? { cursor } : {}),
+        },
+      });
+
+      if (error || !data) return null;
+
+      return data;
+    },
+    [searchQuery],
+  );
+
+  const applyFirstPage = useCallback(
+    (body: PlacesIndexResponse | null) => {
+      if (!body) {
+        setPlacesStatus("Places are not available right now.");
+        return;
+      }
+
+      setPlaces(body.results);
+      setNextCursor(body.cursor);
+      setPaginationStatus("");
+      setPlacesStatus(
+        body.results.length
+          ? ""
+          : searchQuery
+            ? "No places match that search."
+            : "No places are available yet.",
+      );
+    },
+    [searchQuery],
+  );
+
+  useEffect(() => {
+    let active = true;
+
+    void requestPlaces().then((body) => {
+      if (active) applyFirstPage(body);
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [requestPlaces, applyFirstPage]);
+
+  async function reloadFirstPage() {
+    applyFirstPage(await requestPlaces());
+  }
+
+  async function loadMorePlaces() {
+    if (!nextCursor) return;
+
+    setIsLoadingMore(true);
+    setPaginationStatus("");
+
+    try {
+      const body = await requestPlaces(nextCursor);
+
+      if (!body) {
+        setPaginationStatus("More places are not available right now.");
+        return;
+      }
+
+      setPlaces((currentPlaces) => [...currentPlaces, ...body.results]);
+      setNextCursor(body.cursor);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }
+
+  function handleSearch(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const nextSearchQuery = searchInput.trim();
+    setNextCursor(null);
+    setPaginationStatus("");
+    setPlaces([]);
+    setPlacesStatus("Loading places...");
+
+    if (nextSearchQuery === searchQuery) {
+      void reloadFirstPage();
+    } else {
+      setSearchQuery(nextSearchQuery);
+    }
+  }
+
+  function clearSearch() {
+    setSearchInput("");
+    setNextCursor(null);
+    setPaginationStatus("");
+    setPlaces([]);
+    setPlacesStatus("Loading places...");
+
+    if (searchQuery) {
+      setSearchQuery("");
+    } else {
+      void reloadFirstPage();
+    }
+  }
 
   return (
     <AppShell>
@@ -27,15 +144,86 @@ export default function Home() {
       />
 
       <section className="py-8">
-        <h1 className="text-3xl font-semibold tracking-normal text-[#111113]">
-          Available places
-        </h1>
-        <p
-          className="mt-6 border border-[#deded8] bg-white px-4 py-5 text-sm text-[#62625c]"
-          data-testid="home-status"
-        >
-          Place browsing is coming soon.
-        </p>
+        <div className="mb-6 grid gap-5 lg:grid-cols-[1fr_360px] lg:items-end">
+          <div>
+            <h1 className="text-3xl font-semibold tracking-normal text-[#111113]">
+              Available places
+            </h1>
+          </div>
+          <form className="flex gap-2" onSubmit={handleSearch}>
+            <label className="min-w-0 flex-1">
+              <span className="sr-only">Search places</span>
+              <input
+                className="h-11 w-full border border-[#d9d9d2] bg-white px-3 text-base text-[#171717] outline-none transition placeholder:text-[#9b9b94] focus:border-[#1d1d1f]"
+                data-testid="place-search"
+                name="place-search"
+                onChange={(event) => setSearchInput(event.target.value)}
+                placeholder="Search places"
+                type="search"
+                value={searchInput}
+              />
+            </label>
+            {searchQuery && (
+              <button
+                className="h-11 border border-[#d9d9d2] bg-white px-4 text-sm font-semibold text-[#3f3f3a] transition hover:border-[#b9b9b1] hover:text-[#18181a]"
+                onClick={clearSearch}
+                type="button"
+              >
+                Clear
+              </button>
+            )}
+            <button
+              className="h-11 bg-[#1d1d1f] px-4 text-sm font-semibold text-white transition hover:bg-[#333336]"
+              data-testid="place-search-submit"
+              type="submit"
+            >
+              Search
+            </button>
+          </form>
+        </div>
+
+        {placesStatus ? (
+          <p
+            className="border border-[#deded8] bg-white px-4 py-5 text-sm text-[#62625c]"
+            data-testid="home-status"
+          >
+            {placesStatus}
+          </p>
+        ) : (
+          <>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {places.map((place) => (
+                <Link
+                  className="block border border-[#deded8] bg-white p-3 transition hover:border-[#b9b9b1] focus-visible:border-[#1d1d1f] focus-visible:outline-none sm:p-4"
+                  to={`/places/${place.id}`}
+                  key={place.id}
+                >
+                  <p className="text-lg font-semibold text-[#171719]">
+                    {place.title}
+                  </p>
+                </Link>
+              ))}
+            </div>
+            {(nextCursor || paginationStatus) && (
+              <div className="mt-5 flex flex-col items-center gap-3 border-t border-[#deded8] pt-5">
+                {paginationStatus && (
+                  <p className="text-sm text-[#62625c]">{paginationStatus}</p>
+                )}
+                {nextCursor && (
+                  <button
+                    className="h-11 border border-[#d8d8d2] bg-white px-5 text-sm font-semibold text-[#3f3f3a] transition hover:border-[#b9b9b1] hover:text-[#18181a] disabled:cursor-not-allowed disabled:bg-[#f0f0ec] disabled:text-[#8a8a84]"
+                    data-testid="places-load-more"
+                    disabled={isLoadingMore}
+                    onClick={() => void loadMorePlaces()}
+                    type="button"
+                  >
+                    {isLoadingMore ? "Loading..." : "Load more"}
+                  </button>
+                )}
+              </div>
+            )}
+          </>
+        )}
       </section>
     </AppShell>
   );
