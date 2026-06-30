@@ -220,7 +220,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             cursor: string | null;
-                            results: (components["schemas"]["RoomBathroomSummary"] | components["schemas"]["RoomBedroomSummary"])[];
+                            results: (components["schemas"]["RoomBathroomSummary"] | components["schemas"]["RoomBedroomSummary"] | components["schemas"]["RoomKitchenSummary"])[];
                         };
                     };
                 };
@@ -260,7 +260,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["RoomBathroom"] | components["schemas"]["RoomBedroom"];
+                        "application/json": components["schemas"]["RoomBathroom"] | components["schemas"]["RoomBedroom"] | components["schemas"]["RoomKitchen"];
                     };
                 };
                 400: components["responses"]["BadRequest"];
@@ -306,7 +306,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["RoomBathroom"] | components["schemas"]["RoomBedroom"];
+                        "application/json": components["schemas"]["RoomBathroom"] | components["schemas"]["RoomBedroom"] | components["schemas"]["RoomKitchen"];
                     };
                 };
                 400: components["responses"]["BadRequest"];
@@ -422,6 +422,16 @@ export interface components {
             type: "Bedroom";
         };
         RoomBedroomSummary: {
+            id: string;
+        };
+        RoomKitchen: {
+            appliances: ("dishwasher" | "microwave" | "oven" | "stove")[];
+            id: string;
+            position: number | null;
+            /** @enum {string} */
+            type: "Kitchen";
+        };
+        RoomKitchenSummary: {
             id: string;
         };
         ValidationErrors: {
