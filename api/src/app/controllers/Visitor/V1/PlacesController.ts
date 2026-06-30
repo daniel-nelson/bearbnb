@@ -1,6 +1,7 @@
 import Place from '@models/Place.js'
 import { ops } from '@rvoh/dream'
 import { OpenAPI } from '@rvoh/psychic'
+import { PlaceAvailabilitySerializer } from '@serializers/PlaceAvailabilitySerializer.js'
 import VisitorV1BaseController from './BaseController.js'
 
 const openApiTags = ['visitor-places']
@@ -44,5 +45,24 @@ export default class VisitorV1PlacesController extends VisitorV1BaseController {
         .preloadFor('forVisitors')
         .findOrFail(this.castParam('id', 'uuid')),
     )
+  }
+
+  @OpenAPI(PlaceAvailabilitySerializer, {
+    status: 200,
+    tags: openApiTags,
+    description: 'Place availability endpoint for Visitors',
+    fastJsonStringify: true,
+  })
+  public async availability() {
+    const place = await Place.findOrFail(this.castParam('id', 'uuid'))
+    const bookings = await place.associationQuery('bookings').order('startsOn').all()
+
+    this.ok({
+      placeId: place.id,
+      occupiedRanges: bookings.map(booking => ({
+        startsOn: booking.startsOn.toISO(),
+        endsOn: booking.endsOn.toISO(),
+      })),
+    })
   }
 }
