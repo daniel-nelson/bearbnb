@@ -903,6 +903,16 @@
       "parameters": [
         {
           "in": "query",
+          "name": "q",
+          "description": "q",
+          "allowReserved": true,
+          "required": false,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
           "required": false,
           "name": "cursor",
           "description": "Pagination cursor",
