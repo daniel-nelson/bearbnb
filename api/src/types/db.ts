@@ -75,6 +75,14 @@ export type Generated<T> =
 
 export type Timestamp = ColumnType<DateTime | CalendarDate>
 
+export interface Guests {
+  createdAt: Timestamp
+  deletedAt: Timestamp | null
+  id: Generated<string>
+  updatedAt: Timestamp
+  userId: string
+}
+
 export interface Users {
   createdAt: Timestamp
   deletedAt: Timestamp | null
@@ -85,9 +93,11 @@ export interface Users {
 }
 
 export interface DB {
+  guests: Guests
   users: Users
 }
 
 export class DBClass {
+  guests: Guests
   users: Users
 }
