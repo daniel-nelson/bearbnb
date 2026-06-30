@@ -1,10 +1,15 @@
 import { initializeApp } from "firebase/app";
-import { connectAuthEmulator, getAuth } from "firebase/auth";
+import {
+  connectAuthEmulator,
+  getAuth,
+  inMemoryPersistence,
+  setPersistence,
+} from "firebase/auth";
+
+const isTestEnv = import.meta.env.VITE_PSYCHIC_ENV === "test";
 
 const useDemoFirebaseConfig =
-  import.meta.env.VITE_TEST_AUTH === "1" ||
-  import.meta.env.VITE_PSYCHIC_ENV === "test" ||
-  import.meta.env.DEV;
+  import.meta.env.VITE_PSYCHIC_ENV === "test" || import.meta.env.DEV;
 
 const firebaseAuthEmulatorHost = import.meta.env
   .VITE_FIREBASE_AUTH_EMULATOR_HOST;
@@ -32,6 +37,11 @@ if (firebaseAuthEmulatorHost) {
     disableWarnings: true,
   });
 }
+
+// In feature specs each example must start signed out. Firebase's default
+// persistence keeps the session in IndexedDB, which the browser-reset between
+// specs does not clear; in-memory persistence is dropped when the page unloads.
+if (isTestEnv) void setPersistence(auth, inMemoryPersistence);
 
 function firebaseEnv(name: string, demoValue: string) {
   const value = import.meta.env[name];

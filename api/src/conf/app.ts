@@ -93,6 +93,13 @@ export default async (psy: PsychicApp) => {
   psy.set('openapi', {
     outputFilepath: path.join('src', 'openapi', 'openapi.json'),
     defaults: {
+      securitySchemes: {
+        bearerAuth: {
+          type: 'http',
+          scheme: 'bearer',
+        },
+      },
+      security: [{ bearerAuth: [] }],
       components: {
         schemas: {},
       },
