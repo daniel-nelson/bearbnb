@@ -1,5 +1,7 @@
 import { OpenAPI } from '@rvoh/psychic'
 import { DreamParamSafeColumnNames } from '@rvoh/dream/types'
+import ApplicationModel from '@models/ApplicationModel.js'
+import HostPlace from '@models/HostPlace.js'
 import V1HostBaseController from './BaseController.js'
 import Place from '@models/Place.js'
 
@@ -17,10 +19,11 @@ export default class V1HostPlacesController extends V1HostBaseController {
     fastJsonStringify: true,
   })
   public async index() {
-    // const places = await this.currentHost.associationQuery('places')
-    //   .preloadFor('summary')
-    //   .cursorPaginate({ cursor: this.castParam('cursor', 'string', { allowNull: true }) })
-    // this.ok(places)
+    const places = await this.currentHost
+      .associationQuery('places')
+      .preloadFor('summary')
+      .cursorPaginate({ cursor: this.castParam('cursor', 'string', { allowNull: true }) })
+    this.ok(places)
   }
 
   @OpenAPI(Place, {
@@ -30,8 +33,8 @@ export default class V1HostPlacesController extends V1HostBaseController {
     fastJsonStringify: true,
   })
   public async show() {
-    // const place = await this.place()
-    // this.ok(place)
+    const place = await this.place()
+    this.ok(place)
   }
 
   @OpenAPI(Place, {
@@ -44,9 +47,14 @@ export default class V1HostPlacesController extends V1HostBaseController {
     },
   })
   public async create() {
-    // let place = await this.currentHost.createAssociation('places', this.extractParams(Place, paramSafeColumns))
-    // if (place.isPersisted) place = await place.loadFor('default').execute()
-    // this.created(place)
+    let place = await ApplicationModel.transaction(async txn => {
+      const place = await Place.txn(txn).create(this.extractParams(Place, paramSafeColumns))
+      await HostPlace.txn(txn).create({ host: this.currentHost, place })
+      return place
+    })
+
+    if (place.isPersisted) place = await place.loadFor('default').execute()
+    this.created(place)
   }
 
   @OpenAPI(Place, {
@@ -59,9 +67,9 @@ export default class V1HostPlacesController extends V1HostBaseController {
     },
   })
   public async update() {
-    // const place = await this.place()
-    // await place.update(this.extractParams(Place, paramSafeColumns))
-    // this.noContent()
+    const place = await this.place()
+    await place.update(this.extractParams(Place, paramSafeColumns))
+    this.noContent()
   }
 
   @OpenAPI({
@@ -71,14 +79,15 @@ export default class V1HostPlacesController extends V1HostBaseController {
     fastJsonStringify: true,
   })
   public async destroy() {
-    // const place = await this.place()
-    // await place.destroy()
-    // this.noContent()
+    const place = await this.place()
+    await place.destroy()
+    this.noContent()
   }
 
   private async place() {
-    // return await this.currentHost.associationQuery('places')
-    //   .preloadFor('default')
-    //   .findOrFail(this.castParam('id', 'string'))
+    return await this.currentHost
+      .associationQuery('places')
+      .preloadFor('default')
+      .findOrFail(this.castParam('id', 'uuid'))
   }
 }
