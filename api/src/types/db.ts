@@ -210,7 +210,8 @@ export interface Users {
   createdAt: Timestamp
   deletedAt: Timestamp | null
   email: string
-  encryptedPhone: string
+  encryptedPhone: string | null
+  firebaseUid: string | null
   id: Generated<string>
   updatedAt: Timestamp
 }
