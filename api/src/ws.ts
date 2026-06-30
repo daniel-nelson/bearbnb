@@ -1,10 +1,10 @@
 import '@conf/loadEnv.js'
 
-import * as util from 'node:util'
-import { Cable } from '@rvoh/psychic-websockets'
 import AppEnv from '@conf/AppEnv.js'
 import initializePsychicApp from '@conf/system/initializePsychicApp.js'
 import { PsychicApp } from '@rvoh/psychic'
+import { Cable } from '@rvoh/psychic-websockets'
+import * as util from 'node:util'
 
 let cable: Cable | null = null
 
@@ -18,7 +18,7 @@ async function startWs() {
     PsychicApp.logWithLevel(
       'error',
       'Uncaught websockets exception:',
-      JSON.stringify(util.inspect(err, { depth: 10 }))
+      JSON.stringify(util.inspect(err, { depth: 10 })),
     )
     void shutdown('uncaughtException')
   })
@@ -29,7 +29,7 @@ async function startWs() {
       'Unhandled websockets promise rejection at',
       JSON.stringify(util.inspect(promise, { depth: 10 })),
       'reason:',
-      JSON.stringify(util.inspect(reason, { depth: 10 }))
+      JSON.stringify(util.inspect(reason, { depth: 10 })),
     )
     void shutdown('unhandledRejection')
   })
