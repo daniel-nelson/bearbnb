@@ -24,6 +24,16 @@ export type CurrentUser = {
     id: string;
 };
 
+export type Favorite = {
+    id: string;
+    placeId: string;
+};
+
+export type FavoriteSummary = {
+    id: string;
+    placeId: string;
+};
+
 export type OpenapiValidationErrors = {
     type: 'openapi';
     target: 'requestBody' | 'query' | 'headers' | 'responseBody';
@@ -47,6 +57,8 @@ export type Place = {
 
 export type PlaceForVisitors = {
     displayStyle: string;
+    favorited: boolean;
+    favoriteId: string | null;
     id: string;
     rooms: Array<RoomBathroomForVisitors | RoomBedroomForVisitors | RoomDenForVisitors | RoomKitchenForVisitors | RoomLivingRoomForVisitors>;
     sleeps: number;
@@ -60,6 +72,8 @@ export type PlaceSummary = {
 };
 
 export type PlaceSummaryForVisitors = {
+    favorited: boolean;
+    favoriteId: string | null;
     id: string;
     title: string;
 };
@@ -218,6 +232,152 @@ export type GetStatusResponses = {
 };
 
 export type GetStatusResponse = GetStatusResponses[keyof GetStatusResponses];
+
+export type GetV1GuestFavoritesData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Pagination cursor
+         */
+        cursor?: string | null;
+    };
+    url: '/v1/guest/favorites';
+};
+
+export type GetV1GuestFavoritesErrors = {
+    /**
+     * The server would not process the request due to something the server considered to be a client error
+     */
+    400: unknown;
+    /**
+     * The request was not successful because it lacks valid authentication credentials for the requested resource
+     */
+    401: unknown;
+    /**
+     * Understood the request, but refused to process it
+     */
+    403: unknown;
+    /**
+     * The specified resource was not found
+     */
+    404: unknown;
+    /**
+     * The request failed because a conflict was detected with the given request params
+     */
+    409: unknown;
+    /**
+     * the server encountered an unexpected condition that prevented it from fulfilling the request
+     */
+    500: unknown;
+};
+
+export type GetV1GuestFavoritesResponses = {
+    /**
+     * Success
+     */
+    200: {
+        cursor: string | null;
+        results: Array<FavoriteSummary>;
+    };
+};
+
+export type GetV1GuestFavoritesResponse = GetV1GuestFavoritesResponses[keyof GetV1GuestFavoritesResponses];
+
+export type PostV1GuestFavoritesData = {
+    body?: {
+        placeId?: string;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Pagination cursor
+         */
+        cursor?: string | null;
+    };
+    url: '/v1/guest/favorites';
+};
+
+export type PostV1GuestFavoritesErrors = {
+    /**
+     * The server would not process the request due to something the server considered to be a client error
+     */
+    400: unknown;
+    /**
+     * The request was not successful because it lacks valid authentication credentials for the requested resource
+     */
+    401: unknown;
+    /**
+     * Understood the request, but refused to process it
+     */
+    403: unknown;
+    /**
+     * The specified resource was not found
+     */
+    404: unknown;
+    /**
+     * The request failed because a conflict was detected with the given request params
+     */
+    409: unknown;
+    /**
+     * the server encountered an unexpected condition that prevented it from fulfilling the request
+     */
+    500: unknown;
+};
+
+export type PostV1GuestFavoritesResponses = {
+    /**
+     * Created
+     */
+    201: Favorite;
+};
+
+export type PostV1GuestFavoritesResponse = PostV1GuestFavoritesResponses[keyof PostV1GuestFavoritesResponses];
+
+export type DeleteV1GuestFavoritesByIdData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/v1/guest/favorites/{id}';
+};
+
+export type DeleteV1GuestFavoritesByIdErrors = {
+    /**
+     * The server would not process the request due to something the server considered to be a client error
+     */
+    400: unknown;
+    /**
+     * The request was not successful because it lacks valid authentication credentials for the requested resource
+     */
+    401: unknown;
+    /**
+     * Understood the request, but refused to process it
+     */
+    403: unknown;
+    /**
+     * The specified resource was not found
+     */
+    404: unknown;
+    /**
+     * The request failed because a conflict was detected with the given request params
+     */
+    409: unknown;
+    /**
+     * the server encountered an unexpected condition that prevented it from fulfilling the request
+     */
+    500: unknown;
+};
+
+export type DeleteV1GuestFavoritesByIdResponses = {
+    /**
+     * The request has succeeded, but there is no content to render
+     */
+    204: void;
+};
+
+export type DeleteV1GuestFavoritesByIdResponse = DeleteV1GuestFavoritesByIdResponses[keyof DeleteV1GuestFavoritesByIdResponses];
 
 export type DeleteV1HostLocalizedTextsByIdData = {
     body?: never;
