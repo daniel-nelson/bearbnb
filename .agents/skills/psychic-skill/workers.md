@@ -1,0 +1,862 @@
+# Psychic Workers - Background Jobs
+
+## Overview
+
+Psychic Workers is built on **BullMQ** (Redis-based job queue). It provides type-safe backgrounding of service and model methods, with automatic retry, priority levels, scheduled/cron jobs, multiple named queues, and (with BullMQ pro) queue based rate limiting.
+
+Background work should be used to offload costly, process-intensive, or failure-prone operations from the web server, keeping API responses fast and resilient (e.g. an external service may be temporarily down, which would result in an API error, but a background job will simply retry).
+
+### Base Classes
+
+- **`ApplicationBackgroundedService`** - For static method backgrounding
+- **`ApplicationBackgroundedModel`** (extends Dream) - For model instance method backgrounding (transparently handles serializing the model global name and id and calling the backgrounded method on the instantiated model)
+- **`ApplicationScheduledService`** - For recurring/cron-based jobs
+
+## Backgrounding Service Methods
+
+Services are the preferred way to background work. The pattern is:
+
+1. A **public entry method** receives rich objects (e.g., model instances), extracts serializable identifiers, and calls `this.background(...)`.
+2. A **private implementation method** (prefixed with `_`) receives only serializable arguments (strings, numbers), looks up any needed models, and does the work.
+
+This two-method pattern lets the service encapsulate its implementation and expose an expressive API — callers just write `await IntercomSyncService.syncUser(user)` without knowing or caring that the work is backgrounded, how arguments are serialized, or what the worker does internally. As a secondary benefit, it also handles the constraint that background job arguments must be serializable to Redis (model instances and complex objects cannot pass through the queue).
+
+```typescript
+import ApplicationBackgroundedService from './ApplicationBackgroundedService.js'
+
+export default class IntercomSyncService extends ApplicationBackgroundedService {
+  // Public entry point — called from application code
+  public static async syncUser(user: User) {
+    await this.background('_syncUser', user.id)
+  }
+
+  // Private implementation — called by the worker
+  public static async _syncUser(id: string) {
+    const user = await User.find(id)
+    if (!user) return
+    // ...sync user to intercom
+  }
+
+  // Optional: configure priority and/or workstream
+  public static override get backgroundJobConfig() {
+    return { workstream: 'Intercom' }
+  }
+}
+
+// Usage from application code (e.g., a controller or model hook):
+await IntercomSyncService.syncUser(user)
+```
+
+**`backgroundJobConfig` is class-level — a backgrounded service exposes no per-method or per-call override.** Both `background(method, ...args)` and `backgroundWithDelay(delay, method, ...args)` read `this.backgroundJobConfig`, and their only tail is the variadic `...args` — neither accepts a config argument. So the getter's `workstream` and `priority` govern *every* backgrounded method on the service (immediate and delayed alike); you cannot route one method to its own workstream, or make one method `urgent` and another `not_urgent`, from a single class. To isolate a subset of a service's jobs, **extract those methods into a separate backgrounded service** with its own `backgroundJobConfig`. Through the backgrounded-service API, splitting the class is the only mechanism.
+
+**Key rules:**
+- **NEVER pass model data as background job arguments.** Almost always pass only the model's ID and look up the record in the implementation method. This applies to any data stored in a Dream model. Passing model data as arguments has serious downsides: it bloats Redis memory (a full JSON payload vs. a single ID string), loses all type information when serialized to JSON (e.g., Dream date/time objects become plain strings, enums become untyped values), and creates a snapshot that is immediately stale if the record is updated after the job is queued. The only arguments to `this.background(...)` should be IDs and simple scalar values (strings, numbers, booleans) that are not sourced from model columns. For model instance methods, `ApplicationBackgroundedModel` handles this automatically by storing only the primary key.
+- **A composed scalar argument is still model-sourced data if a secret is baked into it.** A string that embeds a live credential — a bearer token, a signed URL, a password-reset link — passes the letter of "simple scalar value" while still writing that secret into every place a job argument lands: BullMQ/Redis job retention, and any queue dashboard or error-monitoring tool that logs job arguments on failure. Defer minting the sensitive part to the implementation method instead: pass only the id(s) needed to look the record up, and construct the token or link from inside the backgrounded method, where it is never serialized as a job argument.
+
+  ```typescript
+  // Wrong — the signed URL (with its embedded token) is stored as a job argument
+  export default class BookingMailerService extends ApplicationBackgroundedService {
+    public static async sendConfirmation(booking: Booking) {
+      const confirmationUrl = await booking.mintConfirmationUrl()
+      await this.background('_sendConfirmation', booking.guestId, confirmationUrl)
+    }
+
+    public static async _sendConfirmation(guestId: string, confirmationUrl: string) {
+      const guest = await Guest.find(guestId)
+      if (!guest) return
+      // ...email guest the confirmationUrl
+    }
+  }
+
+  // Right — only the booking id crosses the queue; the token is minted inside the job
+  export default class BookingMailerService extends ApplicationBackgroundedService {
+    public static async sendConfirmation(booking: Booking) {
+      await this.background('_sendConfirmation', booking.id)
+    }
+
+    public static async _sendConfirmation(bookingId: string) {
+      const booking = await Booking.find(bookingId)
+      if (!booking) return
+      const confirmationUrl = await booking.mintConfirmationUrl()
+      // ...email booking.guest the confirmationUrl
+    }
+  }
+  ```
+- **Use `find` (not `findOrFail`) in background job implementations**, and return early when the record is not found. Model deletion is a normal part of many application flows — a record may be deleted between when the job was queued and when the worker picks it up. Using `findOrFail` would throw an error, causing the job to be retried repeatedly for ~6 days before finally failing, wasting resources on a record that will never exist again.
+- Always call the public entry method from application code, not `this.background(...)` directly from outside the service.
+
+## backgroundWithDelay
+
+`backgroundWithDelay` queues a job to run at least the specified amount of time in the future. Supports `seconds`, `minutes`, `hours`, and `days`.
+
+```typescript
+export default class ImageProcessingService extends ApplicationBackgroundedService {
+  public static async processUpload(uploadId: string) {
+    // Wait for S3 upload to propagate before processing
+    await this.backgroundWithDelay({ seconds: 15 }, '_processUpload', uploadId)
+  }
+
+  public static async _processUpload(uploadId: string) {
+    const upload = await Upload.find(uploadId)
+    if (!upload) return
+    // ...process the image
+  }
+}
+```
+
+Use `backgroundWithDelay` when:
+- A job may be queued before an external dependency is ready (e.g., waiting for a direct-to-S3 upload to exist before image processing begins)
+- You want to add a grace period before processing
+
+### Debounce with jobId
+
+`backgroundWithDelay` supports debounce behavior via `jobId`. If a job with the same `jobId` is already queued with a delay, re-backgrounding with that `jobId` overwrites the previous job but resets the delay timer from the current time. This reduces duplicate work when events fire in quick succession.
+
+The dedup key's TTL equals the delay, so it has expired by the time the delayed job fires — re-arming the same `jobId` from inside the job's own running handler is safe. A delay of `0` seconds attaches no dedup key at all, so if debouncing matters, floor the delay at 1 second or higher.
+
+```typescript
+export default class IntercomSyncService extends ApplicationBackgroundedService {
+  public static async syncUser(user: User) {
+    await this.backgroundWithDelay(
+      { minutes: 2, jobId: `intercom-sync-user-${user.id}` },
+      '_syncUser',
+      user.id
+    )
+  }
+
+  public static async _syncUser(id: string) {
+    const user = await User.find(id)
+    if (!user) return
+    // ...sync user to intercom
+  }
+}
+```
+
+## Backgrounding Model Instance Methods
+
+Models extending `ApplicationBackgroundedModel` can background both static and instance methods. For instance methods, Psychic stores the primary key and looks up the model when the worker picks up the job.
+
+**Use this only when the model itself needs to background its own methods.** For most use cases, prefer a backgrounded service instead.
+
+```typescript
+export default class User extends ApplicationBackgroundedModel {
+  // Static method
+  public static async processAll(batchSize: number) {
+    // ...
+  }
+
+  // Instance method
+  public async sendNotification(message: string) {
+    // Runs on a specific user instance
+  }
+
+  public static override get backgroundJobConfig() {
+    return { workstream: 'user-processing', priority: 'default' }
+  }
+}
+
+// Static method backgrounding
+await User.background('processAll', 100)
+
+// Instance method backgrounding — Psychic stores the primary key
+// and re-fetches the model when the worker picks up the job
+const user = await User.findOrFail(id)
+await user.background('sendNotification', 'Hello!')
+```
+
+## Critical Pattern: Use AfterCommit Hooks
+
+**ALWAYS use after-commit lifecycle hooks (`@deco.AfterCreateCommit`, `@deco.AfterUpdateCommit`, or `@deco.AfterSaveCommit`) instead of the regular hooks (`@deco.AfterCreate`, `@deco.AfterUpdate`, or `@deco.AfterSave`) when queuing background work from a Dream lifecycle hook.** This applies to any enqueue path: calling a backgrounded service, calling `this.background(...)` on an `ApplicationBackgroundedModel`, or calling another model/service method that queues the job. Regular hooks run inside the transaction, so the worker may pick up the job before the transaction commits — meaning the record either doesn't exist yet after create, or still has stale persisted data after update.
+
+```typescript
+// CORRECT — job runs after the transaction commits, so the worker can find the record
+@deco.AfterCreateCommit()
+public async notifyCreation(this: Place) {
+  await NotificationService.placeCreated(this)
+}
+
+// WRONG — job may run before the transaction commits
+@deco.AfterCreate()
+public async notifyCreation(this: Place) {
+  await NotificationService.placeCreated(this)
+}
+```
+
+### Imperative Form: Never Enqueue from Inside an Active Transaction
+
+The same race applies to **services** that take a `txn` parameter and call `background()` directly. BullMQ is not transactional with Postgres — anything you enqueue from inside an open transaction is visible to workers immediately, but the records you just created via `txn(txn).create(...)` are not yet visible to other connections. The worker dequeues, calls `Model.find(id)`, gets `null`, and silently returns success. The job is marked complete, no retry, data stranded.
+
+```typescript
+// WRONG — bgjob races the transaction commit
+await ApplicationModel.transaction(async txn => {
+  const photo = await Photo.txn(txn).create({ ... })
+  await PhotoProcessingService.processOne(photo.id)
+  // ↑ Redis sees the job NOW; Postgres won't see `photo` until commit
+})
+
+// RIGHT — enqueue after commit
+let photoId: string
+await ApplicationModel.transaction(async txn => {
+  const photo = await Photo.txn(txn).create({ ... })
+  photoId = photo.id
+})
+await PhotoProcessingService.processOne(photoId)
+
+// ALSO RIGHT — let the model's @AfterCreateCommit hook do the enqueue
+// (don't ALSO do it manually inside the txn)
+```
+
+**Red flag:** if a service takes a `txn` parameter AND its method body contains `background(`, it is almost always a bug.
+
+## Never Rescue Exceptions Inside Backgrounded Services
+
+Inside any class extending `ApplicationBackgroundedService` or `ApplicationBackgroundedModel`, the bar for adding a `try/catch` is much higher than [Critical Rule 14](SKILL.md#critical-rules). The default is **no catch, ever**, and you need a named, justified reason to deviate.
+
+BullMQ relies on thrown exceptions to detect failure. A caught-and-not-rethrown error inside a backgrounded method causes the job to be marked successful, which means:
+
+- No failed-job marker in BullMQ
+- No automatic retry
+- The work is silently lost and only discoverable by reading worker logs
+
+Throwing is how a job reports that it did not finish — it is not how the app tells a human. When a justified catch handles its expected error and the method returns normally, the job completes and never reaches BullMQ's `failed` set, so report the event to your error-reporting service — Sentry, for instance — right there in the handling code. Rethrowing to put it somewhere a human looks buys twenty backoff retries of something that already will not succeed: retrying is the queue's job, alerting is the app's.
+
+```typescript
+// WRONG — log-and-continue inside a backgrounded service
+private static async _importAll(records: Record[]) {
+  for (const record of records) {
+    try {
+      await this.importOne(record)
+    } catch (error) {
+      console.error('Failed:', error)  // ← BullMQ never sees this; job marks success
+    }
+  }
+}
+
+// RIGHT — let the first failure propagate, let BullMQ retry the whole job
+private static async _importAll(records: Record[]) {
+  for (const record of records) {
+    await this.importOne(record)
+  }
+}
+
+// ALSO RIGHT — fan out to per-record jobs, each retried independently by BullMQ
+public static async importAll(records: Record[]) {
+  for (const record of records) {
+    await this.background('_importOne', record.id)
+  }
+}
+```
+
+If your motivation for adding a catch is "I want to be resilient to one bad input out of many", the right answer is **separate background jobs per input**. A try/catch loop inside a single job that fakes per-iteration success gives up the retry property entirely.
+
+The one catch that carries a named, justified reason is a narrow one matching a single expected error type, where the service takes over the retry itself — see [App-Owned Retry Budgets](#app-owned-retry-budgets).
+
+## Fanning Out Background Jobs for Very Large Record Sets
+
+When you need to background work across a very large number of records (hundreds of thousands to millions), don't enqueue all individual jobs up front. Creating a million jobs at once has several problems:
+
+- **Redis memory pressure** from holding a million job payloads at once
+- **Interruption risk** — the enqueuing loop itself can be killed by a deployment, `SIGTERM`, or a Node process crash, and if it restarts from the beginning it will create duplicate jobs
+- **Queue observability collapses** — dashboards become unusable
+
+The idiomatic pattern is a **two-level fan-out** using `pluckEach` and priority levels:
+
+1. A kickoff job uses `pluckEach` to pluck IDs in batches (default batch size is 1000).
+2. For each batch, it enqueues an **expander job** (priority `last`) with just that batch of IDs.
+3. Each expander job iterates its batch and enqueues an **individual worker job** (priority `not_urgent`) per ID.
+4. Each individual worker job loads the record and does the real work.
+
+Keep both tiers of the fan-out below `default`. A bulk run's individual jobs vastly outnumber ordinary application work, and if they run at `default` priority they compete directly with it — routine, more-important-than-bulk jobs queue up behind however many thousand photos are left to reprocess. Bulk work belongs entirely under `not_urgent`/`last` so it only fills otherwise-idle worker slots.
+
+Because expanders run at `last` priority, they only claim worker slots when no `not_urgent`-priority individual jobs are pending. With 10 workers, that means at most ~10 batches are expanded at a time (producing ~10,000 individual jobs in flight), and the individual jobs are drained before more batches are expanded. The queue depth stays bounded regardless of the total record count. Expander jobs are also infrequent relative to individual jobs — one per 1000 IDs — so sharing the `last` tier with a [check-in/heartbeat job](#priority-levels) doesn't starve it outright; it just interleaves.
+
+```typescript
+// services/ReprocessAllPhotosService.ts
+import PhotoProcessingService from './PhotoProcessingService.js'
+
+export default class ReprocessAllPhotosService extends ApplicationBackgroundedService {
+  public static override get backgroundJobConfig() {
+    return { priority: 'last' as const }
+  }
+
+  // Step 1: kickoff — iterates the table in batches and enqueues one expander per batch
+  public static async reprocessAll() {
+    await this.background('_reprocessAll')
+  }
+
+  public static async _reprocessAll() {
+    let batch: string[] = []
+    await Photo.pluckEach('id', async (id: string) => {
+      batch.push(id)
+      if (batch.length >= 1000) {
+        await this.background('_expandBatch', batch)
+        batch = []
+      }
+    })
+    if (batch.length > 0) await this.background('_expandBatch', batch)
+  }
+
+  // Step 2: expander — fans the batch into individual worker jobs
+  public static async _expandBatch(ids: string[]) {
+    for (const id of ids) {
+      await PhotoProcessingService.processOne(id)
+    }
+  }
+}
+```
+
+```typescript
+// services/PhotoProcessingService.ts
+export default class PhotoProcessingService extends ApplicationBackgroundedService {
+  public static override get backgroundJobConfig() {
+    return { priority: 'not_urgent' as const }
+  }
+
+  // Step 3: individual worker — loads the record and does the actual work
+  public static async processOne(id: string) {
+    await this.background('_processOne', id)
+  }
+
+  public static async _processOne(id: string) {
+    const photo = await Photo.find(id)
+    if (!photo) return
+    // ...do the real work
+  }
+}
+```
+
+Key points:
+
+- **`pluckEach` selects only the `id` column** — no hydration, minimal memory.
+- **Priorities create natural backpressure.** Expanders (`last`) yield to individual jobs (`not_urgent`), so the in-flight count of individual jobs never exceeds roughly `worker_count * concurrency * batch_size`.
+- **The expander and individual-worker services must route to the same queue.** Priority is only meaningful within a single BullMQ queue: jobs in different queues have separate worker pools and never compete for the same slots, so putting expanders and individual jobs on different queues silently defeats the backpressure — each queue just drains independently, and you're back to unbounded fan-out.
+- **To isolate this fan-out to its own queue** (keeping it off the default queue entirely, e.g. so it can't crowd out unrelated default-queue work even at `not_urgent`/`last`):
+  - **Open-source BullMQ** — route both services to the same **native-mode** `queue`, not a named **`workstream`**. A `workstream` sets that job's BullMQ `group.id` to the workstream name, which moves `priority` into `group.priority` instead of the top-level field — and open-source BullMQ silently ignores `group.priority` (it's a BullMQ Pro-only feature), so the expander/individual backpressure stops working with no error or warning. A native-mode `queue` (with no `groupId` set) keeps `priority` top-level and the backpressure intact.
+  - **BullMQ Pro** — a named `workstream` works fine instead, *because* Pro honors `group.priority`, so isolation and backpressure both hold. Pro is also the only way to rate-limit the individual jobs against an external dependency (see [Rate Limiting (BullMQ Pro)](#rate-limiting-bullmq-pro)) — worth adopting for a bulk job that calls a rate-limited API or otherwise needs to throttle pressure on a shared resource (the database included), since `not_urgent`/`last` priority only affects worker-slot ordering, not the rate of requests once a job is running.
+- **If the kickoff is interrupted,** only the expanders already enqueued will run, and if the kickoff job itself is retried it will re-pluck from the beginning — but because each individual job is independent and idempotent (via the `find`/early-return pattern), re-runs are safe.
+- **Individual jobs still follow the standard rule of passing IDs, not model instances.** Hydrate inside `_processOne`.
+
+## Priority Levels
+
+The priority of each backgrounded service/model is customizable via `backgroundJobConfig`:
+
+```typescript
+type BackgroundQueuePriority = 'urgent' | 'default' | 'not_urgent' | 'last'
+// Maps to BullMQ numeric priority: 1 (urgent), 2 (default), 3 (not_urgent), 4 (last)
+```
+
+**Priority ordering and workstreams are an either/or without a BullMQ Pro license.** When a `backgroundJobConfig` sets a `workstream` (or a `groupId`), the priority number is written to the job's `group.priority` instead of the top-level `priority`, and open-source BullMQ ignores `group.priority` — group priority is a BullMQ Pro surface. So a service gets workstream isolation or priority ordering, not both, unless the app runs the `QueuePro`/`WorkerPro` providers.
+
+```typescript
+export default class FileImportService extends ApplicationBackgroundedService {
+  public static get backgroundJobConfig(): BackgroundJobConfig<ApplicationBackgroundedService> {
+    return { priority: 'not_urgent' }
+  }
+}
+```
+
+Use `last` for check-in/heartbeat jobs (e.g., Dead Man's Snitch) so they only run after all other work is processed, giving confidence that the queue is healthy. Keep bulk work — like the [fan-out pattern](#fanning-out-background-jobs-for-very-large-record-sets) — off `default`, so a large bulk run doesn't hold up genuinely important application jobs at that tier.
+
+## Scheduled/Cron Jobs
+
+Classes extending `ApplicationScheduledService` can schedule recurring work using cron expressions via BullMQ:
+
+```typescript
+import ApplicationScheduledService from '../ApplicationScheduledService.js'
+
+export default class ScheduledJobs extends ApplicationScheduledService {
+  public static async scheduleAllJobs() {
+    await this.schedule('0 * * * *', 'processHour')     // Every hour
+    await this.schedule('0 9 * * *', 'dailyReport')     // 9am daily
+    await this.schedule('0 9 * * 1', 'weeklyReport')    // Monday 9am
+    await this.schedule('*/5 * * * *', 'backgroundCheckin')  // Every 5 minutes
+  }
+
+  public static async processHour() {
+    await HourProcessor.process(DateTime.now())
+  }
+
+  public static async dailyReport() {
+    await ReportService.generateDaily()
+  }
+}
+```
+
+### Call `scheduleAllJobs()` yourself, from `db/seed.ts`
+
+Nothing registers your schedules for you. A service that defines `scheduleAllJobs()` and never has it called registers nothing, and every cron job silently never runs. Call it from `db/seed.ts`:
+
+```typescript
+// db/seed.ts
+import ScheduledJobs from '@services/ScheduledJobs.js'
+
+export default async function seed() {
+  if (AppEnv.isTest) return
+  await ScheduledJobs.scheduleAllJobs()
+}
+```
+
+`schedule()` upserts (keyed `` `${globalName}:${method}` ``), so registration is idempotent and belongs wherever a deploy already reconciles the database to the code — which is why seed runs immediately after migrations in every environment ([deploying.md](deploying.md#combine-dbmigrate--dbseed-in-one-invocation)). A pipeline that migrates without seeding leaves Redis holding the previous schedule set, so pair the two commands everywhere they run.
+
+The seed process must reach the jobs Redis; with `enableOfflineQueue: false` an unreachable Redis fails the seed task loudly rather than buffering. Locally, `NODE_ENV=development pnpm psy db:seed` is what makes a schedule exist — development-database work, so only on the user's explicit ask ([console.md](console.md#running-scripts-against-the-development-database)). `db:seed` drops and recreates nothing itself; it runs `db/seed.ts` and nothing else, so whether it is safe against development depends on whether that function is idempotent (as the schedule registration above is) or truncates and re-creates. Under the test default (see [console.md](console.md#node_env-defaults)) `db:seed` skips seeding, and setting `DREAM_SEED_DB_IN_TEST=1` as it suggests still registers nothing, because the seed above then returns at `AppEnv.isTest` — which is also why an unprefixed `db:reset` registers no schedule despite running its seed step.
+
+### Scheduled services are thin orchestrators, not workers
+
+A scheduled method should do almost nothing itself: select what needs to happen now and **fan out to backgrounded services** that do the real work. Heavy lifting inside a scheduled method is a design smell. The goal is to keep the number of permanently-registered schedulers in the BullMQ "Delayed" queue to a small fixed set — typically just `hourly`, `daily`, and `weekly` — each of which kicks off whatever backgrounded jobs that cadence requires. Three clean schedulers fanning out to dedicated services is the target shape; a sprawling list of per-task schedulers is not.
+
+### A class is either scheduled OR backgrounded — never both
+
+`ApplicationScheduledService` exposes `schedule()` but **not** `background()`. `ApplicationBackgroundedService` exposes `background()` but **not** `schedule()`. They are sibling base classes; a service extends one or the other. This is a hard architectural constraint, not a style choice:
+
+- **A scheduled method cannot enqueue background jobs from within itself.** To fan out, the scheduled (orchestrator) service calls the public entry method of a *separate* backgrounded (worker) service.
+- **Import direction is one-way:** the orchestrator imports the worker, never the reverse. A mutual import is a cycle and risks class-init / `globalName`-registration ordering problems.
+
+```typescript
+// Orchestrator — extends ApplicationScheduledService (has schedule(), no background())
+import ReconcileService from '@services/ReconcileService.js'
+
+export default class ScheduledJobs extends ApplicationScheduledService {
+  public static async scheduleAllJobs() {
+    await this.schedule('0 * * * *', 'hourly')
+  }
+
+  public static async hourly() {
+    await ReconcileService.reconcileAll()   // delegate to a backgrounded service
+  }
+}
+```
+
+```typescript
+// Worker — extends ApplicationBackgroundedService (has background(), no schedule())
+export default class ReconcileService extends ApplicationBackgroundedService {
+  public static async reconcileAll() {
+    for (const config of FORM_CONFIGS) {
+      await this.background('_reconcileForm', config.key)  // one job per item
+    }
+  }
+  public static async _reconcileForm(key: string) {
+    // ...the actual work
+  }
+}
+```
+
+### Pitfall: `schedule()` keys by class+method only — looping silently drops jobs
+
+`schedule()` registers the BullMQ job scheduler under the id `` `${globalName}:${method}` `` — **the args are not part of the id.** Internally it calls `upsertJobScheduler`, which is create-or-replace. So scheduling the same method more than once with different args does **not** create multiple schedulers; each call overwrites the last, and only the final args survive:
+
+```typescript
+// WRONG — registers exactly ONE scheduler (for FORM_CONFIGS[last]); the rest silently never run
+for (const config of FORM_CONFIGS) {
+  await ReconcileService.schedule('0 13 * * *', 'reconcileForm', config.key)
+}
+```
+
+This fails silently: no error, no warning, the worker boots clean, and you only discover it when N−1 of N jobs never happened in production. To schedule N variants you need either **N distinct `(class, method)` pairs**, or — the idiomatic fix — **one scheduled method registered once that fans out at runtime**:
+
+```typescript
+// RIGHT — schedule the fan-out method ONCE; it loops at run time, not at schedule time
+await ReconcileService.schedule('0 13 * * *', 'reconcileAll')
+```
+
+### Per-user cadence across time zones: schedule hourly, select by zone, fan out
+
+"Daily" and "weekly" work for users spread across time zones is not a daily/weekly cron. Register the orchestrator on an **hourly** cron and have each run select the users whose *local* end-of-day (or end-of-week) falls in the current hour, then fan out one backgrounded job per selected user. Bake the time zone — and any end-of-week preference — into the query so the database efficiently returns just the relevant user IDs, rather than loading all users and filtering in code.
+
+```typescript
+// Orchestrator — runs every hour; figures out whose local end-of-day this hour is
+import EndOfDayService from '@services/EndOfDayService.js'
+
+export default class ScheduledJobs extends ApplicationScheduledService {
+  public static async scheduleAllJobs() {
+    await this.schedule('0 * * * *', 'endOfDayFanOut')   // hourly, despite being "daily" work
+  }
+
+  public static async endOfDayFanOut() {
+    await EndOfDayService.fanOut(DateTime.now())
+  }
+}
+```
+
+```typescript
+// Worker — selects matching users by time zone, enqueues one job each
+export default class EndOfDayService extends ApplicationBackgroundedService {
+  public static async fanOut(now: DateTime) {
+    // The query filters by timezone so only users whose local hour is end-of-day
+    // are returned — selecting IDs only, never hydrating full records.
+    await User.where({ endOfDayHourUtc: now.hour }).pluckEach('id', async (id: string) => {
+      await this.background('_runEndOfDay', id)
+    })
+  }
+
+  public static async _runEndOfDay(id: string) {
+    const user = await User.find(id)
+    if (!user) return
+    // ...the per-user end-of-day work
+  }
+}
+```
+
+End-of-week works the same way, with the user's chosen end-of-week day folded into the query alongside the time zone, so the single hourly orchestrator covers every user's preference without a separate scheduler per variant.
+
+### Scheduled and backgrounded methods run inline in tests
+
+In `NODE_ENV=test` with the default `testInvocation: 'automatic'`, `schedule(...)`, `background(...)`, and `backgroundWithDelay(...)` all invoke the underlying method immediately and synchronously — the delay is ignored (see the [Testing Workers](#testing-workers) section). A spec that calls any of them executes the work with no queue flush needed. The flip side: any environment guard inside the method (e.g. `if (serverEnvironment !== 'production') return`) also fires in tests, so a guarded method needs a `force`-style override to be exercised in a spec. Switching to `testInvocation: 'manual'` (see [Manual Mode](#manual-mode)) queues jobs instead of running them inline, requiring an explicit `WorkerTestUtils.work()` to process them.
+
+## Two Configuration Modes
+
+`workersApp.set('background', { ... })` accepts one of two mutually exclusive shapes, and the type system enforces the split:
+
+- **Simple (workstream) mode** — Psychic builds the queues and workers from a workstream description. Selected by omitting `nativeBullMQ`; this is what the boilerplate ships, and what every other configuration example in this file uses. Services route with `backgroundJobConfig.workstream`.
+- **Native BullMQ mode** — you hand Psychic raw BullMQ queue and worker options per queue, and it does little beyond constructing them and wiring the job handler. Selected by supplying `nativeBullMQ` — even `nativeBullMQ: {}` selects it. Services route with `queue` and `groupId`.
+
+`pnpm psy sync` generates the routing union from whichever mode is configured, so the mode decides which key a service can use. `priority` is legal in both.
+
+## Named Workstreams
+
+A workstream is a BullMQ queue with its own set of workers. Most apps only need the default workstream, but named workstreams are useful for isolating specific work (e.g., external API calls that need rate limiting).
+
+The workstream's `name` also becomes the `group.id` of that workstream's workers, which is why assigning a service to a workstream moves its priority onto `group.priority` (see [Priority Levels](#priority-levels)).
+
+Configure in `conf/initializers/workers.ts`:
+
+```typescript
+workersApp.set('background', {
+  defaultWorkstream: {
+    workerCount: os.cpus().length,
+    concurrency: 100,
+  },
+
+  namedWorkstreams: [
+    {
+      name: 'Intercom',
+      workerCount: 1,  // the default; concurrency defaults to 10
+    },
+  ],
+  // ...
+})
+```
+
+A named workstream can carry its own `queueConnection` and `workerConnection`. Without them the workstream shares the default connection, and the isolation is only in queue and worker counts.
+
+After adding a named workstream, run `pnpm psy sync` to update types. Then assign services to the workstream via `backgroundJobConfig`:
+
+```typescript
+export default class IntercomSyncService extends ApplicationBackgroundedService {
+  public static get backgroundJobConfig(): BackgroundJobConfig<ApplicationBackgroundedService> {
+    return { workstream: 'Intercom' }
+  }
+}
+```
+
+### Rate Limiting (BullMQ Pro)
+
+Named workstreams can be rate limited when using a BullMQ Pro license. Requires `QueuePro` and `WorkerPro` providers:
+
+```typescript
+import { QueuePro, WorkerPro } from '@taskforcesh/bullmq-pro'
+
+workersApp.set('background', {
+  providers: {
+    Queue: QueuePro,
+    Worker: WorkerPro,
+  },
+
+  namedWorkstreams: [
+    {
+      name: 'Twilio',
+      workerCount: 1,
+      concurrency: 10,
+      rateLimit: { max: 20, duration: 1000 },  // 20 requests/sec
+    },
+  ],
+})
+```
+
+### Transitional Workstreams
+
+Moving background work to a different Redis instance strands whatever the old one still holds: repoint the app's connections and nothing is attached to work those jobs. `transitionalWorkstreams` describes the legacy topology alongside the current one — the same `defaultWorkstream` / `namedWorkstreams` shape, with its own connections — so Psychic builds queues and workers for both.
+
+```typescript
+workersApp.set('background', {
+  defaultQueueConnection: bookingRedis,
+  defaultWorkerConnection: bookingRedis,
+  namedWorkstreams: [{ name: 'BookingReminders' }],
+
+  transitionalWorkstreams: {
+    defaultQueueConnection: legacyRedis,
+    defaultWorkerConnection: legacyRedis,
+    namedWorkstreams: [{ name: 'BookingReminders' }],
+  },
+})
+```
+
+Workers attach to the legacy queues and work them down, while enqueueing reaches only the top-level workstreams, so every new job lands on the new instance. The old side can only drain, never be added to, which is what makes the cutover finish. Delete the key once those queues are empty.
+
+## Native BullMQ Mode
+
+Native mode is for apps that need to hand BullMQ its own options per queue — a distinct Redis instance or cluster node per queue, or BullMQ Pro group settings Psychic's workstream shape does not express. Queues are declared by name, and workers are declared separately against those names:
+
+```typescript
+workersApp.set('background', {
+  defaultQueueConnection: bookingRedis,
+  defaultWorkerConnection: !AppEnv.boolean('WORKER_SERVICE') ? undefined : bookingWorkerRedis,
+
+  nativeBullMQ: {
+    defaultQueueOptions: {
+      defaultJobOptions: { attempts: 20, backoff: { type: 'exponential', delay: 1000 } },
+    },
+    defaultWorkerCount: os.cpus().length,
+    defaultWorkerOptions: { concurrency: 100 },
+
+    namedQueueOptions: {
+      BookingNotifications: {
+        queueConnection: notificationsRedis,
+        workerConnection: notificationsWorkerRedis,
+      },
+    },
+
+    namedQueueWorkers: {
+      BookingNotifications: { workerCount: 1, concurrency: 10 },
+    },
+  },
+})
+```
+
+Run `pnpm psy sync` after changing the queue names, then route a service to one:
+
+```typescript
+export default class BookingNotificationService extends ApplicationBackgroundedService {
+  public static get backgroundJobConfig(): BackgroundJobConfig<ApplicationBackgroundedService> {
+    return { queue: 'BookingNotifications' }
+  }
+}
+```
+
+Sharp edges specific to this mode:
+
+- **A queue in `namedQueueOptions` with no matching key in `namedQueueWorkers` gets zero workers.** The queue is created and accepts jobs; nothing ever works them. There is no warning and no error — jobs simply accumulate in Redis. Every named queue needs an entry in both maps.
+- **A named queue's `defaultJobOptions` replaces the app-wide bag rather than merging with it.** The two option objects are combined with one shallow spread, so a queue that sets `defaultJobOptions: { attempts: 3 }` drops the app-wide `backoff`, `removeOnComplete` and `removeOnFail` entirely. Restate every key you still want.
+- **There is no concurrency default here.** Simple mode always writes the workstream's `concurrency` — 10 when the workstream omits it — which is why it overrides `defaultBullMQWorkerOptions`; native mode writes none, so BullMQ's own default applies unless you set it.
+
+### Connections in native mode
+
+Connections are `Redis`/`Cluster` *instances*, and a named queue's **worker** connection goes on that queue's `namedQueueOptions` entry, not on its `namedQueueWorkers` entry — a `connection` set there typechecks (it is a plain `WorkerOptions` key) and is ignored. Each falls back to `nativeBullMQ.defaultQueueOptions` and then to the app-wide default. Because `pnpm psy sync` connects to background to generate types, a missing *queue* connection surfaces at sync time, not only at boot.
+
+## Automatic Retry
+
+Failed jobs (those that throw an unhandled error) are automatically retried with exponential backoff. The default configuration retries up to 20 times over ~6.1 days:
+
+```typescript
+defaultBullMQQueueOptions: {
+  defaultJobOptions: {
+    removeOnComplete: 1000,
+    removeOnFail: 20000,
+    // 524,288,000 ms (~6.1 days) using "2 ^ (attempts - 1) * delay"
+    attempts: 20,
+    backoff: {
+      type: 'exponential',
+      delay: 1000,
+    },
+  },
+},
+```
+
+This config is sent directly to BullMQ and can be customized in `conf/initializers/workers.ts`.
+
+**This is why using `find` instead of `findOrFail` matters in background jobs.** If a record has been deleted and the job uses `findOrFail`, the thrown error triggers 20 retries over 6 days — all of which will also fail, wasting resources. Using `find` and returning early when the record is `null` allows the job to exit cleanly.
+
+### App-Owned Retry Budgets
+
+There is no per-service retry budget — `backgroundJobConfig` carries `priority` and a routing key, nothing more. When one job's expected failure is worth retrying, but not twenty times over six days (an external service billed per attempt, say), the service owns the budget: the `_` implementation method takes an `attempt` argument defaulting to `1`, catches its one expected error, and re-enqueues itself with the count incremented while it is under the threshold:
+
+```typescript
+export default class PlaceGeocodingService extends ApplicationBackgroundedService {
+  public static async geocodePlace(place: Place) {
+    await this.background('_geocodePlace', place.id)
+  }
+
+  public static async _geocodePlace(placeId: string, attempt: number = 1) {
+    const place = await Place.find(placeId)
+    if (!place) return
+
+    try {
+      await Geocoder.locate(place) // billed per call
+    } catch (error) {
+      if (!(error instanceof GeocoderUnavailableError)) throw error
+
+      if (attempt < 3) {
+        await this.backgroundWithDelay({ minutes: 5 * attempt }, '_geocodePlace', placeId, attempt + 1)
+      } else {
+        // report the exhausted failure to the app's error-reporting service
+      }
+    }
+  }
+}
+```
+
+This is the narrow catch [Never Rescue Exceptions Inside Backgrounded Services](#never-rescue-exceptions-inside-backgrounded-services) allows: it matches one expected error type and rethrows everything else, so an unexpected failure still propagates and still gets the full app-wide budget. Because the expected failure ends in a completed job, BullMQ's own retry never engages for it.
+
+## Job Logging
+
+Background methods can optionally receive a BullMQ `Job` parameter as their last argument to access logging:
+
+```typescript
+import { Job } from 'bullmq'
+
+export default class DataProcessingService extends ApplicationBackgroundedService {
+  public static async processDataset(datasetId: string) {
+    await this.background('_processDataset', datasetId)
+  }
+
+  public static async _processDataset(datasetId: string, job: Job) {
+    await job.log(`Starting processing of dataset ${datasetId}`)
+    // ...do work...
+    await job.log(`Completed processing`)
+  }
+}
+```
+
+The `Job` parameter is optional and always comes last. Job logs are accessible through BullMQ dashboards and can be retrieved programmatically.
+
+## Worker Configuration
+
+Worker configuration lives in `conf/initializers/workers.ts`. This is the simple-mode shape a typical app runs:
+
+```typescript
+import os from 'os'
+import { PsychicApp } from '@rvoh/psychic'
+import { PsychicAppWorkers } from '@rvoh/psychic-workers'
+import { Queue, Worker } from 'bullmq'
+import Redis from 'ioredis'
+import AppEnv from '../AppEnv.js'
+
+export default (psy: PsychicApp) => {
+  psy.plugin(async () => {
+    await PsychicAppWorkers.init(psy, initializeWorkers)
+  })
+}
+
+function initializeWorkers(workersApp: PsychicAppWorkers) {
+  workersApp.set('background', {
+    providers: { Queue, Worker },
+
+    defaultBullMQQueueOptions: {
+      defaultJobOptions: {
+        removeOnComplete: 1000,
+        removeOnFail: 20000,
+        attempts: 20,
+        backoff: { type: 'exponential', delay: 1000 },
+      },
+    },
+
+    defaultWorkstream: {
+      workerCount: os.cpus().length,
+      concurrency: 100,
+    },
+
+    namedWorkstreams: [
+      // Add named workstreams here as needed
+    ],
+
+    // Any instance can push onto the queue
+    defaultQueueConnection: new Redis({
+      host: AppEnv.string('BG_JOBS_REDIS_HOST', { optional: true }) || 'localhost',
+      port: AppEnv.integer('BG_JOBS_REDIS_PORT', { optional: true }) || 6379,
+    }),
+
+    // Only establish the worker connection on instances that process jobs
+    defaultWorkerConnection: !AppEnv.boolean('WORKER_SERVICE')
+      ? undefined
+      : new Redis({
+          host: AppEnv.string('BG_JOBS_REDIS_HOST', { optional: true }) || 'localhost',
+          port: AppEnv.integer('BG_JOBS_REDIS_PORT', { optional: true }) || 6379,
+          maxRetriesPerRequest: null,
+        }),
+  })
+
+  workersApp.on('workers:shutdown', () => {
+    // Add cleanup logic here
+  })
+}
+```
+
+`defaultBullMQWorkerOptions` — the worker-side counterpart to `defaultBullMQQueueOptions` — also belongs in this block, but in simple mode a `concurrency` or `connection` placed inside it is always overwritten by the workstream's own value.
+
+### Redis TLS
+
+Pass `tls: {}` (or a full `tls.ConnectionOptions` object) to the `ioredis` constructor in both `defaultQueueConnection` and `defaultWorkerConnection` to opt into TLS:
+
+```typescript
+new Redis({
+  host: AppEnv.string('BG_JOBS_REDIS_HOST'),
+  port: AppEnv.integer('BG_JOBS_REDIS_PORT'),
+  tls: {},
+})
+```
+
+See the ioredis README and Node's `tls.connect` docs for the option shape and the connection-trust defaults.
+
+### Retry and failure handling
+
+The boilerplate `defaultJobOptions` ships `attempts: 20` with exponential `backoff` and `removeOnFail: 20000`. BullMQ's `failed` set is the dead-letter queue; the boilerplate defaults are the canonical retry-and-DLQ pattern. See the BullMQ docs for `QueueEvents` and bespoke DLQ patterns beyond this default.
+
+### Process-level error semantics
+
+`background.work()` installs the worker process's `uncaughtException` and `unhandledRejection` handlers itself: each logs at error level, runs a bounded (~15s) graceful shutdown — `workers:shutdown` hooks → close DB connections → close workers → quit Redis — then `process.exit(1)` so an orchestrator restarts the process. `SIGTERM`/`SIGINT` go through the same bounded shutdown, exiting `0` on a clean stop and `1` on a failed or timed-out one. Consequences:
+
+- **Do not add your own `process.on('uncaughtException' | 'unhandledRejection')` in the worker entry point** — a second exiting handler races the framework's. This asymmetry with the web and ws entry points (which *do* install their own) is deliberate; don't "fix" it.
+- **`workers:shutdown` is the only lifecycle hook** — there is no `job:failed`/`workers:error` hook, by design (thin wrapper over BullMQ). Wire job-failure observability directly on the BullMQ objects after `background.work()` creates them: `background.workers.forEach(w => w.on('failed' | 'error' | 'stalled', …))` and `background.queues.forEach(q => q.on('error', …))`. To feed a fatal-error pipeline (Sentry/Datadog), read from logging or the orchestrator's restart signal — there is no fatal-error hook.
+- **A job whose class no longer resolves by global name fails loud** with a typed `NoClassForSpecifiedGlobalName` (exported from the package's errors module), landing in BullMQ's `failed` set — the designed signal to clean up a stale repeating scheduler after renaming or removing a backgroundable class. (A model-instance job whose record was legitimately deleted still completes quietly.)
+
+**Redis is a trust boundary equal to the app process.** Dispatch reads `{ globalName, method, args }` off the job payload and invokes the resolved class method with no allow-list — anyone who can write to the jobs Redis can run any registered method with full app privileges. Never route request input into a `globalName`/`method` position, and lock down Redis access accordingly.
+
+## Testing Workers
+
+### Default: Immediate Invocation
+
+By default, backgrounded methods execute immediately and synchronously in tests — no Redis or worker infrastructure needed:
+
+```typescript
+// This runs the method immediately in tests
+await IntercomSyncService.syncUser(user)
+```
+
+### Manual Mode
+
+For tests that need to verify queuing behavior or test timing, switch to manual invocation:
+
+```typescript
+import { WorkerTestUtils, PsychicAppWorkers } from '@rvoh/psychic-workers'
+
+beforeEach(async () => {
+  PsychicAppWorkers.getOrFail().set('testInvocation', 'manual')
+})
+
+afterEach(async () => {
+  PsychicAppWorkers.getOrFail().set('testInvocation', 'automatic')
+})
+
+it('processes the job', async () => {
+  await IntercomSyncService.syncUser(user)  // Queued only, not executed
+
+  await WorkerTestUtils.work()              // Process all queued jobs
+
+  // Assert on side effects after jobs have run
+})
+```
+
+### Test Utilities (for manual mode)
+
+```typescript
+import { WorkerTestUtils } from '@rvoh/psychic-workers'
+
+await WorkerTestUtils.clean()                          // Reset all queues between test runs
+await WorkerTestUtils.work()                           // Work off all queued jobs
+await WorkerTestUtils.workScheduled()                  // Run all delayed/scheduled jobs now
+await WorkerTestUtils.workScheduled({ for: User })     // Run delayed jobs for a specific class
+await WorkerTestUtils.workScheduled({ queue: 'cool' }) // Run delayed jobs for a specific queue
+```
+
+## Plugin Registration
+
+`conf/app.ts` calls `psy.load('initializers', …)`, which auto-loads `conf/initializers/workers.ts`; that file's default export registers the plugin via `psy.plugin()` (see [Worker Configuration](#worker-configuration)). `initializePsychicApp` needs no workers wiring.
