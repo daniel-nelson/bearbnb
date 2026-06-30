@@ -2,6 +2,7 @@ import Place from '@models/Place.js'
 import User from '@models/User.js'
 import { PsychicServer } from '@rvoh/psychic'
 import { OpenapiSpecRequest } from '@rvoh/psychic-spec-helpers'
+import createFavorite from '@spec/factories/FavoriteFactory.js'
 import createLocalizedText from '@spec/factories/LocalizedTextFactory.js'
 import createPlace from '@spec/factories/PlaceFactory.js'
 import createBathroom from '@spec/factories/Room/BathroomFactory.js'
@@ -44,6 +45,8 @@ describe('Visitor/V1/PlacesController', () => {
 
         expect(body.results).toEqual([
           {
+            favoriteId: null,
+            favorited: false,
             id: place.id,
             title: 'The Spanish title',
           },
@@ -60,8 +63,45 @@ describe('Visitor/V1/PlacesController', () => {
 
         expect(body.results).toEqual([
           {
+            favoriteId: null,
+            favorited: false,
             id: matchingPlace.id,
             title: 'The River title',
+          },
+        ])
+      })
+
+      it('returns this Guest favorite metadata', async () => {
+        const place = await createPlace()
+        await createLocalizedText({ localizable: place, locale: 'es-ES', title: 'The Spanish title' })
+        const guest = await user.associationQuery('guest').firstOrFail()
+        const favorite = await createFavorite({ guest, place })
+
+        const { body } = await subject(200)
+
+        expect(body.results).toEqual([
+          {
+            favoriteId: favorite.id,
+            favorited: true,
+            id: place.id,
+            title: 'The Spanish title',
+          },
+        ])
+      })
+
+      it('omits favorite metadata for another Guest', async () => {
+        const place = await createPlace()
+        await createLocalizedText({ localizable: place, locale: 'es-ES', title: 'The Spanish title' })
+        await createFavorite({ place })
+
+        const { body } = await subject(200)
+
+        expect(body.results).toEqual([
+          {
+            favoriteId: null,
+            favorited: false,
+            id: place.id,
+            title: 'The Spanish title',
           },
         ])
       })
@@ -86,6 +126,20 @@ describe('Visitor/V1/PlacesController', () => {
         const { body } = await subject(place, 200)
 
         expect(body).toEqual(expectedShowBody({ place, kitchen, bathroom, bedroom, den, livingRoom }))
+      })
+
+      it('returns this Guest favorite metadata', async () => {
+        const place = await createPlace({ style: 'cabin', sleeps: 3 })
+        await createLocalizedText({ localizable: place, locale: 'es-ES', title: 'The Spanish place title' })
+        const { kitchen, bathroom, bedroom, den, livingRoom } = await createRoomsForPlace(place)
+        const guest = await user.associationQuery('guest').firstOrFail()
+        const favorite = await createFavorite({ guest, place })
+
+        const { body } = await subject(place, 200)
+
+        expect(body).toEqual(
+          expectedShowBody({ place, kitchen, bathroom, bedroom, den, livingRoom, favoriteId: favorite.id }),
+        )
       })
     })
   })
@@ -119,6 +173,8 @@ describe('Visitor/V1/PlacesController', () => {
 
         expect(body.results).toEqual([
           {
+            favoriteId: null,
+            favorited: false,
             id: place.id,
             title: 'The Spanish title',
           },
@@ -135,6 +191,8 @@ describe('Visitor/V1/PlacesController', () => {
 
         expect(body.results).toEqual([
           {
+            favoriteId: null,
+            favorited: false,
             id: matchingPlace.id,
             title: 'The River title',
           },
@@ -200,8 +258,11 @@ function expectedShowBody({
   bedroom,
   den,
   livingRoom,
-}: Awaited<ReturnType<typeof createRoomsForPlace>> & { place: Place }) {
+  favoriteId = null,
+}: Awaited<ReturnType<typeof createRoomsForPlace>> & { favoriteId?: string | null; place: Place }) {
   return {
+    favoriteId,
+    favorited: !!favoriteId,
     id: place.id,
     sleeps: 3,
     title: 'The Spanish place title',

@@ -17,6 +17,12 @@ export const PlaceSummaryForVisitorsSerializer = (place: Place) =>
   DreamSerializer(Place, place)
     .attribute('id')
     .delegatedAttribute('currentLocalizedText', 'title', { openapi: 'string' })
+    .delegatedAttribute('currentFavorite', 'id', {
+      as: 'favoriteId',
+      openapi: 'string',
+      optional: true,
+    })
+    .customAttribute('favorited', () => !!place.currentFavorite, { openapi: 'boolean' })
 
 export const PlaceForVisitorsSerializer = (place: Place, passthrough: { locale: LocalesEnum }) =>
   PlaceSummaryForVisitorsSerializer(place)

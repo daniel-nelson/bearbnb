@@ -1401,6 +1401,8 @@
         "type": "object",
         "required": [
           "displayStyle",
+          "favorited",
+          "favoriteId",
           "id",
           "rooms",
           "sleeps",
@@ -1410,6 +1412,15 @@
         "properties": {
           "displayStyle": {
             "type": "string"
+          },
+          "favorited": {
+            "type": "boolean"
+          },
+          "favoriteId": {
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "id": {
             "type": "string"
@@ -1474,10 +1485,21 @@
       "PlaceSummaryForVisitors": {
         "type": "object",
         "required": [
+          "favorited",
+          "favoriteId",
           "id",
           "title"
         ],
         "properties": {
+          "favorited": {
+            "type": "boolean"
+          },
+          "favoriteId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "id": {
             "type": "string"
           },
