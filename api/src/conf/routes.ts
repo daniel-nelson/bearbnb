@@ -2,8 +2,9 @@ import adminRoutes from '@conf/routes.admin.js'
 import internalRoutes from '@conf/routes.internal.js'
 import StatusController from '@controllers/StatusController.js'
 import VisitorMeController from '@controllers/Visitor/V1/MeController.js'
-import VisitorSignUpController from '@controllers/Visitor/V1/SignUpController.js'
+import VisitorPlacesReviewsController from '@controllers/Visitor/V1/Places/ReviewsController.js'
 import VisitorPlacesController from '@controllers/Visitor/V1/PlacesController.js'
+import VisitorSignUpController from '@controllers/Visitor/V1/SignUpController.js'
 import { PsychicRouter } from '@rvoh/psychic'
 
 export default function routes(r: PsychicRouter) {
@@ -11,6 +12,8 @@ export default function routes(r: PsychicRouter) {
 
   r.namespace('v1', r => {
     r.namespace('guest', r => {
+      r.resources('reviews', { only: ['index', 'create', 'update', 'destroy'] })
+
       r.resources('bookings', { only: ['index', 'create', 'update', 'destroy'] })
 
       r.resources('favorites', { only: ['index', 'create', 'destroy'] })
@@ -21,6 +24,7 @@ export default function routes(r: PsychicRouter) {
 
     r.namespace('visitor', r => {
       r.get('places', VisitorPlacesController, 'index')
+      r.get('places/:placeId/reviews', VisitorPlacesReviewsController, 'index')
       r.get('places/:id/availability', VisitorPlacesController, 'availability')
       r.get('places/:id', VisitorPlacesController, 'show')
     })

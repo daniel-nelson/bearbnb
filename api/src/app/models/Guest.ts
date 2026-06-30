@@ -4,6 +4,7 @@ import ApplicationModel from '@models/ApplicationModel.js'
 import Booking from '@models/Booking.js'
 import Favorite from '@models/Favorite.js'
 import Place from '@models/Place.js'
+import Review from '@models/Review.js'
 import User from '@models/User.js'
 
 const deco = new Decorators<typeof Guest>()
@@ -38,4 +39,7 @@ export default class Guest extends ApplicationModel {
 
   @deco.HasMany('Booking', { dependent: 'destroy' })
   public bookings: Booking[]
+
+  @deco.HasMany('Review', { through: 'bookings', source: 'review' })
+  public reviews: Review[]
 }
