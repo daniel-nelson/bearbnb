@@ -8,6 +8,7 @@ export default class Den extends Room {
     return {
       default: 'Room/DenSerializer',
       summary: 'Room/DenSummarySerializer',
+      forVisitors: 'Room/DenForVisitorsSerializer',
     }
   }
 
