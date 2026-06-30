@@ -10,6 +10,10 @@ export default function routes(r: PsychicRouter) {
   r.get('status', StatusController, 'show')
 
   r.namespace('v1', r => {
+    r.namespace('guest', r => {
+      r.resources('favorites', { only: ['index', 'create', 'destroy'] })
+    })
+
     r.get('me', VisitorMeController, 'show')
     r.post('sign-up', VisitorSignUpController, 'create')
 
