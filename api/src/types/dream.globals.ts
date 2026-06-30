@@ -89,5 +89,6 @@ export const globalTypeConfig = {
     'RoomForVisitorsSerializer',
     'RoomSerializer',
     'RoomSummarySerializer',
+    'StatusSerializer',
   ],
 } as const
