@@ -2,7 +2,7 @@
 
 import { client } from './client.gen.js';
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client/index.js';
-import type { DeleteV1GuestFavoritesByIdData, DeleteV1GuestFavoritesByIdErrors, DeleteV1GuestFavoritesByIdResponses, DeleteV1HostLocalizedTextsByIdData, DeleteV1HostLocalizedTextsByIdErrors, DeleteV1HostLocalizedTextsByIdResponses, DeleteV1HostPlacesByIdData, DeleteV1HostPlacesByIdErrors, DeleteV1HostPlacesByIdResponses, DeleteV1HostPlacesByPlaceIdRoomsByIdData, DeleteV1HostPlacesByPlaceIdRoomsByIdErrors, DeleteV1HostPlacesByPlaceIdRoomsByIdResponses, GetStatusData, GetStatusErrors, GetStatusResponses, GetV1GuestFavoritesData, GetV1GuestFavoritesErrors, GetV1GuestFavoritesResponses, GetV1HostPlacesByIdData, GetV1HostPlacesByIdErrors, GetV1HostPlacesByIdResponses, GetV1HostPlacesByPlaceIdRoomsByIdData, GetV1HostPlacesByPlaceIdRoomsByIdErrors, GetV1HostPlacesByPlaceIdRoomsByIdResponses, GetV1HostPlacesByPlaceIdRoomsData, GetV1HostPlacesByPlaceIdRoomsErrors, GetV1HostPlacesByPlaceIdRoomsResponses, GetV1HostPlacesData, GetV1HostPlacesErrors, GetV1HostPlacesResponses, GetV1MeData, GetV1MeErrors, GetV1MeResponses, GetV1VisitorPlacesByIdData, GetV1VisitorPlacesByIdErrors, GetV1VisitorPlacesByIdResponses, GetV1VisitorPlacesData, GetV1VisitorPlacesErrors, GetV1VisitorPlacesResponses, PatchV1HostLocalizedTextsByIdData, PatchV1HostLocalizedTextsByIdErrors, PatchV1HostLocalizedTextsByIdResponses, PatchV1HostPlacesByIdData, PatchV1HostPlacesByIdErrors, PatchV1HostPlacesByIdResponses, PatchV1HostPlacesByPlaceIdRoomsByIdData, PatchV1HostPlacesByPlaceIdRoomsByIdErrors, PatchV1HostPlacesByPlaceIdRoomsByIdResponses, PostV1GuestFavoritesData, PostV1GuestFavoritesErrors, PostV1GuestFavoritesResponses, PostV1HostPlacesByPlaceIdRoomsData, PostV1HostPlacesByPlaceIdRoomsErrors, PostV1HostPlacesByPlaceIdRoomsResponses, PostV1HostPlacesData, PostV1HostPlacesErrors, PostV1HostPlacesResponses, PostV1SignUpData, PostV1SignUpErrors, PostV1SignUpResponses } from './types.gen.js';
+import type { DeleteV1GuestBookingsByIdData, DeleteV1GuestBookingsByIdErrors, DeleteV1GuestBookingsByIdResponses, DeleteV1GuestFavoritesByIdData, DeleteV1GuestFavoritesByIdErrors, DeleteV1GuestFavoritesByIdResponses, DeleteV1HostLocalizedTextsByIdData, DeleteV1HostLocalizedTextsByIdErrors, DeleteV1HostLocalizedTextsByIdResponses, DeleteV1HostPlacesByIdData, DeleteV1HostPlacesByIdErrors, DeleteV1HostPlacesByIdResponses, DeleteV1HostPlacesByPlaceIdRoomsByIdData, DeleteV1HostPlacesByPlaceIdRoomsByIdErrors, DeleteV1HostPlacesByPlaceIdRoomsByIdResponses, GetStatusData, GetStatusErrors, GetStatusResponses, GetV1GuestBookingsData, GetV1GuestBookingsErrors, GetV1GuestBookingsResponses, GetV1GuestFavoritesData, GetV1GuestFavoritesErrors, GetV1GuestFavoritesResponses, GetV1HostPlacesByIdData, GetV1HostPlacesByIdErrors, GetV1HostPlacesByIdResponses, GetV1HostPlacesByPlaceIdRoomsByIdData, GetV1HostPlacesByPlaceIdRoomsByIdErrors, GetV1HostPlacesByPlaceIdRoomsByIdResponses, GetV1HostPlacesByPlaceIdRoomsData, GetV1HostPlacesByPlaceIdRoomsErrors, GetV1HostPlacesByPlaceIdRoomsResponses, GetV1HostPlacesData, GetV1HostPlacesErrors, GetV1HostPlacesResponses, GetV1MeData, GetV1MeErrors, GetV1MeResponses, GetV1VisitorPlacesByIdData, GetV1VisitorPlacesByIdErrors, GetV1VisitorPlacesByIdResponses, GetV1VisitorPlacesData, GetV1VisitorPlacesErrors, GetV1VisitorPlacesResponses, PatchV1GuestBookingsByIdData, PatchV1GuestBookingsByIdErrors, PatchV1GuestBookingsByIdResponses, PatchV1HostLocalizedTextsByIdData, PatchV1HostLocalizedTextsByIdErrors, PatchV1HostLocalizedTextsByIdResponses, PatchV1HostPlacesByIdData, PatchV1HostPlacesByIdErrors, PatchV1HostPlacesByIdResponses, PatchV1HostPlacesByPlaceIdRoomsByIdData, PatchV1HostPlacesByPlaceIdRoomsByIdErrors, PatchV1HostPlacesByPlaceIdRoomsByIdResponses, PostV1GuestBookingsData, PostV1GuestBookingsErrors, PostV1GuestBookingsResponses, PostV1GuestFavoritesData, PostV1GuestFavoritesErrors, PostV1GuestFavoritesResponses, PostV1HostPlacesByPlaceIdRoomsData, PostV1HostPlacesByPlaceIdRoomsErrors, PostV1HostPlacesByPlaceIdRoomsResponses, PostV1HostPlacesData, PostV1HostPlacesErrors, PostV1HostPlacesResponses, PostV1SignUpData, PostV1SignUpErrors, PostV1SignUpResponses } from './types.gen.js';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -25,6 +25,50 @@ export const getStatus = <ThrowOnError extends boolean = false>(options?: Option
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/status',
     ...options
+});
+
+/**
+ * Paginated index of Bookings
+ */
+export const getV1GuestBookings = <ThrowOnError extends boolean = false>(options?: Options<GetV1GuestBookingsData, ThrowOnError>): RequestResult<GetV1GuestBookingsResponses, GetV1GuestBookingsErrors, ThrowOnError> => (options?.client ?? client).get<GetV1GuestBookingsResponses, GetV1GuestBookingsErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/guest/bookings',
+    ...options
+});
+
+/**
+ * Create a Booking
+ */
+export const postV1GuestBookings = <ThrowOnError extends boolean = false>(options?: Options<PostV1GuestBookingsData, ThrowOnError>): RequestResult<PostV1GuestBookingsResponses, PostV1GuestBookingsErrors, ThrowOnError> => (options?.client ?? client).post<PostV1GuestBookingsResponses, PostV1GuestBookingsErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/guest/bookings',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers
+    }
+});
+
+/**
+ * Destroy a Booking
+ */
+export const deleteV1GuestBookingsById = <ThrowOnError extends boolean = false>(options: Options<DeleteV1GuestBookingsByIdData, ThrowOnError>): RequestResult<DeleteV1GuestBookingsByIdResponses, DeleteV1GuestBookingsByIdErrors, ThrowOnError> => (options.client ?? client).delete<DeleteV1GuestBookingsByIdResponses, DeleteV1GuestBookingsByIdErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/guest/bookings/{id}',
+    ...options
+});
+
+/**
+ * Update a Booking
+ */
+export const patchV1GuestBookingsById = <ThrowOnError extends boolean = false>(options: Options<PatchV1GuestBookingsByIdData, ThrowOnError>): RequestResult<PatchV1GuestBookingsByIdResponses, PatchV1GuestBookingsByIdErrors, ThrowOnError> => (options.client ?? client).patch<PatchV1GuestBookingsByIdResponses, PatchV1GuestBookingsByIdErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/guest/bookings/{id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
 });
 
 /**
