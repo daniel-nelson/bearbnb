@@ -75,6 +75,9 @@ jobs:
       # to allow requests from the Vite dev servers. Must match CLIENT_APP_HOST,
       # ADMIN_APP_HOST, and INTERNAL_APP_HOST in .env.test.
       CORS_HOSTS: '["http://localhost:3050", "http://localhost:3051", "http://localhost:3052"]'
+      CLIENT_APP_HOST: "http://localhost:3050"
+      ADMIN_APP_HOST: "http://localhost:3051"
+      INTERNAL_APP_HOST: "http://localhost:3052"
     defaults:
       run:
         working-directory: ./api
@@ -144,6 +147,9 @@ jobs:
       # to allow requests from the Vite dev servers. Must match CLIENT_APP_HOST,
       # ADMIN_APP_HOST, and INTERNAL_APP_HOST in .env.test.
       CORS_HOSTS: '["http://localhost:3050", "http://localhost:3051", "http://localhost:3052"]'
+      CLIENT_APP_HOST: "http://localhost:3050"
+      ADMIN_APP_HOST: "http://localhost:3051"
+      INTERNAL_APP_HOST: "http://localhost:3052"
     defaults:
       run:
         working-directory: ./api
@@ -222,6 +228,9 @@ jobs:
       # to allow requests from the Vite dev servers. Must match CLIENT_APP_HOST,
       # ADMIN_APP_HOST, and INTERNAL_APP_HOST in .env.test.
       CORS_HOSTS: '["http://localhost:3050", "http://localhost:3051", "http://localhost:3052"]'
+      CLIENT_APP_HOST: "http://localhost:3050"
+      ADMIN_APP_HOST: "http://localhost:3051"
+      INTERNAL_APP_HOST: "http://localhost:3052"
     defaults:
       run:
         working-directory: ./api
