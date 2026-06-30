@@ -43,9 +43,22 @@ pnpm psy db:migrate
 pnpm uspec
 ```
 
+## Running the app locally
+
+Create `api/.env`, then:
+
+```bash
+cd api
+NODE_ENV=development pnpm psy db:create
+NODE_ENV=development pnpm psy db:migrate
+pnpm dev
+```
+
+`pnpm dev` starts the backend, worker, websocket server, client, and Firebase Auth emulator together. Stop everything with `Ctrl-C`.
+
 ## State of the repo
 
-To see feature specs and end user front end application, check out the `frontend` branch.
+The guest client app is a working front end: browse places, sign in with Firebase email/password at `/auth`, then book stays, review, and favorite places. The admin and internal apps remain the default create-psychic scaffolds. End-to-end feature specs cover the guest flows and self-manage the Firebase Auth emulator (`firebase emulators:exec`) when you run `pnpm fspec`.
 
 ## Entity Relationship Diagram (ERD) of the BearBnB model domain
 
