@@ -213,6 +213,8 @@ export interface Users {
   encryptedPhone: string | null
   firebaseUid: string | null
   id: Generated<string>
+  tosAcceptedAt: Timestamp | null
+  tosVersion: string | null
   updatedAt: Timestamp
 }
 

@@ -97,12 +97,12 @@ export default class FirebaseAuth {
   }
 
   private static firebasePayload(payload: { uid: string; email?: string; email_verified?: boolean }) {
-    if (!payload.email || !payload.email_verified) return null
+    if (!payload.email) return null
 
     return {
       uid: payload.uid,
       email: payload.email,
-      emailVerified: payload.email_verified,
+      emailVerified: payload.email_verified ?? false,
     }
   }
 
@@ -126,7 +126,7 @@ export default class FirebaseAuth {
     return (
       typeof firebasePayload.uid === 'string' &&
       typeof firebasePayload.email === 'string' &&
-      firebasePayload.emailVerified === true
+      typeof firebasePayload.emailVerified === 'boolean'
     )
   }
 
