@@ -20,3 +20,9 @@ api/.yarnrc.yml
 
 pnpm-lock.yaml
 package-lock.json
+
+# only adding so that diffs are clearer for demo app
+api/src/app/serializers/**/*.ts
+api/src/db/migrations/*.ts
+api/spec/unit/controllers/V1/Host/PlacesController.spec.ts
+api/spec/unit/controllers/V1/Host/Places/RoomsController.spec.ts
