@@ -2,7 +2,7 @@
 
 import { client } from './client.gen.js';
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client/index.js';
-import type { DeleteV1HostLocalizedTextsByIdData, DeleteV1HostLocalizedTextsByIdErrors, DeleteV1HostLocalizedTextsByIdResponses, DeleteV1HostPlacesByIdData, DeleteV1HostPlacesByIdErrors, DeleteV1HostPlacesByIdResponses, DeleteV1HostPlacesByPlaceIdRoomsByIdData, DeleteV1HostPlacesByPlaceIdRoomsByIdErrors, DeleteV1HostPlacesByPlaceIdRoomsByIdResponses, GetStatusData, GetStatusErrors, GetStatusResponses, GetV1HostPlacesByIdData, GetV1HostPlacesByIdErrors, GetV1HostPlacesByIdResponses, GetV1HostPlacesByPlaceIdRoomsByIdData, GetV1HostPlacesByPlaceIdRoomsByIdErrors, GetV1HostPlacesByPlaceIdRoomsByIdResponses, GetV1HostPlacesByPlaceIdRoomsData, GetV1HostPlacesByPlaceIdRoomsErrors, GetV1HostPlacesByPlaceIdRoomsResponses, GetV1HostPlacesData, GetV1HostPlacesErrors, GetV1HostPlacesResponses, GetV1VisitorPlacesByIdData, GetV1VisitorPlacesByIdErrors, GetV1VisitorPlacesByIdResponses, GetV1VisitorPlacesData, GetV1VisitorPlacesErrors, GetV1VisitorPlacesResponses, PatchV1HostLocalizedTextsByIdData, PatchV1HostLocalizedTextsByIdErrors, PatchV1HostLocalizedTextsByIdResponses, PatchV1HostPlacesByIdData, PatchV1HostPlacesByIdErrors, PatchV1HostPlacesByIdResponses, PatchV1HostPlacesByPlaceIdRoomsByIdData, PatchV1HostPlacesByPlaceIdRoomsByIdErrors, PatchV1HostPlacesByPlaceIdRoomsByIdResponses, PostV1HostPlacesByPlaceIdRoomsData, PostV1HostPlacesByPlaceIdRoomsErrors, PostV1HostPlacesByPlaceIdRoomsResponses, PostV1HostPlacesData, PostV1HostPlacesErrors, PostV1HostPlacesResponses } from './types.gen.js';
+import type { DeleteV1HostLocalizedTextsByIdData, DeleteV1HostLocalizedTextsByIdErrors, DeleteV1HostLocalizedTextsByIdResponses, DeleteV1HostPlacesByIdData, DeleteV1HostPlacesByIdErrors, DeleteV1HostPlacesByIdResponses, DeleteV1HostPlacesByPlaceIdRoomsByIdData, DeleteV1HostPlacesByPlaceIdRoomsByIdErrors, DeleteV1HostPlacesByPlaceIdRoomsByIdResponses, GetStatusData, GetStatusErrors, GetStatusResponses, GetV1HostPlacesByIdData, GetV1HostPlacesByIdErrors, GetV1HostPlacesByIdResponses, GetV1HostPlacesByPlaceIdRoomsByIdData, GetV1HostPlacesByPlaceIdRoomsByIdErrors, GetV1HostPlacesByPlaceIdRoomsByIdResponses, GetV1HostPlacesByPlaceIdRoomsData, GetV1HostPlacesByPlaceIdRoomsErrors, GetV1HostPlacesByPlaceIdRoomsResponses, GetV1HostPlacesData, GetV1HostPlacesErrors, GetV1HostPlacesResponses, GetV1MeData, GetV1MeErrors, GetV1MeResponses, GetV1VisitorPlacesByIdData, GetV1VisitorPlacesByIdErrors, GetV1VisitorPlacesByIdResponses, GetV1VisitorPlacesData, GetV1VisitorPlacesErrors, GetV1VisitorPlacesResponses, PatchV1HostLocalizedTextsByIdData, PatchV1HostLocalizedTextsByIdErrors, PatchV1HostLocalizedTextsByIdResponses, PatchV1HostPlacesByIdData, PatchV1HostPlacesByIdErrors, PatchV1HostPlacesByIdResponses, PatchV1HostPlacesByPlaceIdRoomsByIdData, PatchV1HostPlacesByPlaceIdRoomsByIdErrors, PatchV1HostPlacesByPlaceIdRoomsByIdResponses, PostV1HostPlacesByPlaceIdRoomsData, PostV1HostPlacesByPlaceIdRoomsErrors, PostV1HostPlacesByPlaceIdRoomsResponses, PostV1HostPlacesData, PostV1HostPlacesErrors, PostV1HostPlacesResponses } from './types.gen.js';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -117,6 +117,11 @@ export const patchV1HostPlacesByPlaceIdRoomsById = <ThrowOnError extends boolean
         ...options.headers
     }
 });
+
+/**
+ * Current Firebase-authenticated BearBnB user
+ */
+export const getV1Me = <ThrowOnError extends boolean = false>(options?: Options<GetV1MeData, ThrowOnError>): RequestResult<GetV1MeResponses, GetV1MeErrors, ThrowOnError> => (options?.client ?? client).get<GetV1MeResponses, GetV1MeErrors, ThrowOnError>({ url: '/v1/me', ...options });
 
 /**
  * Place index endpoint for Visitors
