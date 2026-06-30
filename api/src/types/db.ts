@@ -73,6 +73,19 @@ export type Generated<T> =
     ? ColumnType<S, I | undefined, U>
     : ColumnType<T, T | undefined, T>
 
+export type PlaceStylesEnum =
+  'cabin' | 'cave' | 'cottage' | 'dump' | 'lean_to' | 'tent' | 'treehouse'
+
+export const PlaceStylesEnumValues = [
+  'cabin',
+  'cave',
+  'cottage',
+  'dump',
+  'lean_to',
+  'tent',
+  'treehouse',
+] as const
+
 export type Timestamp = ColumnType<DateTime | CalendarDate>
 
 export interface Guests {
@@ -91,6 +104,16 @@ export interface Hosts {
   userId: string
 }
 
+export interface Places {
+  createdAt: Timestamp
+  deletedAt: Timestamp | null
+  id: Generated<string>
+  name: string
+  sleeps: number
+  style: PlaceStylesEnum
+  updatedAt: Timestamp
+}
+
 export interface Users {
   createdAt: Timestamp
   deletedAt: Timestamp | null
@@ -103,11 +126,13 @@ export interface Users {
 export interface DB {
   guests: Guests
   hosts: Hosts
+  places: Places
   users: Users
 }
 
 export class DBClass {
   guests: Guests
   hosts: Hosts
+  places: Places
   users: Users
 }
