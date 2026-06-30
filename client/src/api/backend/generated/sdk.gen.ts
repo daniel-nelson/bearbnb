@@ -2,7 +2,7 @@
 
 import { client } from './client.gen.js';
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client/index.js';
-import type { DeleteV1HostLocalizedTextsByIdData, DeleteV1HostLocalizedTextsByIdErrors, DeleteV1HostLocalizedTextsByIdResponses, DeleteV1HostPlacesByIdData, DeleteV1HostPlacesByIdErrors, DeleteV1HostPlacesByIdResponses, DeleteV1HostPlacesByPlaceIdRoomsByIdData, DeleteV1HostPlacesByPlaceIdRoomsByIdErrors, DeleteV1HostPlacesByPlaceIdRoomsByIdResponses, GetStatusData, GetStatusErrors, GetStatusResponses, GetV1HostPlacesByIdData, GetV1HostPlacesByIdErrors, GetV1HostPlacesByIdResponses, GetV1HostPlacesByPlaceIdRoomsByIdData, GetV1HostPlacesByPlaceIdRoomsByIdErrors, GetV1HostPlacesByPlaceIdRoomsByIdResponses, GetV1HostPlacesByPlaceIdRoomsData, GetV1HostPlacesByPlaceIdRoomsErrors, GetV1HostPlacesByPlaceIdRoomsResponses, GetV1HostPlacesData, GetV1HostPlacesErrors, GetV1HostPlacesResponses, GetV1VisitorPlacesByIdData, GetV1VisitorPlacesByIdErrors, GetV1VisitorPlacesByIdResponses, GetV1VisitorPlacesData, GetV1VisitorPlacesErrors, GetV1VisitorPlacesResponses, PatchV1HostLocalizedTextsByIdData, PatchV1HostLocalizedTextsByIdErrors, PatchV1HostLocalizedTextsByIdResponses, PatchV1HostPlacesByIdData, PatchV1HostPlacesByIdErrors, PatchV1HostPlacesByIdResponses, PatchV1HostPlacesByPlaceIdRoomsByIdData, PatchV1HostPlacesByPlaceIdRoomsByIdErrors, PatchV1HostPlacesByPlaceIdRoomsByIdResponses, PostV1HostPlacesByPlaceIdRoomsData, PostV1HostPlacesByPlaceIdRoomsErrors, PostV1HostPlacesByPlaceIdRoomsResponses, PostV1HostPlacesData, PostV1HostPlacesErrors, PostV1HostPlacesResponses } from './types.gen.js';
+import type { DeleteV1HostLocalizedTextsByIdData, DeleteV1HostLocalizedTextsByIdErrors, DeleteV1HostLocalizedTextsByIdResponses, DeleteV1HostPlacesByIdData, DeleteV1HostPlacesByIdErrors, DeleteV1HostPlacesByIdResponses, DeleteV1HostPlacesByPlaceIdRoomsByIdData, DeleteV1HostPlacesByPlaceIdRoomsByIdErrors, DeleteV1HostPlacesByPlaceIdRoomsByIdResponses, GetStatusData, GetStatusErrors, GetStatusResponses, GetV1HostPlacesByIdData, GetV1HostPlacesByIdErrors, GetV1HostPlacesByIdResponses, GetV1HostPlacesByPlaceIdRoomsByIdData, GetV1HostPlacesByPlaceIdRoomsByIdErrors, GetV1HostPlacesByPlaceIdRoomsByIdResponses, GetV1HostPlacesByPlaceIdRoomsData, GetV1HostPlacesByPlaceIdRoomsErrors, GetV1HostPlacesByPlaceIdRoomsResponses, GetV1HostPlacesData, GetV1HostPlacesErrors, GetV1HostPlacesResponses, GetV1MeData, GetV1MeErrors, GetV1MeResponses, GetV1VisitorPlacesByIdData, GetV1VisitorPlacesByIdErrors, GetV1VisitorPlacesByIdResponses, GetV1VisitorPlacesData, GetV1VisitorPlacesErrors, GetV1VisitorPlacesResponses, PatchV1HostLocalizedTextsByIdData, PatchV1HostLocalizedTextsByIdErrors, PatchV1HostLocalizedTextsByIdResponses, PatchV1HostPlacesByIdData, PatchV1HostPlacesByIdErrors, PatchV1HostPlacesByIdResponses, PatchV1HostPlacesByPlaceIdRoomsByIdData, PatchV1HostPlacesByPlaceIdRoomsByIdErrors, PatchV1HostPlacesByPlaceIdRoomsByIdResponses, PostV1HostPlacesByPlaceIdRoomsData, PostV1HostPlacesByPlaceIdRoomsErrors, PostV1HostPlacesByPlaceIdRoomsResponses, PostV1HostPlacesData, PostV1HostPlacesErrors, PostV1HostPlacesResponses, PostV1SignUpData, PostV1SignUpErrors, PostV1SignUpResponses } from './types.gen.js';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -21,17 +21,26 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
 /**
  * API status endpoint for frontend connectivity checks
  */
-export const getStatus = <ThrowOnError extends boolean = false>(options?: Options<GetStatusData, ThrowOnError>): RequestResult<GetStatusResponses, GetStatusErrors, ThrowOnError> => (options?.client ?? client).get<GetStatusResponses, GetStatusErrors, ThrowOnError>({ url: '/status', ...options });
+export const getStatus = <ThrowOnError extends boolean = false>(options?: Options<GetStatusData, ThrowOnError>): RequestResult<GetStatusResponses, GetStatusErrors, ThrowOnError> => (options?.client ?? client).get<GetStatusResponses, GetStatusErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/status',
+    ...options
+});
 
 /**
  * Destroy a LocalizedText
  */
-export const deleteV1HostLocalizedTextsById = <ThrowOnError extends boolean = false>(options: Options<DeleteV1HostLocalizedTextsByIdData, ThrowOnError>): RequestResult<DeleteV1HostLocalizedTextsByIdResponses, DeleteV1HostLocalizedTextsByIdErrors, ThrowOnError> => (options.client ?? client).delete<DeleteV1HostLocalizedTextsByIdResponses, DeleteV1HostLocalizedTextsByIdErrors, ThrowOnError>({ url: '/v1/host/localized-texts/{id}', ...options });
+export const deleteV1HostLocalizedTextsById = <ThrowOnError extends boolean = false>(options: Options<DeleteV1HostLocalizedTextsByIdData, ThrowOnError>): RequestResult<DeleteV1HostLocalizedTextsByIdResponses, DeleteV1HostLocalizedTextsByIdErrors, ThrowOnError> => (options.client ?? client).delete<DeleteV1HostLocalizedTextsByIdResponses, DeleteV1HostLocalizedTextsByIdErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/host/localized-texts/{id}',
+    ...options
+});
 
 /**
  * Update a LocalizedText
  */
 export const patchV1HostLocalizedTextsById = <ThrowOnError extends boolean = false>(options: Options<PatchV1HostLocalizedTextsByIdData, ThrowOnError>): RequestResult<PatchV1HostLocalizedTextsByIdResponses, PatchV1HostLocalizedTextsByIdErrors, ThrowOnError> => (options.client ?? client).patch<PatchV1HostLocalizedTextsByIdResponses, PatchV1HostLocalizedTextsByIdErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/v1/host/localized-texts/{id}',
     ...options,
     headers: {
@@ -43,12 +52,17 @@ export const patchV1HostLocalizedTextsById = <ThrowOnError extends boolean = fal
 /**
  * Paginated index of Places
  */
-export const getV1HostPlaces = <ThrowOnError extends boolean = false>(options?: Options<GetV1HostPlacesData, ThrowOnError>): RequestResult<GetV1HostPlacesResponses, GetV1HostPlacesErrors, ThrowOnError> => (options?.client ?? client).get<GetV1HostPlacesResponses, GetV1HostPlacesErrors, ThrowOnError>({ url: '/v1/host/places', ...options });
+export const getV1HostPlaces = <ThrowOnError extends boolean = false>(options?: Options<GetV1HostPlacesData, ThrowOnError>): RequestResult<GetV1HostPlacesResponses, GetV1HostPlacesErrors, ThrowOnError> => (options?.client ?? client).get<GetV1HostPlacesResponses, GetV1HostPlacesErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/host/places',
+    ...options
+});
 
 /**
  * Create a Place
  */
 export const postV1HostPlaces = <ThrowOnError extends boolean = false>(options?: Options<PostV1HostPlacesData, ThrowOnError>): RequestResult<PostV1HostPlacesResponses, PostV1HostPlacesErrors, ThrowOnError> => (options?.client ?? client).post<PostV1HostPlacesResponses, PostV1HostPlacesErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/v1/host/places',
     ...options,
     headers: {
@@ -60,17 +74,26 @@ export const postV1HostPlaces = <ThrowOnError extends boolean = false>(options?:
 /**
  * Destroy a Place
  */
-export const deleteV1HostPlacesById = <ThrowOnError extends boolean = false>(options: Options<DeleteV1HostPlacesByIdData, ThrowOnError>): RequestResult<DeleteV1HostPlacesByIdResponses, DeleteV1HostPlacesByIdErrors, ThrowOnError> => (options.client ?? client).delete<DeleteV1HostPlacesByIdResponses, DeleteV1HostPlacesByIdErrors, ThrowOnError>({ url: '/v1/host/places/{id}', ...options });
+export const deleteV1HostPlacesById = <ThrowOnError extends boolean = false>(options: Options<DeleteV1HostPlacesByIdData, ThrowOnError>): RequestResult<DeleteV1HostPlacesByIdResponses, DeleteV1HostPlacesByIdErrors, ThrowOnError> => (options.client ?? client).delete<DeleteV1HostPlacesByIdResponses, DeleteV1HostPlacesByIdErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/host/places/{id}',
+    ...options
+});
 
 /**
  * Fetch a Place
  */
-export const getV1HostPlacesById = <ThrowOnError extends boolean = false>(options: Options<GetV1HostPlacesByIdData, ThrowOnError>): RequestResult<GetV1HostPlacesByIdResponses, GetV1HostPlacesByIdErrors, ThrowOnError> => (options.client ?? client).get<GetV1HostPlacesByIdResponses, GetV1HostPlacesByIdErrors, ThrowOnError>({ url: '/v1/host/places/{id}', ...options });
+export const getV1HostPlacesById = <ThrowOnError extends boolean = false>(options: Options<GetV1HostPlacesByIdData, ThrowOnError>): RequestResult<GetV1HostPlacesByIdResponses, GetV1HostPlacesByIdErrors, ThrowOnError> => (options.client ?? client).get<GetV1HostPlacesByIdResponses, GetV1HostPlacesByIdErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/host/places/{id}',
+    ...options
+});
 
 /**
  * Update a Place
  */
 export const patchV1HostPlacesById = <ThrowOnError extends boolean = false>(options: Options<PatchV1HostPlacesByIdData, ThrowOnError>): RequestResult<PatchV1HostPlacesByIdResponses, PatchV1HostPlacesByIdErrors, ThrowOnError> => (options.client ?? client).patch<PatchV1HostPlacesByIdResponses, PatchV1HostPlacesByIdErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/v1/host/places/{id}',
     ...options,
     headers: {
@@ -82,12 +105,17 @@ export const patchV1HostPlacesById = <ThrowOnError extends boolean = false>(opti
 /**
  * Paginated index of Rooms
  */
-export const getV1HostPlacesByPlaceIdRooms = <ThrowOnError extends boolean = false>(options: Options<GetV1HostPlacesByPlaceIdRoomsData, ThrowOnError>): RequestResult<GetV1HostPlacesByPlaceIdRoomsResponses, GetV1HostPlacesByPlaceIdRoomsErrors, ThrowOnError> => (options.client ?? client).get<GetV1HostPlacesByPlaceIdRoomsResponses, GetV1HostPlacesByPlaceIdRoomsErrors, ThrowOnError>({ url: '/v1/host/places/{placeId}/rooms', ...options });
+export const getV1HostPlacesByPlaceIdRooms = <ThrowOnError extends boolean = false>(options: Options<GetV1HostPlacesByPlaceIdRoomsData, ThrowOnError>): RequestResult<GetV1HostPlacesByPlaceIdRoomsResponses, GetV1HostPlacesByPlaceIdRoomsErrors, ThrowOnError> => (options.client ?? client).get<GetV1HostPlacesByPlaceIdRoomsResponses, GetV1HostPlacesByPlaceIdRoomsErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/host/places/{placeId}/rooms',
+    ...options
+});
 
 /**
  * Create a Room
  */
 export const postV1HostPlacesByPlaceIdRooms = <ThrowOnError extends boolean = false>(options: Options<PostV1HostPlacesByPlaceIdRoomsData, ThrowOnError>): RequestResult<PostV1HostPlacesByPlaceIdRoomsResponses, PostV1HostPlacesByPlaceIdRoomsErrors, ThrowOnError> => (options.client ?? client).post<PostV1HostPlacesByPlaceIdRoomsResponses, PostV1HostPlacesByPlaceIdRoomsErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/v1/host/places/{placeId}/rooms',
     ...options,
     headers: {
@@ -99,17 +127,26 @@ export const postV1HostPlacesByPlaceIdRooms = <ThrowOnError extends boolean = fa
 /**
  * Destroy a Room
  */
-export const deleteV1HostPlacesByPlaceIdRoomsById = <ThrowOnError extends boolean = false>(options: Options<DeleteV1HostPlacesByPlaceIdRoomsByIdData, ThrowOnError>): RequestResult<DeleteV1HostPlacesByPlaceIdRoomsByIdResponses, DeleteV1HostPlacesByPlaceIdRoomsByIdErrors, ThrowOnError> => (options.client ?? client).delete<DeleteV1HostPlacesByPlaceIdRoomsByIdResponses, DeleteV1HostPlacesByPlaceIdRoomsByIdErrors, ThrowOnError>({ url: '/v1/host/places/{placeId}/rooms/{id}', ...options });
+export const deleteV1HostPlacesByPlaceIdRoomsById = <ThrowOnError extends boolean = false>(options: Options<DeleteV1HostPlacesByPlaceIdRoomsByIdData, ThrowOnError>): RequestResult<DeleteV1HostPlacesByPlaceIdRoomsByIdResponses, DeleteV1HostPlacesByPlaceIdRoomsByIdErrors, ThrowOnError> => (options.client ?? client).delete<DeleteV1HostPlacesByPlaceIdRoomsByIdResponses, DeleteV1HostPlacesByPlaceIdRoomsByIdErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/host/places/{placeId}/rooms/{id}',
+    ...options
+});
 
 /**
  * Fetch a Room
  */
-export const getV1HostPlacesByPlaceIdRoomsById = <ThrowOnError extends boolean = false>(options: Options<GetV1HostPlacesByPlaceIdRoomsByIdData, ThrowOnError>): RequestResult<GetV1HostPlacesByPlaceIdRoomsByIdResponses, GetV1HostPlacesByPlaceIdRoomsByIdErrors, ThrowOnError> => (options.client ?? client).get<GetV1HostPlacesByPlaceIdRoomsByIdResponses, GetV1HostPlacesByPlaceIdRoomsByIdErrors, ThrowOnError>({ url: '/v1/host/places/{placeId}/rooms/{id}', ...options });
+export const getV1HostPlacesByPlaceIdRoomsById = <ThrowOnError extends boolean = false>(options: Options<GetV1HostPlacesByPlaceIdRoomsByIdData, ThrowOnError>): RequestResult<GetV1HostPlacesByPlaceIdRoomsByIdResponses, GetV1HostPlacesByPlaceIdRoomsByIdErrors, ThrowOnError> => (options.client ?? client).get<GetV1HostPlacesByPlaceIdRoomsByIdResponses, GetV1HostPlacesByPlaceIdRoomsByIdErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/host/places/{placeId}/rooms/{id}',
+    ...options
+});
 
 /**
  * Update a Room
  */
 export const patchV1HostPlacesByPlaceIdRoomsById = <ThrowOnError extends boolean = false>(options: Options<PatchV1HostPlacesByPlaceIdRoomsByIdData, ThrowOnError>): RequestResult<PatchV1HostPlacesByPlaceIdRoomsByIdResponses, PatchV1HostPlacesByPlaceIdRoomsByIdErrors, ThrowOnError> => (options.client ?? client).patch<PatchV1HostPlacesByPlaceIdRoomsByIdResponses, PatchV1HostPlacesByPlaceIdRoomsByIdErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
     url: '/v1/host/places/{placeId}/rooms/{id}',
     ...options,
     headers: {
@@ -119,11 +156,37 @@ export const patchV1HostPlacesByPlaceIdRoomsById = <ThrowOnError extends boolean
 });
 
 /**
+ * Current Firebase-authenticated BearBnB user
+ */
+export const getV1Me = <ThrowOnError extends boolean = false>(options?: Options<GetV1MeData, ThrowOnError>): RequestResult<GetV1MeResponses, GetV1MeErrors, ThrowOnError> => (options?.client ?? client).get<GetV1MeResponses, GetV1MeErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/me',
+    ...options
+});
+
+/**
+ * Provision the current Firebase-authenticated user and record terms-of-service consent
+ */
+export const postV1SignUp = <ThrowOnError extends boolean = false>(options?: Options<PostV1SignUpData, ThrowOnError>): RequestResult<PostV1SignUpResponses, PostV1SignUpErrors, ThrowOnError> => (options?.client ?? client).post<PostV1SignUpResponses, PostV1SignUpErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/sign-up',
+    ...options
+});
+
+/**
  * Place index endpoint for Visitors
  */
-export const getV1VisitorPlaces = <ThrowOnError extends boolean = false>(options?: Options<GetV1VisitorPlacesData, ThrowOnError>): RequestResult<GetV1VisitorPlacesResponses, GetV1VisitorPlacesErrors, ThrowOnError> => (options?.client ?? client).get<GetV1VisitorPlacesResponses, GetV1VisitorPlacesErrors, ThrowOnError>({ url: '/v1/visitor/places', ...options });
+export const getV1VisitorPlaces = <ThrowOnError extends boolean = false>(options?: Options<GetV1VisitorPlacesData, ThrowOnError>): RequestResult<GetV1VisitorPlacesResponses, GetV1VisitorPlacesErrors, ThrowOnError> => (options?.client ?? client).get<GetV1VisitorPlacesResponses, GetV1VisitorPlacesErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/visitor/places',
+    ...options
+});
 
 /**
  * Place show endpoint for Visitors
  */
-export const getV1VisitorPlacesById = <ThrowOnError extends boolean = false>(options: Options<GetV1VisitorPlacesByIdData, ThrowOnError>): RequestResult<GetV1VisitorPlacesByIdResponses, GetV1VisitorPlacesByIdErrors, ThrowOnError> => (options.client ?? client).get<GetV1VisitorPlacesByIdResponses, GetV1VisitorPlacesByIdErrors, ThrowOnError>({ url: '/v1/visitor/places/{id}', ...options });
+export const getV1VisitorPlacesById = <ThrowOnError extends boolean = false>(options: Options<GetV1VisitorPlacesByIdData, ThrowOnError>): RequestResult<GetV1VisitorPlacesByIdResponses, GetV1VisitorPlacesByIdErrors, ThrowOnError> => (options.client ?? client).get<GetV1VisitorPlacesByIdResponses, GetV1VisitorPlacesByIdErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/visitor/places/{id}',
+    ...options
+});
