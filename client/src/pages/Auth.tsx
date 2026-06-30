@@ -184,6 +184,7 @@ export default function Auth() {
             <p
               className="mt-4 border border-[#f0c9c9] bg-[#fff7f7] px-3 py-2 text-sm text-[#9a2d2d]"
               data-testid="auth-error"
+              role="alert"
             >
               {error}
             </p>
