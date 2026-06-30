@@ -21,6 +21,7 @@ export default function routes(r: PsychicRouter) {
 
     r.namespace('visitor', r => {
       r.get('places', VisitorPlacesController, 'index')
+      r.get('places/:id/availability', VisitorPlacesController, 'availability')
       r.get('places/:id', VisitorPlacesController, 'show')
     })
 

@@ -1,3 +1,4 @@
+import { CalendarDate } from '@rvoh/dream'
 import AppEnv from '@conf/AppEnv.js'
 import Booking from '@models/Booking.js'
 import createPlace from '@spec/factories/PlaceFactory.js'
@@ -12,10 +13,15 @@ describe('guest booking', () => {
 
   it('lets a signed-in guest book from the place detail page', async () => {
     const email = uniqueEmail('booking')
+
+    // Pick check-in / checkout in next month so a single "Next month" click
+    // reaches them on the calendar, regardless of the day this spec runs.
+    const month = CalendarDate.today().plus({ months: 1 }).startOf('month')
+    const checkIn = month.plus({ days: 9 })
+    const checkout = month.plus({ days: 11 })
+
     const place = await createPlace()
-    await (
-      await place.associationQuery('localizedTexts').firstOrFail()
-    ).update({ title: 'Creekside Cabin' })
+    await (await place.associationQuery('localizedTexts').firstOrFail()).update({ title: 'Creekside Cabin' })
 
     // Signed-out visitors are prompted to sign in rather than shown the form.
     await visit(`/places/${place.id}`, { baseUrl })
@@ -34,10 +40,13 @@ describe('guest booking', () => {
     await page.waitForSelector('[data-testid="header-avatar"]')
 
     // Navigate to the detail page within the SPA so the session persists, then
-    // book using the default check-in / checkout dates.
+    // select a check-in / checkout range on the month-grid calendar and book.
     await page.waitForSelector(`a[href="/places/${place.id}"]`)
     await page.click(`a[href="/places/${place.id}"]`)
-    await page.waitForSelector('[data-testid="booking-submit"]')
+    await page.waitForSelector('[aria-label="Next month"]')
+    await page.click('[aria-label="Next month"]')
+    await page.click(`[data-testid="availability-day-${checkIn.toISO()}"]`)
+    await page.click(`[data-testid="availability-day-${checkout.toISO()}"]`)
     await page.click('[data-testid="booking-submit"]')
 
     await page.waitForSelector('[data-testid="booking-message"]')
