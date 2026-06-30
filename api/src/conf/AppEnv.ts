@@ -1,7 +1,14 @@
 import { Env } from '@rvoh/dream'
 
 class AppEnvClass extends Env<{
-  boolean: 'CONSOLE_SERVICE' | 'CLIENT' | 'DB_NO_SSL' | 'REQUEST_LOGGING' | 'WEB_SERVICE' | 'WS_SERVICE' | 'WORKER_SERVICE'
+  boolean:
+    | 'CONSOLE_SERVICE'
+    | 'CLIENT'
+    | 'DB_NO_SSL'
+    | 'REQUEST_LOGGING'
+    | 'WEB_SERVICE'
+    | 'WS_SERVICE'
+    | 'WORKER_SERVICE'
 
   integer:
     | 'BG_JOBS_REDIS_PORT'
@@ -26,6 +33,8 @@ class AppEnvClass extends Env<{
     | 'DB_NAME'
     | 'DB_PASSWORD'
     | 'DB_USER'
+    | 'FIREBASE_AUTH_EMULATOR_HOST'
+    | 'FIREBASE_PROJECT_ID'
     | 'INTERNAL_APP_HOST'
     | 'REPLICA_DB_HOST'
     | 'SSL_CERT_PATH'

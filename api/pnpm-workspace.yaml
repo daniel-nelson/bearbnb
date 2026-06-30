@@ -22,9 +22,12 @@
 strictDepBuilds: false
 
 allowBuilds:
+  '@firebase/util': false
   esbuild: false
   msgpackr-extract: false
+  protobufjs: false
   puppeteer: false
+  re2: false
 
 # Don't install dependency versions published in the last 3 days (4320 min). Most
 # worm-injected releases are caught and unpublished inside that window, so the

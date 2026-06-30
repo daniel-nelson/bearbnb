@@ -66,6 +66,7 @@ jobs:
       REPLICA_DB_HOST: localhost
       REPLICA_DB_PORT: "5432"
       DREAM_PARALLEL_TESTS: "2"
+      FIREBASE_PROJECT_ID: "demo-bearbnb"
       # TEST-ONLY throwaway encryption keys for the ephemeral CI database. Safe to
       # commit (they protect nothing real). Do NOT reuse these in any other env.
       APP_ENCRYPTION_KEY: "GGfrxv8OC6GohHqM2tieKIMx38DFZ9zhVgKM0kkdfaw="
@@ -134,6 +135,7 @@ jobs:
       REPLICA_DB_HOST: localhost
       REPLICA_DB_PORT: "5432"
       DREAM_PARALLEL_TESTS: "2"
+      FIREBASE_PROJECT_ID: "demo-bearbnb"
       # TEST-ONLY throwaway encryption keys for the ephemeral CI database. Safe to
       # commit (they protect nothing real). Do NOT reuse these in any other env.
       APP_ENCRYPTION_KEY: "GGfrxv8OC6GohHqM2tieKIMx38DFZ9zhVgKM0kkdfaw="
@@ -211,6 +213,7 @@ jobs:
       REPLICA_DB_HOST: localhost
       REPLICA_DB_PORT: "5432"
       DREAM_PARALLEL_TESTS: "2"
+      FIREBASE_PROJECT_ID: "demo-bearbnb"
       # TEST-ONLY throwaway encryption keys for the ephemeral CI database. Safe to
       # commit (they protect nothing real). Do NOT reuse these in any other env.
       APP_ENCRYPTION_KEY: "GGfrxv8OC6GohHqM2tieKIMx38DFZ9zhVgKM0kkdfaw="
