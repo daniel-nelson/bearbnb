@@ -96,6 +96,15 @@ export interface Guests {
   userId: string
 }
 
+export interface HostPlaces {
+  createdAt: Timestamp
+  deletedAt: Timestamp | null
+  hostId: string
+  id: Generated<string>
+  placeId: string
+  updatedAt: Timestamp
+}
+
 export interface Hosts {
   createdAt: Timestamp
   deletedAt: Timestamp | null
@@ -125,6 +134,7 @@ export interface Users {
 
 export interface DB {
   guests: Guests
+  host_places: HostPlaces
   hosts: Hosts
   places: Places
   users: Users
@@ -132,6 +142,7 @@ export interface DB {
 
 export class DBClass {
   guests: Guests
+  host_places: HostPlaces
   hosts: Hosts
   places: Places
   users: Users
