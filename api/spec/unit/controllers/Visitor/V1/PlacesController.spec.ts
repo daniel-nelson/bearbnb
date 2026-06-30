@@ -24,8 +24,12 @@ describe('Visitor/V1/PlacesController', () => {
     })
 
     describe('GET index', () => {
-      const subject = async <StatusCode extends 200 | 400>(expectedStatus: StatusCode) => {
+      const subject = async <StatusCode extends 200 | 400>(
+        expectedStatus: StatusCode,
+        query: { q?: string } = {},
+      ) => {
         return request.get('/v1/visitor/places', expectedStatus, {
+          query,
           headers: {
             'accept-language': 'es-ES',
           },
@@ -42,6 +46,22 @@ describe('Visitor/V1/PlacesController', () => {
           {
             id: place.id,
             title: 'The Spanish title',
+          },
+        ])
+      })
+
+      it('filters Places by search query', async () => {
+        const matchingPlace = await createPlace({ name: 'Riverbend Cabin' })
+        await createLocalizedText({ localizable: matchingPlace, locale: 'es-ES', title: 'The River title' })
+
+        await createPlace({ name: 'High Branch Treehouse' })
+
+        const { body } = await subject(200, { q: 'river' })
+
+        expect(body.results).toEqual([
+          {
+            id: matchingPlace.id,
+            title: 'The River title',
           },
         ])
       })
@@ -79,8 +99,12 @@ describe('Visitor/V1/PlacesController', () => {
     })
 
     describe('GET index', () => {
-      const subject = async <StatusCode extends 200 | 400>(expectedStatus: StatusCode) => {
+      const subject = async <StatusCode extends 200 | 400>(
+        expectedStatus: StatusCode,
+        query: { q?: string } = {},
+      ) => {
         return request.get('/v1/visitor/places', expectedStatus, {
+          query,
           headers: {
             'accept-language': 'es-ES',
           },
@@ -97,6 +121,22 @@ describe('Visitor/V1/PlacesController', () => {
           {
             id: place.id,
             title: 'The Spanish title',
+          },
+        ])
+      })
+
+      it('filters Places by search query', async () => {
+        const matchingPlace = await createPlace({ name: 'Riverbend Cabin' })
+        await createLocalizedText({ localizable: matchingPlace, locale: 'es-ES', title: 'The River title' })
+
+        await createPlace({ name: 'High Branch Treehouse' })
+
+        const { body } = await subject(200, { q: 'river' })
+
+        expect(body.results).toEqual([
+          {
+            id: matchingPlace.id,
+            title: 'The River title',
           },
         ])
       })
