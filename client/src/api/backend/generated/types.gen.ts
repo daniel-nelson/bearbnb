@@ -102,6 +102,29 @@ export type PlaceSummaryForVisitors = {
     title: string;
 };
 
+export type Review = {
+    body: string;
+    bookingId: string;
+    createdAt: string;
+    id: string;
+    rating: number;
+};
+
+export type ReviewSummary = {
+    body: string;
+    bookingId: string;
+    createdAt: string;
+    id: string;
+    rating: number;
+};
+
+export type ReviewVisitorSummary = {
+    body: string;
+    createdAt: string;
+    id: string;
+    rating: number;
+};
+
 export type RoomBathroom = {
     bathOrShowerStyle: 'bath' | 'bath_and_shower' | 'none' | 'shower' | null;
     id: string;
@@ -599,6 +622,202 @@ export type DeleteV1GuestFavoritesByIdResponses = {
 };
 
 export type DeleteV1GuestFavoritesByIdResponse = DeleteV1GuestFavoritesByIdResponses[keyof DeleteV1GuestFavoritesByIdResponses];
+
+export type GetV1GuestReviewsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Pagination cursor
+         */
+        cursor?: string | null;
+    };
+    url: '/v1/guest/reviews';
+};
+
+export type GetV1GuestReviewsErrors = {
+    /**
+     * The server would not process the request due to something the server considered to be a client error
+     */
+    400: unknown;
+    /**
+     * The request was not successful because it lacks valid authentication credentials for the requested resource
+     */
+    401: unknown;
+    /**
+     * Understood the request, but refused to process it
+     */
+    403: unknown;
+    /**
+     * The specified resource was not found
+     */
+    404: unknown;
+    /**
+     * The request failed because a conflict was detected with the given request params
+     */
+    409: unknown;
+    /**
+     * the server encountered an unexpected condition that prevented it from fulfilling the request
+     */
+    500: unknown;
+};
+
+export type GetV1GuestReviewsResponses = {
+    /**
+     * Success
+     */
+    200: {
+        cursor: string | null;
+        results: Array<ReviewSummary>;
+    };
+};
+
+export type GetV1GuestReviewsResponse = GetV1GuestReviewsResponses[keyof GetV1GuestReviewsResponses];
+
+export type PostV1GuestReviewsData = {
+    body?: {
+        body?: string;
+        rating?: number;
+        bookingId?: string;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Pagination cursor
+         */
+        cursor?: string | null;
+    };
+    url: '/v1/guest/reviews';
+};
+
+export type PostV1GuestReviewsErrors = {
+    /**
+     * The server would not process the request due to something the server considered to be a client error
+     */
+    400: unknown;
+    /**
+     * The request was not successful because it lacks valid authentication credentials for the requested resource
+     */
+    401: unknown;
+    /**
+     * Understood the request, but refused to process it
+     */
+    403: unknown;
+    /**
+     * The specified resource was not found
+     */
+    404: unknown;
+    /**
+     * The request failed because a conflict was detected with the given request params
+     */
+    409: unknown;
+    /**
+     * the server encountered an unexpected condition that prevented it from fulfilling the request
+     */
+    500: unknown;
+};
+
+export type PostV1GuestReviewsResponses = {
+    /**
+     * Created
+     */
+    201: Review;
+};
+
+export type PostV1GuestReviewsResponse = PostV1GuestReviewsResponses[keyof PostV1GuestReviewsResponses];
+
+export type DeleteV1GuestReviewsByIdData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/v1/guest/reviews/{id}';
+};
+
+export type DeleteV1GuestReviewsByIdErrors = {
+    /**
+     * The server would not process the request due to something the server considered to be a client error
+     */
+    400: unknown;
+    /**
+     * The request was not successful because it lacks valid authentication credentials for the requested resource
+     */
+    401: unknown;
+    /**
+     * Understood the request, but refused to process it
+     */
+    403: unknown;
+    /**
+     * The specified resource was not found
+     */
+    404: unknown;
+    /**
+     * The request failed because a conflict was detected with the given request params
+     */
+    409: unknown;
+    /**
+     * the server encountered an unexpected condition that prevented it from fulfilling the request
+     */
+    500: unknown;
+};
+
+export type DeleteV1GuestReviewsByIdResponses = {
+    /**
+     * The request has succeeded, but there is no content to render
+     */
+    204: void;
+};
+
+export type DeleteV1GuestReviewsByIdResponse = DeleteV1GuestReviewsByIdResponses[keyof DeleteV1GuestReviewsByIdResponses];
+
+export type PatchV1GuestReviewsByIdData = {
+    body?: {
+        body?: string;
+        rating?: number;
+    };
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/v1/guest/reviews/{id}';
+};
+
+export type PatchV1GuestReviewsByIdErrors = {
+    /**
+     * The server would not process the request due to something the server considered to be a client error
+     */
+    400: unknown;
+    /**
+     * The request was not successful because it lacks valid authentication credentials for the requested resource
+     */
+    401: unknown;
+    /**
+     * Understood the request, but refused to process it
+     */
+    403: unknown;
+    /**
+     * The specified resource was not found
+     */
+    404: unknown;
+    /**
+     * The request failed because a conflict was detected with the given request params
+     */
+    409: unknown;
+    /**
+     * the server encountered an unexpected condition that prevented it from fulfilling the request
+     */
+    500: unknown;
+};
+
+export type PatchV1GuestReviewsByIdResponses = {
+    /**
+     * The request has succeeded, but there is no content to render
+     */
+    204: void;
+};
+
+export type PatchV1GuestReviewsByIdResponse = PatchV1GuestReviewsByIdResponses[keyof PatchV1GuestReviewsByIdResponses];
 
 export type DeleteV1HostLocalizedTextsByIdData = {
     body?: never;
@@ -1418,3 +1637,56 @@ export type GetV1VisitorPlacesByIdAvailabilityResponses = {
 };
 
 export type GetV1VisitorPlacesByIdAvailabilityResponse = GetV1VisitorPlacesByIdAvailabilityResponses[keyof GetV1VisitorPlacesByIdAvailabilityResponses];
+
+export type GetV1VisitorPlacesByPlaceIdReviewsData = {
+    body?: never;
+    path: {
+        placeId: string;
+    };
+    query?: {
+        /**
+         * Pagination cursor
+         */
+        cursor?: string | null;
+    };
+    url: '/v1/visitor/places/{placeId}/reviews';
+};
+
+export type GetV1VisitorPlacesByPlaceIdReviewsErrors = {
+    /**
+     * The server would not process the request due to something the server considered to be a client error
+     */
+    400: unknown;
+    /**
+     * The request was not successful because it lacks valid authentication credentials for the requested resource
+     */
+    401: unknown;
+    /**
+     * Understood the request, but refused to process it
+     */
+    403: unknown;
+    /**
+     * The specified resource was not found
+     */
+    404: unknown;
+    /**
+     * The request failed because a conflict was detected with the given request params
+     */
+    409: unknown;
+    /**
+     * the server encountered an unexpected condition that prevented it from fulfilling the request
+     */
+    500: unknown;
+};
+
+export type GetV1VisitorPlacesByPlaceIdReviewsResponses = {
+    /**
+     * Success
+     */
+    200: {
+        cursor: string | null;
+        results: Array<ReviewVisitorSummary>;
+    };
+};
+
+export type GetV1VisitorPlacesByPlaceIdReviewsResponse = GetV1VisitorPlacesByPlaceIdReviewsResponses[keyof GetV1VisitorPlacesByPlaceIdReviewsResponses];
