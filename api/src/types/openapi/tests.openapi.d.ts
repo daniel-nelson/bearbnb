@@ -185,6 +185,206 @@ export interface paths {
         };
         trace?: never;
     };
+    "/v1/host/places/{placeId}/rooms": {
+        parameters: {
+            query?: {
+                /** @description Pagination cursor */
+                cursor?: string | null;
+            };
+            header?: never;
+            path: {
+                placeId: string;
+            };
+            cookie?: never;
+        };
+        /** @description Paginated index of Rooms */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Pagination cursor */
+                    cursor?: string | null;
+                };
+                header?: never;
+                path: {
+                    placeId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Success */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            cursor: string | null;
+                            results: (components["schemas"]["RoomBathroomSummary"] | components["schemas"]["RoomBedroomSummary"] | components["schemas"]["RoomDenSummary"] | components["schemas"]["RoomKitchenSummary"] | components["schemas"]["RoomLivingRoomSummary"])[];
+                        };
+                    };
+                };
+                400: components["responses"]["BadRequest"];
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["Forbidden"];
+                404: components["responses"]["NotFound"];
+                409: components["responses"]["Conflict"];
+                500: components["responses"]["InternalServerError"];
+            };
+        };
+        put?: never;
+        /** @description Create a Room */
+        post: {
+            parameters: {
+                query?: {
+                    /** @description Pagination cursor */
+                    cursor?: string | null;
+                };
+                header?: never;
+                path: {
+                    placeId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        appliances?: ("dishwasher" | "microwave" | "oven" | "stove")[];
+                        /** @enum {string|null} */
+                        bathOrShowerStyle?: "bath" | "bath_and_shower" | "none" | "shower" | null;
+                        bedTypes?: ("bunk" | "cot" | "king" | "queen" | "sofabed" | "twin")[];
+                        position?: number | null;
+                        /** @enum {string} */
+                        type?: "Bathroom" | "Bedroom" | "Den" | "Kitchen" | "LivingRoom";
+                    };
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["RoomBathroom"] | components["schemas"]["RoomBedroom"] | components["schemas"]["RoomDen"] | components["schemas"]["RoomKitchen"] | components["schemas"]["RoomLivingRoom"];
+                    };
+                };
+                400: components["responses"]["BadRequest"];
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["Forbidden"];
+                404: components["responses"]["NotFound"];
+                409: components["responses"]["Conflict"];
+                500: components["responses"]["InternalServerError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/host/places/{placeId}/rooms/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                placeId: string;
+                id: string;
+            };
+            cookie?: never;
+        };
+        /** @description Fetch a Room */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    placeId: string;
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Success */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["RoomBathroom"] | components["schemas"]["RoomBedroom"] | components["schemas"]["RoomDen"] | components["schemas"]["RoomKitchen"] | components["schemas"]["RoomLivingRoom"];
+                    };
+                };
+                400: components["responses"]["BadRequest"];
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["Forbidden"];
+                404: components["responses"]["NotFound"];
+                409: components["responses"]["Conflict"];
+                500: components["responses"]["InternalServerError"];
+            };
+        };
+        put?: never;
+        post?: never;
+        /** @description Destroy a Room */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    placeId: string;
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Success, no content */
+                204: components["responses"]["NoContent"];
+                400: components["responses"]["BadRequest"];
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["Forbidden"];
+                404: components["responses"]["NotFound"];
+                409: components["responses"]["Conflict"];
+                500: components["responses"]["InternalServerError"];
+            };
+        };
+        options?: never;
+        head?: never;
+        /** @description Update a Room */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    placeId: string;
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        appliances?: ("dishwasher" | "microwave" | "oven" | "stove")[];
+                        /** @enum {string|null} */
+                        bathOrShowerStyle?: "bath" | "bath_and_shower" | "none" | "shower" | null;
+                        bedTypes?: ("bunk" | "cot" | "king" | "queen" | "sofabed" | "twin")[];
+                        position?: number | null;
+                    };
+                };
+            };
+            responses: {
+                /** @description Success, no content */
+                204: components["responses"]["NoContent"];
+                400: components["responses"]["BadRequest"];
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["Forbidden"];
+                404: components["responses"]["NotFound"];
+                409: components["responses"]["Conflict"];
+                500: components["responses"]["InternalServerError"];
+            };
+        };
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -212,6 +412,70 @@ export interface components {
         PlaceSummary: {
             id: string;
             name: string;
+        };
+        RoomBathroom: {
+            /** @enum {string|null} */
+            bathOrShowerStyle: "bath" | "bath_and_shower" | "none" | "shower" | null;
+            id: string;
+            position: number | null;
+            /** @enum {string} */
+            type: "Bathroom";
+        };
+        RoomBathroomSummary: {
+            id: string;
+            position: number | null;
+            /** @enum {string} */
+            type: "Bathroom";
+        };
+        RoomBedroom: {
+            bedTypes: ("bunk" | "cot" | "king" | "queen" | "sofabed" | "twin")[];
+            id: string;
+            position: number | null;
+            /** @enum {string} */
+            type: "Bedroom";
+        };
+        RoomBedroomSummary: {
+            id: string;
+            position: number | null;
+            /** @enum {string} */
+            type: "Bedroom";
+        };
+        RoomDen: {
+            id: string;
+            position: number | null;
+            /** @enum {string} */
+            type: "Den";
+        };
+        RoomDenSummary: {
+            id: string;
+            position: number | null;
+            /** @enum {string} */
+            type: "Den";
+        };
+        RoomKitchen: {
+            appliances: ("dishwasher" | "microwave" | "oven" | "stove")[];
+            id: string;
+            position: number | null;
+            /** @enum {string} */
+            type: "Kitchen";
+        };
+        RoomKitchenSummary: {
+            id: string;
+            position: number | null;
+            /** @enum {string} */
+            type: "Kitchen";
+        };
+        RoomLivingRoom: {
+            id: string;
+            position: number | null;
+            /** @enum {string} */
+            type: "LivingRoom";
+        };
+        RoomLivingRoomSummary: {
+            id: string;
+            position: number | null;
+            /** @enum {string} */
+            type: "LivingRoom";
         };
         ValidationErrors: {
             /** @enum {string} */
