@@ -4,13 +4,19 @@ import type { User } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 import { auth } from "./firebase";
 import { setBackendBearerToken } from "./backendAuth";
-import { setUnauthorizedHandler } from "../api/backend/client";
+import {
+  setConsentRequiredHandler,
+  setUnauthorizedHandler,
+} from "../api/backend/client";
+import { postV1SignUp } from "../api/backend/generated";
 import { AuthContext } from "./authContext";
+import { ConsentGate } from "../components/ConsentGate";
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(auth.currentUser);
   const [ready, setReady] = useState(false);
+  const [consentRequired, setConsentRequired] = useState(false);
 
   useEffect(() => {
     return onAuthStateChanged(auth, async (nextUser) => {
@@ -18,6 +24,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setBackendBearerToken(await nextUser.getIdToken());
       } else {
         setBackendBearerToken(undefined);
+        // A signed-out user can never be consent-blocked; clear any stale gate.
+        setConsentRequired(false);
       }
       setUser(nextUser);
       setReady(true);
@@ -40,14 +48,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => setUnauthorizedHandler(undefined);
   }, [navigate]);
 
+  useEffect(() => {
+    // A consent-required 403 means the user is authenticated but has not accepted
+    // the current terms. Raise the accept-terms gate; ignore when no session is
+    // held so a stray 403 cannot trap a signed-out visitor.
+    setConsentRequiredHandler(() => {
+      if (!auth.currentUser) return;
+      setConsentRequired(true);
+    });
+    return () => setConsentRequiredHandler(undefined);
+  }, []);
+
   async function signOut() {
     await firebaseSignOut(auth);
     setBackendBearerToken(undefined);
   }
 
+  async function acceptConsent() {
+    await postV1SignUp({ throwOnError: true });
+    setConsentRequired(false);
+  }
+
+  function dismissConsent() {
+    setConsentRequired(false);
+  }
+
   return (
-    <AuthContext.Provider value={{ user, ready, signOut }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        ready,
+        signOut,
+        consentRequired,
+        acceptConsent,
+        dismissConsent,
+      }}
+    >
       {children}
+      <ConsentGate />
     </AuthContext.Provider>
   );
 }

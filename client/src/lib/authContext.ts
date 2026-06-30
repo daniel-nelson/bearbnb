@@ -5,6 +5,13 @@ export type AuthContextValue = {
   user: User | null;
   ready: boolean;
   signOut: () => Promise<void>;
+  // True when an authed call was refused because the user has not accepted the
+  // current terms of service. Drives the accept-terms gate.
+  consentRequired: boolean;
+  // Record terms-of-service consent for the signed-in user, then clear the gate.
+  acceptConsent: () => Promise<void>;
+  // Dismiss the gate without accepting (the next blocked action re-raises it).
+  dismissConsent: () => void;
 };
 
 export const AuthContext = createContext<AuthContextValue | undefined>(

@@ -41,7 +41,19 @@ if (firebaseAuthEmulatorHost) {
 // In feature specs each example must start signed out. Firebase's default
 // persistence keeps the session in IndexedDB, which the browser-reset between
 // specs does not clear; in-memory persistence is dropped when the page unloads.
-if (isTestEnv) void setPersistence(auth, inMemoryPersistence);
+if (isTestEnv) {
+  void setPersistence(auth, inMemoryPersistence);
+}
+
+// Strictly test-only window hooks (e.g. `window.__testSignIn`) live in a
+// separate module loaded via a dynamic import gated on the build-time
+// `VITE_PSYCHIC_ENV === "test"` literal. In dev/prod that condition is
+// statically false, so Vite eliminates this branch and never bundles
+// `./testHooks` — the prod-build guard (scripts/assert-no-test-hooks.mjs)
+// enforces that the `__testSignIn` marker never ships.
+if (import.meta.env.VITE_PSYCHIC_ENV === "test") {
+  void import("./testHooks").then((m) => m.installTestHooks(auth));
+}
 
 function firebaseEnv(name: string, demoValue: string) {
   const value = import.meta.env[name];
