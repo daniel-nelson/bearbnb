@@ -845,6 +845,15 @@ export const schema = {
         requiredAndClauses: null,
         passthroughAndClauses: ['locale'],
       },
+      fallbackCurrentLocalizedText: {
+        type: 'HasOne',
+        foreignKey: 'localizableId',
+        foreignKeyTypeColumn: 'localizableType',
+        tables: ['localized_texts'],
+        optional: null,
+        requiredAndClauses: null,
+        passthroughAndClauses: null,
+      },
       favorites: {
         type: 'HasMany',
         foreignKey: 'placeId',
@@ -1114,6 +1123,15 @@ export const schema = {
         optional: null,
         requiredAndClauses: null,
         passthroughAndClauses: ['locale'],
+      },
+      fallbackCurrentLocalizedText: {
+        type: 'HasOne',
+        foreignKey: 'localizableId',
+        foreignKeyTypeColumn: 'localizableType',
+        tables: ['localized_texts'],
+        optional: null,
+        requiredAndClauses: null,
+        passthroughAndClauses: null,
       },
       localizedTexts: {
         type: 'HasMany',

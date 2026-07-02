@@ -16,7 +16,12 @@ export const PlaceSerializer = (place: Place) =>
 export const PlaceSummaryForVisitorsSerializer = (place: Place) =>
   DreamSerializer(Place, place)
     .attribute('id')
-    .delegatedAttribute('currentLocalizedText', 'title', { openapi: 'string' })
+    // Render the always-present en-US fallback title first, then let the requested
+    // locale's title override it. When the requested locale has no LocalizedText,
+    // `currentLocalizedText` is null and the optional delegated attribute is skipped,
+    // leaving the fallback in place. Order matters: fallback before current.
+    .delegatedAttribute('fallbackCurrentLocalizedText', 'title', { openapi: 'string' })
+    .delegatedAttribute('currentLocalizedText', 'title', { openapi: 'string', required: false })
     .delegatedAttribute('currentFavorite', 'id', {
       as: 'favoriteId',
       openapi: 'string',

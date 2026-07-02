@@ -1,4 +1,5 @@
 import Place from '@models/Place.js'
+import Room from '@models/Room.js'
 import User from '@models/User.js'
 import { CalendarDate } from '@rvoh/dream'
 import { PsychicServer } from '@rvoh/psychic'
@@ -142,6 +143,90 @@ describe('Visitor/V1/PlacesController', () => {
         expect(body).toEqual(
           expectedShowBody({ place, kitchen, bathroom, bedroom, den, livingRoom, favoriteId: favorite.id }),
         )
+      })
+    })
+
+    // Visitor-facing localized content falls back to the always-present en-US
+    // LocalizedText when the requested locale has no row, so a Host can save partial
+    // non-default translations without blanking Visitor pages. Both cases are covered:
+    // the requested locale exists and overrides the fallback, and it is missing and
+    // returns en-US.
+    describe('en-US fallback for the requested locale', () => {
+      async function setEnglishTitle(owner: Place | Room, title: string) {
+        const en = await owner.associationQuery('localizedTexts').firstOrFail()
+        await en.update({ title })
+        return en
+      }
+
+      describe('GET index', () => {
+        it('falls back to the en-US title when the requested locale has no LocalizedText', async () => {
+          const place = await createPlace()
+          await setEnglishTitle(place, 'English index title')
+
+          const { body } = await request.get('/v1/visitor/places', 200, {
+            headers: { 'accept-language': 'es-ES' },
+          })
+
+          expect(body.results).toEqual([
+            { favoriteId: null, favorited: false, id: place.id, title: 'English index title' },
+          ])
+        })
+
+        it('uses the requested-locale title when it exists, overriding the en-US fallback', async () => {
+          const place = await createPlace()
+          await setEnglishTitle(place, 'English index title')
+          await createLocalizedText({ localizable: place, locale: 'es-ES', title: 'Título en español' })
+
+          const { body } = await request.get('/v1/visitor/places', 200, {
+            headers: { 'accept-language': 'es-ES' },
+          })
+
+          expect(body.results).toEqual([
+            { favoriteId: null, favorited: false, id: place.id, title: 'Título en español' },
+          ])
+        })
+      })
+
+      describe('GET show', () => {
+        it('falls back to the en-US title for the Place and its Rooms when the requested locale is missing', async () => {
+          const place = await createPlace({ style: 'cabin', sleeps: 2 })
+          await setEnglishTitle(place, 'English place title')
+
+          const den = await createDen({ place })
+          await setEnglishTitle(den, 'English den title')
+
+          const { body } = await request.get('/v1/visitor/places/{id}', 200, {
+            id: place.id,
+            headers: { 'accept-language': 'es-ES' },
+          })
+
+          expect(body.title).toEqual('English place title')
+          // Code-driven enum labels (displayType) still translate to Spanish; only the
+          // data-driven LocalizedText title falls back to en-US.
+          expect(body.rooms).toEqual([
+            { id: den.id, type: 'Den', displayType: 'estudio', title: 'English den title' },
+          ])
+        })
+
+        it('uses the requested-locale title when it exists, overriding the en-US fallback', async () => {
+          const place = await createPlace({ style: 'cabin', sleeps: 2 })
+          await setEnglishTitle(place, 'English place title')
+          await createLocalizedText({ localizable: place, locale: 'es-ES', title: 'Título del lugar' })
+
+          const den = await createDen({ place })
+          await setEnglishTitle(den, 'English den title')
+          await createLocalizedText({ localizable: den, locale: 'es-ES', title: 'Título del estudio' })
+
+          const { body } = await request.get('/v1/visitor/places/{id}', 200, {
+            id: place.id,
+            headers: { 'accept-language': 'es-ES' },
+          })
+
+          expect(body.title).toEqual('Título del lugar')
+          expect(body.rooms).toEqual([
+            { id: den.id, type: 'Den', displayType: 'estudio', title: 'Título del estudio' },
+          ])
+        })
       })
     })
 
