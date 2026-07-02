@@ -6,6 +6,7 @@ import HostPlaces from "./pages/HostPlaces";
 import HostPlaceNew from "./pages/HostPlaceNew";
 import HostPlaceShow from "./pages/HostPlaceShow";
 import HostPlaceEdit from "./pages/HostPlaceEdit";
+import HostRoomNew from "./pages/HostRoomNew";
 
 export default function App() {
   return (
@@ -15,6 +16,10 @@ export default function App() {
       <Route path="/places/:id" element={<PlaceDetail />} />
       <Route path="/host/places" element={<HostPlaces />} />
       <Route path="/host/places/new" element={<HostPlaceNew />} />
+      <Route
+        path="/host/places/:placeId/rooms/new"
+        element={<HostRoomNew />}
+      />
       <Route path="/host/places/:id/edit" element={<HostPlaceEdit />} />
       <Route path="/host/places/:id" element={<HostPlaceShow />} />
     </Routes>

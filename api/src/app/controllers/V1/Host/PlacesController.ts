@@ -1,26 +1,19 @@
 import { OpenAPI } from '@rvoh/psychic'
-import { DreamTransaction } from '@rvoh/dream'
 import { DreamParamSafeColumnNames } from '@rvoh/dream/types'
 import ApplicationModel from '@models/ApplicationModel.js'
 import HostPlace from '@models/HostPlace.js'
 import LocalizedText from '@models/LocalizedText.js'
+import {
+  DEFAULT_LOCALE,
+  localizedTextParams,
+  reconcileLocalizedTexts,
+} from '@src/app/services/LocalizedTextReconciler.js'
 import V1HostBaseController from './BaseController.js'
 import Place from '@models/Place.js'
-import { LocalesEnum } from '@src/types/db.js'
 
 const openApiTags = ['places']
 
-const DEFAULT_LOCALE: LocalesEnum = 'en-US'
-
 const paramSafeColumns: DreamParamSafeColumnNames<Place>[] = ['name', 'style', 'sleeps']
-
-const localizedTextParams: DreamParamSafeColumnNames<LocalizedText>[] = ['locale', 'title', 'markdown']
-
-type LocalizedTextParams = Partial<{
-  locale: LocalesEnum | undefined
-  title: string | null | undefined
-  markdown: string | null | undefined
-}>
 
 export default class V1HostPlacesController extends V1HostBaseController {
   @OpenAPI(Place, {
@@ -88,7 +81,7 @@ export default class V1HostPlacesController extends V1HostBaseController {
     let place = await ApplicationModel.transaction(async txn => {
       const place = await Place.txn(txn).create(placeParams)
       await HostPlace.txn(txn).create({ host: this.currentHost, place })
-      await this.reconcileLocalizedTexts(place, localizedTexts, txn)
+      await reconcileLocalizedTexts(place, localizedTexts, txn)
       return place
     })
 
@@ -130,7 +123,7 @@ export default class V1HostPlacesController extends V1HostBaseController {
     const place = await this.place()
     await ApplicationModel.transaction(async txn => {
       await place.txn(txn).update(placeParams)
-      await this.reconcileLocalizedTexts(place, localizedTexts, txn, { removeMissing: true })
+      await reconcileLocalizedTexts(place, localizedTexts, txn, { removeMissing: true })
     })
 
     this.noContent()
@@ -153,39 +146,6 @@ export default class V1HostPlacesController extends V1HostBaseController {
       key: 'localizedTexts',
       array: true,
     })
-  }
-
-  // Upserts each provided locale's text through the owning Place, and (on update)
-  // removes non-default locales the Place no longer provides. `en-US` is always retained so
-  // Visitor reads can fall back to it. Ownership is already proven by loading the Place from
-  // the current Host, so this performs no separate reverse-lookup authorization.
-  private async reconcileLocalizedTexts(
-    place: Place,
-    localizedTexts: LocalizedTextParams[],
-    txn: DreamTransaction<ApplicationModel>,
-    { removeMissing = false }: { removeMissing?: boolean } = {},
-  ) {
-    for (const { locale, title, markdown } of localizedTexts) {
-      if (!locale) continue
-
-      const existing = await place.txn(txn).associationQuery('localizedTexts', { and: { locale } }).first()
-
-      if (existing) {
-        await existing.txn(txn).update({ title, markdown })
-      } else {
-        await place.txn(txn).createAssociation('localizedTexts', { locale, title, markdown })
-      }
-    }
-
-    if (!removeMissing) return
-
-    const providedLocales = localizedTexts.map(localizedText => localizedText.locale)
-    const existingTexts = await place.txn(txn).associationQuery('localizedTexts').all()
-
-    for (const existing of existingTexts) {
-      if (existing.locale !== DEFAULT_LOCALE && !providedLocales.includes(existing.locale))
-        await existing.txn(txn).destroy()
-    }
   }
 
   private async place() {
