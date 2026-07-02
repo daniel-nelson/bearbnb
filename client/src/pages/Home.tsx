@@ -275,6 +275,13 @@ function SignedInControls({ user }: { user: User }) {
   return (
     <div className="flex items-center gap-2">
       <span className="sr-only">Signed in as {displayNameFor(user)}</span>
+      <Link
+        className="flex min-h-11 items-center border border-[#d8d8d2] bg-white px-4 text-sm font-semibold text-[#3f3f3a] transition hover:border-[#b9b9b1] hover:text-[#18181a]"
+        data-testid="home-hosting-link"
+        to="/host/places"
+      >
+        Hosting
+      </Link>
       <span
         aria-hidden="true"
         className="grid h-11 w-11 place-items-center rounded-full border border-[#d8d8d2] bg-white text-sm font-semibold text-[#1d1d1f]"
