@@ -12,6 +12,14 @@ export const RoomSummarySerializer = <T extends Room>(StiChildClass: typeof Room
 export const RoomSerializer = <T extends Room>(StiChildClass: typeof Room, room: T) =>
   RoomSummarySerializer(StiChildClass, room)
 
+// Host-facing shape: owner-management fields plus the editable localized text rows the
+// Host Room show/edit screens need (raw rows, not a locale-selected display string).
+// Mirrors PlaceForHostSerializer. Each STI child extends this and adds its own
+// type-specific column.
+export const RoomForHostSerializer = <T extends Room>(StiChildClass: typeof Room, room: T) =>
+  RoomSerializer(StiChildClass, room)
+    .rendersMany('localizedTexts')
+
 export const RoomForVisitorsSerializer = <T extends Room>(
   StiChildClass: typeof Room,
   room: T,
