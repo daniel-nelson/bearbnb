@@ -1183,7 +1183,7 @@
         "tags": [
           "places"
         ],
-        "description": "Update a Place",
+        "description": "Update a Place, with multi-locale localized text",
         "requestBody": {
           "content": {
             "application/json": {
@@ -1207,6 +1207,38 @@
                       "tent",
                       "treehouse"
                     ]
+                  },
+                  "localizedTexts": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "locale",
+                        "title",
+                        "markdown"
+                      ],
+                      "properties": {
+                        "locale": {
+                          "type": "string",
+                          "enum": [
+                            "en-US",
+                            "es-ES"
+                          ]
+                        },
+                        "markdown": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "title": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        }
+                      }
+                    }
                   }
                 }
               }
@@ -1232,6 +1264,9 @@
           },
           "409": {
             "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "description": "Missing en-US title and description"
           },
           "500": {
             "$ref": "#/components/responses/InternalServerError"

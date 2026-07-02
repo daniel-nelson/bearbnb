@@ -147,7 +147,7 @@ describe('V1/Host/PlacesController', () => {
   })
 
   describe('PATCH update', () => {
-    const update = async <StatusCode extends 204 | 400 | 404>(
+    const update = async <StatusCode extends 204 | 400 | 404 | 422>(
       place: Place,
       data: RequestBody<'patch', '/v1/host/places/{id}'>,
       expectedStatus: StatusCode
@@ -158,7 +158,7 @@ describe('V1/Host/PlacesController', () => {
       })
     }
 
-    it('updates the Place', async () => {
+    it('updates the Place management fields and default-locale text', async () => {
       const place = await createPlace()
       await createHostPlace({ host, place })
 
@@ -166,12 +166,71 @@ describe('V1/Host/PlacesController', () => {
         name: 'Updated Place name',
         style: 'dump',
         sleeps: 2,
+        localizedTexts: [{ locale: 'en-US', title: 'Updated title', markdown: 'Updated body' }],
       }, 204)
 
       await place.reload()
       expect(place.name).toEqual('Updated Place name')
       expect(place.style).toEqual('dump')
       expect(place.sleeps).toEqual(2)
+
+      const localizedTexts = await place.associationQuery('localizedTexts').order('locale').all()
+      expect(localizedTexts.map(text => [text.locale, text.title, text.markdown])).toEqual([
+        ['en-US', 'Updated title', 'Updated body'],
+      ])
+    })
+
+    it('adds a non-default locale row', async () => {
+      const place = await createPlace()
+      await createHostPlace({ host, place })
+
+      await update(place, {
+        name: place.name,
+        style: place.style,
+        sleeps: place.sleeps,
+        localizedTexts: [
+          { locale: 'en-US', title: 'English title', markdown: 'English body' },
+          { locale: 'es-ES', title: 'Título', markdown: 'Cuerpo' },
+        ],
+      }, 204)
+
+      const localizedTexts = await place.associationQuery('localizedTexts').order('locale').all()
+      expect(localizedTexts.map(text => [text.locale, text.title, text.markdown])).toEqual([
+        ['en-US', 'English title', 'English body'],
+        ['es-ES', 'Título', 'Cuerpo'],
+      ])
+    })
+
+    it('removes a non-default locale row omitted from the payload', async () => {
+      const place = await createPlace()
+      await createHostPlace({ host, place })
+      await place.createAssociation('localizedTexts', { locale: 'es-ES', title: 'Título', markdown: 'Cuerpo' })
+
+      await update(place, {
+        name: place.name,
+        style: place.style,
+        sleeps: place.sleeps,
+        localizedTexts: [{ locale: 'en-US', title: 'English title', markdown: 'English body' }],
+      }, 204)
+
+      const localizedTexts = await place.associationQuery('localizedTexts').order('locale').all()
+      expect(localizedTexts.map(text => text.locale)).toEqual(['en-US'])
+    })
+
+    it('returns 422 when the default-locale title and description are missing', async () => {
+      const place = await createPlace()
+      await createHostPlace({ host, place })
+      const originalName = place.name
+
+      await update(place, {
+        name: 'Updated Place name',
+        style: 'dump',
+        sleeps: 2,
+        localizedTexts: [{ locale: 'es-ES', title: 'Título', markdown: 'Cuerpo' }],
+      }, 422)
+
+      await place.reload()
+      expect(place.name).toEqual(originalName)
     })
 
     context('a Place created by another Host', () => {
@@ -185,6 +244,7 @@ describe('V1/Host/PlacesController', () => {
           name: 'Updated Place name',
           style: 'dump',
           sleeps: 2,
+          localizedTexts: [{ locale: 'en-US', title: 'Updated title', markdown: 'Updated body' }],
         }, 404)
 
         await place.reload()

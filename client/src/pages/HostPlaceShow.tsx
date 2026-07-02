@@ -1,8 +1,13 @@
 import { useEffect, useState } from "react";
-import { Link, Navigate, useParams } from "react-router-dom";
-import { getV1Host, getV1HostPlacesById } from "../api/backend/generated";
+import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
+import {
+  deleteV1HostPlacesById,
+  getV1Host,
+  getV1HostPlacesById,
+} from "../api/backend/generated";
 import type { PlaceForHost } from "../api/backend/generated";
 import { AppShell } from "../components/AppShell";
+import { ConfirmDialog } from "../components/ConfirmDialog";
 import { SiteHeader } from "../components/SiteHeader";
 import { useAuth } from "../lib/authContext";
 
@@ -140,6 +145,27 @@ export default function HostPlaceShow() {
 }
 
 function PlaceDetail({ place }: { place: PlaceForHost }) {
+  const navigate = useNavigate();
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
+
+  async function deletePlace() {
+    setDeleting(true);
+    setDeleteError("");
+
+    const { error } = await deleteV1HostPlacesById({ path: { id: place.id } });
+
+    if (error) {
+      setDeleting(false);
+      setDeleteError("We could not delete this place. Please try again.");
+      return;
+    }
+
+    // Return to the Host Places index after a successful delete.
+    navigate("/host/places");
+  }
+
   return (
     <div className="space-y-8" data-testid="host-place-detail">
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -156,7 +182,7 @@ function PlaceDetail({ place }: { place: PlaceForHost }) {
         </div>
 
         <div className="flex flex-wrap gap-2">
-          {/* Edit navigates to the full-page edit route (item 6). */}
+          {/* Edit navigates to the full-page edit route. */}
           <Link
             className="inline-flex h-11 items-center border border-[#d8d8d2] bg-white px-5 text-sm font-semibold text-[#3f3f3a] transition hover:border-[#b9b9b1] hover:text-[#18181a]"
             data-testid="host-place-edit"
@@ -164,16 +190,31 @@ function PlaceDetail({ place }: { place: PlaceForHost }) {
           >
             Edit
           </Link>
-          {/* Delete entry point only; the confirmation + destroy behavior lands in item 6. */}
+          {/* Delete opens the shared confirmation dialog, which shows the Place name. */}
           <button
             className="inline-flex h-11 items-center border border-[#e0c8c8] bg-white px-5 text-sm font-semibold text-[#a4423a] transition hover:border-[#cf9a9a]"
             data-testid="host-place-delete"
+            onClick={() => {
+              setDeleteError("");
+              setConfirmOpen(true);
+            }}
             type="button"
           >
             Delete
           </button>
         </div>
       </div>
+
+      <ConfirmDialog
+        body="Delete"
+        busy={deleting}
+        error={deleteError}
+        heading="Delete place"
+        itemName={place.name}
+        onCancel={() => setConfirmOpen(false)}
+        onConfirm={() => void deletePlace()}
+        open={confirmOpen}
+      />
 
       <dl className="grid grid-cols-2 border border-[#deded8] bg-white sm:grid-cols-3">
         <div className="border-b border-r border-[#deded8] p-4 sm:border-b-0">
