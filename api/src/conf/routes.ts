@@ -32,8 +32,6 @@ export default function routes(r: PsychicRouter) {
     })
 
     r.namespace('host', r => {
-      r.resources('localized-texts', { only: ['update', 'destroy'] })
-
       r.resources('places', r => {
         r.resources('rooms')
       })
