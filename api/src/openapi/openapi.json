@@ -1402,7 +1402,7 @@
         "tags": [
           "rooms"
         ],
-        "description": "Create a Room",
+        "description": "Create a Room, with multi-locale localized text",
         "requestBody": {
           "content": {
             "application/json": {
@@ -1463,6 +1463,38 @@
                       "Kitchen",
                       "LivingRoom"
                     ]
+                  },
+                  "localizedTexts": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "locale",
+                        "title",
+                        "markdown"
+                      ],
+                      "properties": {
+                        "locale": {
+                          "type": "string",
+                          "enum": [
+                            "en-US",
+                            "es-ES"
+                          ]
+                        },
+                        "markdown": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "title": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        }
+                      }
+                    }
                   }
                 }
               }
@@ -1510,6 +1542,9 @@
           },
           "409": {
             "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "description": "Missing en-US title and description"
           },
           "500": {
             "$ref": "#/components/responses/InternalServerError"

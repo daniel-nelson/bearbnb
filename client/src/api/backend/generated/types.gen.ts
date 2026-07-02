@@ -1407,6 +1407,11 @@ export type PostV1HostPlacesByPlaceIdRoomsData = {
         bedTypes?: Array<'bunk' | 'cot' | 'king' | 'queen' | 'sofabed' | 'twin'>;
         position?: number | null;
         type?: 'Bathroom' | 'Bedroom' | 'Den' | 'Kitchen' | 'LivingRoom';
+        localizedTexts?: Array<{
+            locale: 'en-US' | 'es-ES';
+            markdown: string | null;
+            title: string | null;
+        }>;
     };
     path: {
         placeId: string;
@@ -1441,6 +1446,10 @@ export type PostV1HostPlacesByPlaceIdRoomsErrors = {
      * The request failed because a conflict was detected with the given request params
      */
     409: unknown;
+    /**
+     * Missing en-US title and description
+     */
+    422: unknown;
     /**
      * the server encountered an unexpected condition that prevented it from fulfilling the request
      */
