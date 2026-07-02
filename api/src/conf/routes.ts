@@ -11,6 +11,8 @@ export default function routes(r: PsychicRouter) {
   r.get('status', StatusController, 'show')
 
   r.namespace('v1', r => {
+    r.resource('host', { only: ['show', 'create', 'update'] })
+
     r.namespace('guest', r => {
       r.resources('reviews', { only: ['index', 'create', 'update', 'destroy'] })
 
