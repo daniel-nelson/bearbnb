@@ -22,6 +22,8 @@ export default class Host extends ApplicationModel {
   }
 
   public id: DreamColumn<Host, 'id'>
+  public legalName: DreamColumn<Host, 'legalName'>
+  public signedHostAgreementAt: DreamColumn<Host, 'signedHostAgreementAt'>
   public createdAt: DreamColumn<Host, 'createdAt'>
   public updatedAt: DreamColumn<Host, 'updatedAt'>
   public deletedAt: DreamColumn<Host, 'deletedAt'>

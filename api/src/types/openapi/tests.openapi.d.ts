@@ -481,6 +481,128 @@ export interface paths {
         };
         trace?: never;
     };
+    "/v1/host": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Fetch the current User's Host */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Success */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Host"];
+                    };
+                };
+                400: components["responses"]["BadRequest"];
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["Forbidden"];
+                404: components["responses"]["NotFound"];
+                409: components["responses"]["Conflict"];
+                500: components["responses"]["InternalServerError"];
+            };
+        };
+        put?: never;
+        /** @description Create the Host for the current User, with multi-locale profile text */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        legalName: string;
+                        /** Format: date-time */
+                        signedHostAgreementAt: string;
+                        localizedTexts?: {
+                            /** @enum {string} */
+                            locale: "en-US" | "es-ES";
+                            markdown: string | null;
+                            title: string | null;
+                        }[];
+                    };
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Host"];
+                    };
+                };
+                400: components["responses"]["BadRequest"];
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["Forbidden"];
+                404: components["responses"]["NotFound"];
+                409: components["responses"]["Conflict"];
+                /** @description Missing en-US title and description */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                500: components["responses"]["InternalServerError"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** @description Update the current Host, adding or removing non-default profile locales */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        legalName?: string;
+                        /** Format: date-time */
+                        signedHostAgreementAt?: string;
+                        localizedTexts?: {
+                            /** @enum {string} */
+                            locale: "en-US" | "es-ES";
+                            markdown: string | null;
+                            title: string | null;
+                        }[];
+                    };
+                };
+            };
+            responses: {
+                /** @description Success, no content */
+                204: components["responses"]["NoContent"];
+                400: components["responses"]["BadRequest"];
+                401: components["responses"]["Unauthorized"];
+                403: components["responses"]["Forbidden"];
+                404: components["responses"]["NotFound"];
+                409: components["responses"]["Conflict"];
+                500: components["responses"]["InternalServerError"];
+            };
+        };
+        trace?: never;
+    };
     "/v1/host/localized-texts/{id}": {
         parameters: {
             query?: never;
@@ -1268,6 +1390,23 @@ export interface components {
         FavoriteSummary: {
             id: string;
             placeId: string;
+        };
+        Host: {
+            id: string;
+            legalName: string;
+            localizedTexts: components["schemas"]["LocalizedText"][];
+            /** Format: date-time */
+            signedHostAgreementAt: string;
+        };
+        LocalizedText: {
+            id: string;
+            /** @enum {string} */
+            locale: "en-US" | "es-ES";
+            localizableId: string;
+            /** @enum {string} */
+            localizableType: "Host" | "Place" | "Room";
+            markdown: string | null;
+            title: string | null;
         };
         OpenapiValidationErrors: {
             /** @enum {string} */

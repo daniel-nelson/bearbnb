@@ -2,7 +2,7 @@
 
 import { client } from './client.gen.js';
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client/index.js';
-import type { DeleteV1GuestBookingsByIdData, DeleteV1GuestBookingsByIdErrors, DeleteV1GuestBookingsByIdResponses, DeleteV1GuestFavoritesByIdData, DeleteV1GuestFavoritesByIdErrors, DeleteV1GuestFavoritesByIdResponses, DeleteV1GuestReviewsByIdData, DeleteV1GuestReviewsByIdErrors, DeleteV1GuestReviewsByIdResponses, DeleteV1HostLocalizedTextsByIdData, DeleteV1HostLocalizedTextsByIdErrors, DeleteV1HostLocalizedTextsByIdResponses, DeleteV1HostPlacesByIdData, DeleteV1HostPlacesByIdErrors, DeleteV1HostPlacesByIdResponses, DeleteV1HostPlacesByPlaceIdRoomsByIdData, DeleteV1HostPlacesByPlaceIdRoomsByIdErrors, DeleteV1HostPlacesByPlaceIdRoomsByIdResponses, GetStatusData, GetStatusErrors, GetStatusResponses, GetV1GuestBookingsData, GetV1GuestBookingsErrors, GetV1GuestBookingsResponses, GetV1GuestFavoritesData, GetV1GuestFavoritesErrors, GetV1GuestFavoritesResponses, GetV1GuestReviewsData, GetV1GuestReviewsErrors, GetV1GuestReviewsResponses, GetV1HostPlacesByIdData, GetV1HostPlacesByIdErrors, GetV1HostPlacesByIdResponses, GetV1HostPlacesByPlaceIdRoomsByIdData, GetV1HostPlacesByPlaceIdRoomsByIdErrors, GetV1HostPlacesByPlaceIdRoomsByIdResponses, GetV1HostPlacesByPlaceIdRoomsData, GetV1HostPlacesByPlaceIdRoomsErrors, GetV1HostPlacesByPlaceIdRoomsResponses, GetV1HostPlacesData, GetV1HostPlacesErrors, GetV1HostPlacesResponses, GetV1MeData, GetV1MeErrors, GetV1MeResponses, GetV1VisitorPlacesByIdAvailabilityData, GetV1VisitorPlacesByIdAvailabilityErrors, GetV1VisitorPlacesByIdAvailabilityResponses, GetV1VisitorPlacesByIdData, GetV1VisitorPlacesByIdErrors, GetV1VisitorPlacesByIdResponses, GetV1VisitorPlacesByPlaceIdReviewsData, GetV1VisitorPlacesByPlaceIdReviewsErrors, GetV1VisitorPlacesByPlaceIdReviewsResponses, GetV1VisitorPlacesData, GetV1VisitorPlacesErrors, GetV1VisitorPlacesResponses, PatchV1GuestBookingsByIdData, PatchV1GuestBookingsByIdErrors, PatchV1GuestBookingsByIdResponses, PatchV1GuestReviewsByIdData, PatchV1GuestReviewsByIdErrors, PatchV1GuestReviewsByIdResponses, PatchV1HostLocalizedTextsByIdData, PatchV1HostLocalizedTextsByIdErrors, PatchV1HostLocalizedTextsByIdResponses, PatchV1HostPlacesByIdData, PatchV1HostPlacesByIdErrors, PatchV1HostPlacesByIdResponses, PatchV1HostPlacesByPlaceIdRoomsByIdData, PatchV1HostPlacesByPlaceIdRoomsByIdErrors, PatchV1HostPlacesByPlaceIdRoomsByIdResponses, PostV1GuestBookingsData, PostV1GuestBookingsErrors, PostV1GuestBookingsResponses, PostV1GuestFavoritesData, PostV1GuestFavoritesErrors, PostV1GuestFavoritesResponses, PostV1GuestReviewsData, PostV1GuestReviewsErrors, PostV1GuestReviewsResponses, PostV1HostPlacesByPlaceIdRoomsData, PostV1HostPlacesByPlaceIdRoomsErrors, PostV1HostPlacesByPlaceIdRoomsResponses, PostV1HostPlacesData, PostV1HostPlacesErrors, PostV1HostPlacesResponses, PostV1SignUpData, PostV1SignUpErrors, PostV1SignUpResponses } from './types.gen.js';
+import type { DeleteV1GuestBookingsByIdData, DeleteV1GuestBookingsByIdErrors, DeleteV1GuestBookingsByIdResponses, DeleteV1GuestFavoritesByIdData, DeleteV1GuestFavoritesByIdErrors, DeleteV1GuestFavoritesByIdResponses, DeleteV1GuestReviewsByIdData, DeleteV1GuestReviewsByIdErrors, DeleteV1GuestReviewsByIdResponses, DeleteV1HostLocalizedTextsByIdData, DeleteV1HostLocalizedTextsByIdErrors, DeleteV1HostLocalizedTextsByIdResponses, DeleteV1HostPlacesByIdData, DeleteV1HostPlacesByIdErrors, DeleteV1HostPlacesByIdResponses, DeleteV1HostPlacesByPlaceIdRoomsByIdData, DeleteV1HostPlacesByPlaceIdRoomsByIdErrors, DeleteV1HostPlacesByPlaceIdRoomsByIdResponses, GetStatusData, GetStatusErrors, GetStatusResponses, GetV1GuestBookingsData, GetV1GuestBookingsErrors, GetV1GuestBookingsResponses, GetV1GuestFavoritesData, GetV1GuestFavoritesErrors, GetV1GuestFavoritesResponses, GetV1GuestReviewsData, GetV1GuestReviewsErrors, GetV1GuestReviewsResponses, GetV1HostData, GetV1HostErrors, GetV1HostPlacesByIdData, GetV1HostPlacesByIdErrors, GetV1HostPlacesByIdResponses, GetV1HostPlacesByPlaceIdRoomsByIdData, GetV1HostPlacesByPlaceIdRoomsByIdErrors, GetV1HostPlacesByPlaceIdRoomsByIdResponses, GetV1HostPlacesByPlaceIdRoomsData, GetV1HostPlacesByPlaceIdRoomsErrors, GetV1HostPlacesByPlaceIdRoomsResponses, GetV1HostPlacesData, GetV1HostPlacesErrors, GetV1HostPlacesResponses, GetV1HostResponses, GetV1MeData, GetV1MeErrors, GetV1MeResponses, GetV1VisitorPlacesByIdAvailabilityData, GetV1VisitorPlacesByIdAvailabilityErrors, GetV1VisitorPlacesByIdAvailabilityResponses, GetV1VisitorPlacesByIdData, GetV1VisitorPlacesByIdErrors, GetV1VisitorPlacesByIdResponses, GetV1VisitorPlacesByPlaceIdReviewsData, GetV1VisitorPlacesByPlaceIdReviewsErrors, GetV1VisitorPlacesByPlaceIdReviewsResponses, GetV1VisitorPlacesData, GetV1VisitorPlacesErrors, GetV1VisitorPlacesResponses, PatchV1GuestBookingsByIdData, PatchV1GuestBookingsByIdErrors, PatchV1GuestBookingsByIdResponses, PatchV1GuestReviewsByIdData, PatchV1GuestReviewsByIdErrors, PatchV1GuestReviewsByIdResponses, PatchV1HostData, PatchV1HostErrors, PatchV1HostLocalizedTextsByIdData, PatchV1HostLocalizedTextsByIdErrors, PatchV1HostLocalizedTextsByIdResponses, PatchV1HostPlacesByIdData, PatchV1HostPlacesByIdErrors, PatchV1HostPlacesByIdResponses, PatchV1HostPlacesByPlaceIdRoomsByIdData, PatchV1HostPlacesByPlaceIdRoomsByIdErrors, PatchV1HostPlacesByPlaceIdRoomsByIdResponses, PatchV1HostResponses, PostV1GuestBookingsData, PostV1GuestBookingsErrors, PostV1GuestBookingsResponses, PostV1GuestFavoritesData, PostV1GuestFavoritesErrors, PostV1GuestFavoritesResponses, PostV1GuestReviewsData, PostV1GuestReviewsErrors, PostV1GuestReviewsResponses, PostV1HostData, PostV1HostErrors, PostV1HostPlacesByPlaceIdRoomsData, PostV1HostPlacesByPlaceIdRoomsErrors, PostV1HostPlacesByPlaceIdRoomsResponses, PostV1HostPlacesData, PostV1HostPlacesErrors, PostV1HostPlacesResponses, PostV1HostResponses, PostV1SignUpData, PostV1SignUpErrors, PostV1SignUpResponses } from './types.gen.js';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -143,6 +143,41 @@ export const patchV1GuestReviewsById = <ThrowOnError extends boolean = false>(op
     headers: {
         'Content-Type': 'application/json',
         ...options.headers
+    }
+});
+
+/**
+ * Fetch the current User's Host
+ */
+export const getV1Host = <ThrowOnError extends boolean = false>(options?: Options<GetV1HostData, ThrowOnError>): RequestResult<GetV1HostResponses, GetV1HostErrors, ThrowOnError> => (options?.client ?? client).get<GetV1HostResponses, GetV1HostErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/host',
+    ...options
+});
+
+/**
+ * Update the current Host, adding or removing non-default profile locales
+ */
+export const patchV1Host = <ThrowOnError extends boolean = false>(options?: Options<PatchV1HostData, ThrowOnError>): RequestResult<PatchV1HostResponses, PatchV1HostErrors, ThrowOnError> => (options?.client ?? client).patch<PatchV1HostResponses, PatchV1HostErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/host',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers
+    }
+});
+
+/**
+ * Create the Host for the current User, with multi-locale profile text
+ */
+export const postV1Host = <ThrowOnError extends boolean = false>(options?: Options<PostV1HostData, ThrowOnError>): RequestResult<PostV1HostResponses, PostV1HostErrors, ThrowOnError> => (options?.client ?? client).post<PostV1HostResponses, PostV1HostErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/host',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers
     }
 });
 
