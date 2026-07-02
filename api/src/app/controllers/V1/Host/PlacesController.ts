@@ -42,11 +42,15 @@ export default class V1HostPlacesController extends V1HostBaseController {
   @OpenAPI(Place, {
     status: 200,
     tags: openApiTags,
-    description: 'Fetch a Place',
+    description: 'Fetch a Place, with localized text rows and embedded Rooms',
+    serializerKey: 'forHost',
     fastJsonStringify: true,
   })
   public async show() {
-    const place = await this.place()
+    const place = await this.currentHost
+      .associationQuery('places')
+      .preloadFor('forHost')
+      .findOrFail(this.castParam('id', 'uuid'))
     this.ok(place)
   }
 
