@@ -81,7 +81,7 @@ describe('V1/Host/PlacesController', () => {
   })
 
   describe('POST create', () => {
-    const create = async <StatusCode extends 201 | 400 | 404>(
+    const create = async <StatusCode extends 201 | 400 | 404 | 422>(
       data: RequestBody<'post', '/v1/host/places'>,
       expectedStatus: StatusCode
     ) => {
@@ -90,17 +90,27 @@ describe('V1/Host/PlacesController', () => {
       })
     }
 
-    it('creates a Place for this Host', async () => {
+    it('creates a Place for this Host with multi-locale localized text', async () => {
       const { body } = await create({
         name: 'The Place name',
         style: 'cottage',
         sleeps: 1,
+        localizedTexts: [
+          { locale: 'en-US', title: 'Cozy cottage', markdown: 'A warm den' },
+          { locale: 'es-ES', title: 'Cabaña acogedora', markdown: 'Una guarida cálida' },
+        ],
       }, 201)
 
       const place = await host.associationQuery('places').firstOrFail()
       expect(place.name).toEqual('The Place name')
       expect(place.style).toEqual('cottage')
       expect(place.sleeps).toEqual(1)
+
+      const localizedTexts = await place.associationQuery('localizedTexts').order('locale').all()
+      expect(localizedTexts.map(text => [text.locale, text.title, text.markdown])).toEqual([
+        ['en-US', 'Cozy cottage', 'A warm den'],
+        ['es-ES', 'Cabaña acogedora', 'Una guarida cálida'],
+      ])
 
       expect(body).toEqual(
         expect.objectContaining({
@@ -110,6 +120,17 @@ describe('V1/Host/PlacesController', () => {
           sleeps: place.sleeps,
         }),
       )
+    })
+
+    it('returns 422 when the default-locale title and description are missing', async () => {
+      await create({
+        name: 'The Place name',
+        style: 'cottage',
+        sleeps: 1,
+        localizedTexts: [{ locale: 'es-ES', title: 'Cabaña', markdown: 'Una guarida' }],
+      }, 422)
+
+      expect(await host.associationQuery('places').first()).toBeNull()
     })
   })
 
