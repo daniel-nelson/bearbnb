@@ -16,6 +16,7 @@ export default class Room extends ApplicationModel {
     return {
       default: 'RoomSerializer',
       summary: 'RoomSummarySerializer',
+      forHost: 'RoomForHostSerializer',
     }
   }
 

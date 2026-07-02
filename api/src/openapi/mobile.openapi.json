@@ -1575,7 +1575,7 @@
         "tags": [
           "rooms"
         ],
-        "description": "Fetch a Room",
+        "description": "Fetch a Room, with localized text rows for editing/display",
         "responses": {
           "200": {
             "content": {
@@ -1583,19 +1583,19 @@
                 "schema": {
                   "anyOf": [
                     {
-                      "$ref": "#/components/schemas/RoomBathroom"
+                      "$ref": "#/components/schemas/RoomBathroomForHost"
                     },
                     {
-                      "$ref": "#/components/schemas/RoomBedroom"
+                      "$ref": "#/components/schemas/RoomBedroomForHost"
                     },
                     {
-                      "$ref": "#/components/schemas/RoomDen"
+                      "$ref": "#/components/schemas/RoomDenForHost"
                     },
                     {
-                      "$ref": "#/components/schemas/RoomKitchen"
+                      "$ref": "#/components/schemas/RoomKitchenForHost"
                     },
                     {
-                      "$ref": "#/components/schemas/RoomLivingRoom"
+                      "$ref": "#/components/schemas/RoomLivingRoomForHost"
                     }
                   ]
                 }
@@ -1627,7 +1627,7 @@
         "tags": [
           "rooms"
         ],
-        "description": "Update a Room",
+        "description": "Update a Room, with multi-locale localized text. The Room type is fixed after creation.",
         "requestBody": {
           "content": {
             "application/json": {
@@ -1678,6 +1678,38 @@
                       "integer",
                       "null"
                     ]
+                  },
+                  "localizedTexts": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "locale",
+                        "title",
+                        "markdown"
+                      ],
+                      "properties": {
+                        "locale": {
+                          "type": "string",
+                          "enum": [
+                            "en-US",
+                            "es-ES"
+                          ]
+                        },
+                        "markdown": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "title": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        }
+                      }
+                    }
                   }
                 }
               }
@@ -1703,6 +1735,9 @@
           },
           "409": {
             "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "description": "Missing en-US title and description"
           },
           "500": {
             "$ref": "#/components/responses/InternalServerError"
@@ -2668,6 +2703,44 @@
           }
         }
       },
+      "RoomBathroomForHost": {
+        "type": "object",
+        "required": [
+          "bathOrShowerStyle",
+          "id",
+          "localizedTexts",
+          "position",
+          "type"
+        ],
+        "properties": {
+          "bathOrShowerStyle": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The following values will be allowed:\n  bath,\n  bath_and_shower,\n  none,\n  shower"
+          },
+          "id": {
+            "type": "string"
+          },
+          "localizedTexts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LocalizedText"
+            }
+          },
+          "position": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "type": {
+            "type": "string",
+            "description": "The following values will be allowed:\n  Bathroom"
+          }
+        }
+      },
       "RoomBathroomForVisitors": {
         "type": "object",
         "required": [
@@ -2750,6 +2823,44 @@
           }
         }
       },
+      "RoomBedroomForHost": {
+        "type": "object",
+        "required": [
+          "bedTypes",
+          "id",
+          "localizedTexts",
+          "position",
+          "type"
+        ],
+        "properties": {
+          "bedTypes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "description": "The following values will be allowed:\n  bunk,\n  cot,\n  king,\n  queen,\n  sofabed,\n  twin"
+            }
+          },
+          "id": {
+            "type": "string"
+          },
+          "localizedTexts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LocalizedText"
+            }
+          },
+          "position": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "type": {
+            "type": "string",
+            "description": "The following values will be allowed:\n  Bedroom"
+          }
+        }
+      },
       "RoomBedroomForVisitors": {
         "type": "object",
         "required": [
@@ -2814,6 +2925,36 @@
         "properties": {
           "id": {
             "type": "string"
+          },
+          "position": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "type": {
+            "type": "string",
+            "description": "The following values will be allowed:\n  Den"
+          }
+        }
+      },
+      "RoomDenForHost": {
+        "type": "object",
+        "required": [
+          "id",
+          "localizedTexts",
+          "position",
+          "type"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "localizedTexts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LocalizedText"
+            }
           },
           "position": {
             "type": [
@@ -2905,6 +3046,44 @@
           }
         }
       },
+      "RoomKitchenForHost": {
+        "type": "object",
+        "required": [
+          "appliances",
+          "id",
+          "localizedTexts",
+          "position",
+          "type"
+        ],
+        "properties": {
+          "appliances": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "description": "The following values will be allowed:\n  dishwasher,\n  microwave,\n  oven,\n  stove"
+            }
+          },
+          "id": {
+            "type": "string"
+          },
+          "localizedTexts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LocalizedText"
+            }
+          },
+          "position": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "type": {
+            "type": "string",
+            "description": "The following values will be allowed:\n  Kitchen"
+          }
+        }
+      },
       "RoomKitchenForVisitors": {
         "type": "object",
         "required": [
@@ -2969,6 +3148,36 @@
         "properties": {
           "id": {
             "type": "string"
+          },
+          "position": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "type": {
+            "type": "string",
+            "description": "The following values will be allowed:\n  LivingRoom"
+          }
+        }
+      },
+      "RoomLivingRoomForHost": {
+        "type": "object",
+        "required": [
+          "id",
+          "localizedTexts",
+          "position",
+          "type"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "localizedTexts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LocalizedText"
+            }
           },
           "position": {
             "type": [

@@ -55,11 +55,15 @@ export default class V1HostPlacesRoomsController extends V1HostPlacesBaseControl
   @OpenAPI(Room, {
     status: 200,
     tags: openApiTags,
-    description: 'Fetch a Room',
+    description: 'Fetch a Room, with localized text rows for editing/display',
+    serializerKey: 'forHost',
     fastJsonStringify: true,
   })
   public async show() {
-    const room = await this.room()
+    const room = await this.currentPlace
+      .associationQuery('rooms')
+      .preloadFor('forHost')
+      .findOrFail(this.castParam('id', 'uuid'))
     this.ok(room)
   }
 
@@ -124,15 +128,32 @@ export default class V1HostPlacesRoomsController extends V1HostPlacesBaseControl
   @OpenAPI(Room, {
     status: 204,
     tags: openApiTags,
-    description: 'Update a Room',
+    description: 'Update a Room, with multi-locale localized text. The Room type is fixed after creation.',
     fastJsonStringify: true,
     requestBody: {
       params: paramSafeColumns,
+      combining: localizedTextsRequestBody,
+    },
+    responses: {
+      422: { description: `Missing ${DEFAULT_LOCALE} title and description` },
     },
   })
   public async update() {
+    const roomParams = this.extractParams(Room, paramSafeColumns)
+    const localizedTexts = this.extractLocalizedTexts()
+
+    const defaultText = localizedTexts.find(text => text.locale === DEFAULT_LOCALE)
+    if (!defaultText?.title || !defaultText?.markdown)
+      return this.unprocessableContent({
+        errors: { localizedTexts: [`must include a ${DEFAULT_LOCALE} title and description`] },
+      })
+
     const room = await this.room()
-    await room.update(this.extractParams(Room, paramSafeColumns))
+    await ApplicationModel.transaction(async txn => {
+      await room.txn(txn).update(roomParams)
+      await reconcileLocalizedTexts(room, localizedTexts, txn, { removeMissing: true })
+    })
+
     this.noContent()
   }
 

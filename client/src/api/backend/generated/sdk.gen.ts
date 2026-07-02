@@ -288,7 +288,7 @@ export const deleteV1HostPlacesByPlaceIdRoomsById = <ThrowOnError extends boolea
 });
 
 /**
- * Fetch a Room
+ * Fetch a Room, with localized text rows for editing/display
  */
 export const getV1HostPlacesByPlaceIdRoomsById = <ThrowOnError extends boolean = false>(options: Options<GetV1HostPlacesByPlaceIdRoomsByIdData, ThrowOnError>): RequestResult<GetV1HostPlacesByPlaceIdRoomsByIdResponses, GetV1HostPlacesByPlaceIdRoomsByIdErrors, ThrowOnError> => (options.client ?? client).get<GetV1HostPlacesByPlaceIdRoomsByIdResponses, GetV1HostPlacesByPlaceIdRoomsByIdErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -297,7 +297,7 @@ export const getV1HostPlacesByPlaceIdRoomsById = <ThrowOnError extends boolean =
 });
 
 /**
- * Update a Room
+ * Update a Room, with multi-locale localized text. The Room type is fixed after creation.
  */
 export const patchV1HostPlacesByPlaceIdRoomsById = <ThrowOnError extends boolean = false>(options: Options<PatchV1HostPlacesByPlaceIdRoomsByIdData, ThrowOnError>): RequestResult<PatchV1HostPlacesByPlaceIdRoomsByIdResponses, PatchV1HostPlacesByPlaceIdRoomsByIdErrors, ThrowOnError> => (options.client ?? client).patch<PatchV1HostPlacesByPlaceIdRoomsByIdResponses, PatchV1HostPlacesByPlaceIdRoomsByIdErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

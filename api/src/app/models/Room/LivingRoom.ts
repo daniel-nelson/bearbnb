@@ -8,6 +8,7 @@ export default class LivingRoom extends Room {
     return {
       default: 'Room/LivingRoomSerializer',
       summary: 'Room/LivingRoomSummarySerializer',
+      forHost: 'Room/LivingRoomForHostSerializer',
       forVisitors: 'Room/LivingRoomForVisitorsSerializer',
     }
   }
