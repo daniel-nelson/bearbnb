@@ -783,7 +783,7 @@ export interface paths {
             };
             cookie?: never;
         };
-        /** @description Fetch a Place */
+        /** @description Fetch a Place, with localized text rows and embedded Rooms */
         get: {
             parameters: {
                 query?: never;
@@ -801,7 +801,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["Place"];
+                        "application/json": components["schemas"]["PlaceForHost"];
                     };
                 };
                 400: components["responses"]["BadRequest"];
@@ -1444,6 +1444,15 @@ export interface components {
         PlaceAvailability: {
             occupiedRanges: components["schemas"]["PlaceOccupiedRange"][];
             placeId: string;
+        };
+        PlaceForHost: {
+            id: string;
+            localizedTexts: components["schemas"]["LocalizedText"][];
+            name: string;
+            rooms: (components["schemas"]["RoomBathroom"] | components["schemas"]["RoomBedroom"] | components["schemas"]["RoomDen"] | components["schemas"]["RoomKitchen"] | components["schemas"]["RoomLivingRoom"])[];
+            sleeps: number;
+            /** @enum {string} */
+            style: "cabin" | "cave" | "cottage" | "dump" | "lean_to" | "tent" | "treehouse";
         };
         PlaceForVisitors: {
             displayStyle: string;

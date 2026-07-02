@@ -70,6 +70,7 @@ export const globalTypeConfig = {
     'LocalizedTextSerializer',
     'LocalizedTextSummarySerializer',
     'PlaceAvailabilitySerializer',
+    'PlaceForHostSerializer',
     'PlaceForVisitorsSerializer',
     'PlaceOccupiedRangeSerializer',
     'PlaceSerializer',

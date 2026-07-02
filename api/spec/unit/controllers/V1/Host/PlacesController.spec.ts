@@ -3,6 +3,7 @@ import User from '@models/User.js'
 import Host from '@models/Host.js'
 import createHostPlace from '@spec/factories/HostPlaceFactory.js'
 import createPlace from '@spec/factories/PlaceFactory.js'
+import createBedroom from '@spec/factories/Room/BedroomFactory.js'
 import createUser from '@spec/factories/UserFactory.js'
 import createHost from '@spec/factories/HostFactory.js'
 import { RequestBody, session, SpecRequestType } from '@spec/unit/helpers/authentication.js'
@@ -55,9 +56,10 @@ describe('V1/Host/PlacesController', () => {
       })
     }
 
-    it('returns the specified Place', async () => {
+    it('returns the specified Place with localized text rows and embedded Rooms', async () => {
       const place = await createPlace()
       await createHostPlace({ host, place })
+      const bedroom = await createBedroom({ place })
 
       const { body } = await show(place, 200)
 
@@ -69,6 +71,16 @@ describe('V1/Host/PlacesController', () => {
           sleeps: place.sleeps,
         }),
       )
+
+      // localized text rows for editing/display (the auto-created en-US row)
+      expect(body.localizedTexts).toEqual([
+        expect.objectContaining({ locale: 'en-US', title: `My ${place.style}` }),
+      ])
+
+      // embedded Rooms for the Place
+      expect(body.rooms).toEqual([
+        expect.objectContaining({ id: bedroom.id, type: 'Bedroom', position: bedroom.position }),
+      ])
     })
 
     context('Place created by another Host', () => {
