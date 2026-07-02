@@ -99,15 +99,40 @@ export default class V1HostPlacesController extends V1HostBaseController {
   @OpenAPI(Place, {
     status: 204,
     tags: openApiTags,
-    description: 'Update a Place',
+    description: 'Update a Place, with multi-locale localized text',
     fastJsonStringify: true,
     requestBody: {
       params: paramSafeColumns,
+      combining: {
+        localizedTexts: {
+          type: 'array',
+          items: OpenAPI.forDream(LocalizedText, {
+            params: localizedTextParams,
+            required: localizedTextParams,
+          }),
+        },
+      },
+    },
+    responses: {
+      422: { description: `Missing ${DEFAULT_LOCALE} title and description` },
     },
   })
   public async update() {
+    const placeParams = this.extractParams(Place, paramSafeColumns)
+    const localizedTexts = this.extractLocalizedTexts()
+
+    const defaultText = localizedTexts.find(text => text.locale === DEFAULT_LOCALE)
+    if (!defaultText?.title || !defaultText?.markdown)
+      return this.unprocessableContent({
+        errors: { localizedTexts: [`must include a ${DEFAULT_LOCALE} title and description`] },
+      })
+
     const place = await this.place()
-    await place.update(this.extractParams(Place, paramSafeColumns))
+    await ApplicationModel.transaction(async txn => {
+      await place.txn(txn).update(placeParams)
+      await this.reconcileLocalizedTexts(place, localizedTexts, txn, { removeMissing: true })
+    })
+
     this.noContent()
   }
 
