@@ -1147,13 +1147,13 @@
         "tags": [
           "places"
         ],
-        "description": "Fetch a Place",
+        "description": "Fetch a Place, with localized text rows and embedded Rooms",
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Place"
+                  "$ref": "#/components/schemas/PlaceForHost"
                 }
               }
             },
@@ -2342,6 +2342,68 @@
           },
           "placeId": {
             "type": "string"
+          }
+        }
+      },
+      "PlaceForHost": {
+        "type": "object",
+        "required": [
+          "id",
+          "localizedTexts",
+          "name",
+          "rooms",
+          "sleeps",
+          "style"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "localizedTexts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LocalizedText"
+            }
+          },
+          "name": {
+            "type": "string"
+          },
+          "rooms": {
+            "type": "array",
+            "items": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/RoomBathroom"
+                },
+                {
+                  "$ref": "#/components/schemas/RoomBedroom"
+                },
+                {
+                  "$ref": "#/components/schemas/RoomDen"
+                },
+                {
+                  "$ref": "#/components/schemas/RoomKitchen"
+                },
+                {
+                  "$ref": "#/components/schemas/RoomLivingRoom"
+                }
+              ]
+            }
+          },
+          "sleeps": {
+            "type": "integer"
+          },
+          "style": {
+            "type": "string",
+            "enum": [
+              "cabin",
+              "cave",
+              "cottage",
+              "dump",
+              "lean_to",
+              "tent",
+              "treehouse"
+            ]
           }
         }
       },

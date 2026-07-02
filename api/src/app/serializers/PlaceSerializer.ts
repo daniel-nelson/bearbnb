@@ -24,6 +24,11 @@ export const PlaceSummaryForVisitorsSerializer = (place: Place) =>
     })
     .customAttribute('favorited', () => !!place.currentFavorite, { openapi: 'boolean' })
 
+export const PlaceForHostSerializer = (place: Place) =>
+  PlaceSerializer(place)
+    .rendersMany('localizedTexts')
+    .rendersMany('rooms')
+
 export const PlaceForVisitorsSerializer = (place: Place, passthrough: { locale: LocalesEnum }) =>
   PlaceSummaryForVisitorsSerializer(place)
     .attribute('style')

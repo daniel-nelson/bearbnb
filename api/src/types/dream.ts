@@ -731,7 +731,13 @@ export const schema = {
     },
   },
   places: {
-    serializerKeys: ['default', 'forVisitors', 'summary', 'summaryForVisitors'],
+    serializerKeys: [
+      'default',
+      'forHost',
+      'forVisitors',
+      'summary',
+      'summaryForVisitors',
+    ],
     scopes: {
       default: ['dream:SoftDelete'],
       named: [],
