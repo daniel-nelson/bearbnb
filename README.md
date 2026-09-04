@@ -21,36 +21,57 @@ This project ships with AI tooling for Dream and Psychic development.
 
 \* if this Psychic app was created without a front-end client, then these files are in the project root
 
-## Running specs locally
+## Fresh clone setup
 
-Create file `.env.test` in the `api` directory:
-
-```
-DB_USER=<your PostgreSQL username>
-DB_NAME=bearbnb_test
-DB_PORT=5432
-DB_HOST=localhost
-APP_ENCRYPTION_KEY="RpCuTrH6fz+yKpxLJPUjsKoIlz+aHO79N5hI3o1oVSU="
-TZ=UTC
-```
-
-Then:
+BearBnB requires Node 26 or newer, pnpm, PostgreSQL, and Redis. The repository has no root `package.json`, so install each package separately from the repository root:
 
 ```bash
-cd api
-pnpm psy db:create
-pnpm psy db:migrate
-pnpm uspec
+pnpm --dir api install
+pnpm --dir client install
+pnpm --dir admin install
+pnpm --dir internal install
 ```
 
-## Running the app locally
+Copy the complete local-development and test environment templates:
 
-Create `api/.env`, then:
+```bash
+cp api/.env.example api/.env
+cp api/.env.test.example api/.env.test
+```
+
+In both copied files:
+
+1. Replace `<db-user>` and `<db-password>` with your local PostgreSQL credentials. Leave `DB_PASSWORD` empty if your local PostgreSQL connection does not require one.
+2. Replace `APP_ENCRYPTION_KEY` and `COLUMN_ENCRYPTION_KEY` with separate keys. Generate them by running `pnpm --dir api psy g:encryption-key` twice from the repository root.
+
+The copied files already contain the local Firebase Auth emulator configuration and the distinct development/test database names. They are ignored by Git and must not be committed.
+
+Create and migrate both databases from `api/`:
 
 ```bash
 cd api
 NODE_ENV=development pnpm psy db:create
 NODE_ENV=development pnpm psy db:migrate
+pnpm psy db:create
+pnpm psy db:migrate
+```
+
+## Running specs locally
+
+Run commands from `api/`:
+
+```bash
+pnpm uspec
+pnpm fspec
+```
+
+`pnpm fspec` starts and stops the Firebase Auth emulator and front-end test servers automatically.
+
+## Running the app locally
+
+With PostgreSQL and Redis running, start the full development stack from `api/`:
+
+```bash
 pnpm dev
 ```
 
