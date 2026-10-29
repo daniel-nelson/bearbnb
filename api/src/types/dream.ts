@@ -456,7 +456,7 @@ export const schema = {
     },
   },
   places: {
-    serializerKeys: ['default', 'summary'],
+    serializerKeys: ['default', 'forVisitors', 'summary', 'summaryForVisitors'],
     scopes: {
       default: ['dream:SoftDelete'],
       named: [],
@@ -585,7 +585,7 @@ export const schema = {
     },
   },
   rooms: {
-    serializerKeys: ['default', 'summary'],
+    serializerKeys: ['default', 'forVisitors', 'summary'],
     scopes: {
       default: ['dream:STI', 'dream:SoftDelete'],
       named: [],
