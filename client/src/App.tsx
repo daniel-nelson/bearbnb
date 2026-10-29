@@ -7,6 +7,8 @@ import HostPlaceNew from './pages/HostPlaceNew'
 import HostPlaceShow from './pages/HostPlaceShow'
 import HostPlaceEdit from './pages/HostPlaceEdit'
 import HostRoomNew from './pages/HostRoomNew'
+import HostRoomShow from './pages/HostRoomShow'
+import HostRoomEdit from './pages/HostRoomEdit'
 
 export default function App() {
   return (
@@ -17,6 +19,8 @@ export default function App() {
       <Route path="/host/places" element={<HostPlaces />} />
       <Route path="/host/places/new" element={<HostPlaceNew />} />
       <Route path="/host/places/:placeId/rooms/new" element={<HostRoomNew />} />
+      <Route path="/host/places/:placeId/rooms/:id/edit" element={<HostRoomEdit />} />
+      <Route path="/host/places/:placeId/rooms/:id" element={<HostRoomShow />} />
       <Route path="/host/places/:id/edit" element={<HostPlaceEdit />} />
       <Route path="/host/places/:id" element={<HostPlaceShow />} />
     </Routes>

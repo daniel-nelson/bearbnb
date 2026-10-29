@@ -1,5 +1,10 @@
 import { ObjectSerializer } from '@rvoh/dream'
-import { RoomForVisitorsSerializer, RoomSerializer, RoomSummarySerializer } from '#serializers/RoomSerializer.js'
+import {
+  RoomForHostSerializer,
+  RoomForVisitorsSerializer,
+  RoomSerializer,
+  RoomSummarySerializer,
+} from '#serializers/RoomSerializer.js'
 import Bedroom from '#models/Room/Bedroom.js'
 import { type BedTypesEnum, BedTypesEnumValues, type LocalesEnum } from '#src/types/db.js'
 import i18n from '#src/utils/i18n.js'
@@ -17,6 +22,9 @@ export const BedTypeSerializer = (bedType: BedTypesEnum, passthrough: { locale: 
     .customAttribute('label', () => i18n(passthrough.locale, `rooms.Bedroom.bedTypes.${bedType}`), {
       openapi: 'string',
     })
+
+export const RoomBedroomForHostSerializer = (bedroom: Bedroom) =>
+  RoomForHostSerializer(Bedroom, bedroom).attribute('bedTypes')
 
 export const RoomBedroomForVisitorsSerializer = (roomBedroom: Bedroom, passthrough: { locale: LocalesEnum }) =>
   RoomForVisitorsSerializer(Bedroom, roomBedroom, passthrough).rendersMany<Bedroom>('bedTypes', {

@@ -44,11 +44,15 @@ export default class V1HostPlacesRoomsController extends V1HostPlacesBaseControl
   @OpenAPI(Room, {
     status: 200,
     tags: openApiTags,
-    description: 'Fetch a Room',
+    description: 'Fetch a Room, with localized text rows for editing/display',
+    serializerKey: 'forHost',
     fastJsonStringify: true,
   })
   public async show() {
-    const room = await this.room()
+    const room = await this.currentPlace
+      .associationQuery('rooms')
+      .preloadFor('forHost')
+      .findOrFail(this.castParam('id', 'uuid'))
     this.ok(room)
   }
 
@@ -120,15 +124,39 @@ export default class V1HostPlacesRoomsController extends V1HostPlacesBaseControl
   @OpenAPI(Room, {
     status: 204,
     tags: openApiTags,
-    description: 'Update a Room',
+    description: 'Update a Room, with multi-locale localized text. The Room type is fixed after creation.',
     fastJsonStringify: true,
     requestBody: {
       params: paramSafeColumns,
+      combining: {
+        localizedTexts: {
+          type: 'array',
+          items: OpenAPI.forDream(LocalizedText, {
+            params: localizedTextParams,
+            required: localizedTextParams,
+          }),
+        },
+      },
+    },
+    responses: {
+      422: { description: `Missing ${DEFAULT_LOCALE} title and description` },
     },
   })
   public async update() {
     const room = await this.room()
-    await room.update(this.extractParams(Room, paramSafeColumns))
+    const roomParams = this.extractParams(Room, paramSafeColumns)
+    const localizedTexts = this.extractLocalizedTexts()
+
+    if (!ReconcileLocalizedTexts.hasDefaultText(localizedTexts))
+      return this.unprocessableContent({
+        errors: { localizedTexts: [`must include a ${DEFAULT_LOCALE} title and description`] },
+      })
+
+    await ApplicationModel.transaction(async txn => {
+      await room.txn(txn).update(roomParams)
+      await ReconcileLocalizedTexts.call(room, localizedTexts, txn, { removeMissing: true })
+    })
+
     this.noContent()
   }
 

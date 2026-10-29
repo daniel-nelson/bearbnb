@@ -1,5 +1,10 @@
 import { ObjectSerializer } from '@rvoh/dream'
-import { RoomForVisitorsSerializer, RoomSerializer, RoomSummarySerializer } from '#serializers/RoomSerializer.js'
+import {
+  RoomForHostSerializer,
+  RoomForVisitorsSerializer,
+  RoomSerializer,
+  RoomSummarySerializer,
+} from '#serializers/RoomSerializer.js'
 import Bathroom from '#models/Room/Bathroom.js'
 import {
   type BathOrShowerStylesEnum,
@@ -31,6 +36,9 @@ export const BathOrShowerStyleSerializer = (
         openapi: 'string',
       }
     )
+
+export const RoomBathroomForHostSerializer = (bathroom: Bathroom) =>
+  RoomForHostSerializer(Bathroom, bathroom).attribute('bathOrShowerStyle')
 
 export const RoomBathroomForVisitorsSerializer = (roomBathroom: Bathroom, passthrough: { locale: LocalesEnum }) =>
   RoomForVisitorsSerializer(Bathroom, roomBathroom, passthrough)

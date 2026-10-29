@@ -157,6 +157,14 @@ export type RoomBathroom = {
     type: 'Bathroom';
 };
 
+export type RoomBathroomForHost = {
+    bathOrShowerStyle: 'bath' | 'bath_and_shower' | 'none' | 'shower' | null;
+    id: string;
+    localizedTexts: Array<LocalizedText>;
+    position: number | null;
+    type: 'Bathroom';
+};
+
 export type RoomBathroomForVisitors = {
     bathOrShowerStyle: BathOrShowerStyle;
     displayType: string;
@@ -174,6 +182,14 @@ export type RoomBathroomSummary = {
 export type RoomBedroom = {
     bedTypes: Array<'bunk' | 'cot' | 'king' | 'queen' | 'sofabed' | 'twin'>;
     id: string;
+    position: number | null;
+    type: 'Bedroom';
+};
+
+export type RoomBedroomForHost = {
+    bedTypes: Array<'bunk' | 'cot' | 'king' | 'queen' | 'sofabed' | 'twin'>;
+    id: string;
+    localizedTexts: Array<LocalizedText>;
     position: number | null;
     type: 'Bedroom';
 };
@@ -198,6 +214,13 @@ export type RoomDen = {
     type: 'Den';
 };
 
+export type RoomDenForHost = {
+    id: string;
+    localizedTexts: Array<LocalizedText>;
+    position: number | null;
+    type: 'Den';
+};
+
 export type RoomDenForVisitors = {
     displayType: string;
     id: string;
@@ -218,6 +241,14 @@ export type RoomKitchen = {
     type: 'Kitchen';
 };
 
+export type RoomKitchenForHost = {
+    appliances: Array<'dishwasher' | 'microwave' | 'oven' | 'stove'>;
+    id: string;
+    localizedTexts: Array<LocalizedText>;
+    position: number | null;
+    type: 'Kitchen';
+};
+
 export type RoomKitchenForVisitors = {
     appliances: Array<Appliance>;
     displayType: string;
@@ -234,6 +265,13 @@ export type RoomKitchenSummary = {
 
 export type RoomLivingRoom = {
     id: string;
+    position: number | null;
+    type: 'LivingRoom';
+};
+
+export type RoomLivingRoomForHost = {
+    id: string;
+    localizedTexts: Array<LocalizedText>;
     position: number | null;
     type: 'LivingRoom';
 };
@@ -1552,7 +1590,7 @@ export type GetV1HostPlacesByPlaceIdRoomsByIdResponses = {
     /**
      * Success
      */
-    200: RoomBathroom | RoomBedroom | RoomDen | RoomKitchen | RoomLivingRoom;
+    200: RoomBathroomForHost | RoomBedroomForHost | RoomDenForHost | RoomKitchenForHost | RoomLivingRoomForHost;
 };
 
 export type GetV1HostPlacesByPlaceIdRoomsByIdResponse = GetV1HostPlacesByPlaceIdRoomsByIdResponses[keyof GetV1HostPlacesByPlaceIdRoomsByIdResponses];
@@ -1563,6 +1601,11 @@ export type PatchV1HostPlacesByPlaceIdRoomsByIdData = {
         bathOrShowerStyle?: 'bath' | 'bath_and_shower' | 'none' | 'shower' | null;
         bedTypes?: Array<'bunk' | 'cot' | 'king' | 'queen' | 'sofabed' | 'twin'>;
         position?: number | null;
+        localizedTexts?: Array<{
+            locale: 'en-US' | 'es-ES';
+            markdown: string | null;
+            title: string | null;
+        }>;
     };
     path: {
         placeId: string;
@@ -1593,6 +1636,10 @@ export type PatchV1HostPlacesByPlaceIdRoomsByIdErrors = {
      * The request failed because a conflict was detected with the given request params
      */
     409: unknown;
+    /**
+     * Missing en-US title and description
+     */
+    422: unknown;
     /**
      * the server encountered an unexpected condition that prevented it from fulfilling the request
      */

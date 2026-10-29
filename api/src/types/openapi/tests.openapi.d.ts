@@ -1005,7 +1005,7 @@ export interface paths {
             };
             cookie?: never;
         };
-        /** @description Fetch a Room */
+        /** @description Fetch a Room, with localized text rows for editing/display */
         get: {
             parameters: {
                 query?: never;
@@ -1024,7 +1024,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["RoomBathroom"] | components["schemas"]["RoomBedroom"] | components["schemas"]["RoomDen"] | components["schemas"]["RoomKitchen"] | components["schemas"]["RoomLivingRoom"];
+                        "application/json": components["schemas"]["RoomBathroomForHost"] | components["schemas"]["RoomBedroomForHost"] | components["schemas"]["RoomDenForHost"] | components["schemas"]["RoomKitchenForHost"] | components["schemas"]["RoomLivingRoomForHost"];
                     };
                 };
                 400: components["responses"]["BadRequest"];
@@ -1062,7 +1062,7 @@ export interface paths {
         };
         options?: never;
         head?: never;
-        /** @description Update a Room */
+        /** @description Update a Room, with multi-locale localized text. The Room type is fixed after creation. */
         patch: {
             parameters: {
                 query?: never;
@@ -1081,6 +1081,12 @@ export interface paths {
                         bathOrShowerStyle?: "bath" | "bath_and_shower" | "none" | "shower" | null;
                         bedTypes?: ("bunk" | "cot" | "king" | "queen" | "sofabed" | "twin")[];
                         position?: number | null;
+                        localizedTexts?: {
+                            /** @enum {string} */
+                            locale: "en-US" | "es-ES";
+                            markdown: string | null;
+                            title: string | null;
+                        }[];
                     };
                 };
             };
@@ -1092,6 +1098,13 @@ export interface paths {
                 403: components["responses"]["Forbidden"];
                 404: components["responses"]["NotFound"];
                 409: components["responses"]["Conflict"];
+                /** @description Missing en-US title and description */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
                 500: components["responses"]["InternalServerError"];
             };
         };
@@ -1538,6 +1551,15 @@ export interface components {
             /** @enum {string} */
             type: "Bathroom";
         };
+        RoomBathroomForHost: {
+            /** @enum {string|null} */
+            bathOrShowerStyle: "bath" | "bath_and_shower" | "none" | "shower" | null;
+            id: string;
+            localizedTexts: components["schemas"]["LocalizedText"][];
+            position: number | null;
+            /** @enum {string} */
+            type: "Bathroom";
+        };
         RoomBathroomForVisitors: {
             bathOrShowerStyle: components["schemas"]["BathOrShowerStyle"];
             displayType: string;
@@ -1555,6 +1577,14 @@ export interface components {
         RoomBedroom: {
             bedTypes: ("bunk" | "cot" | "king" | "queen" | "sofabed" | "twin")[];
             id: string;
+            position: number | null;
+            /** @enum {string} */
+            type: "Bedroom";
+        };
+        RoomBedroomForHost: {
+            bedTypes: ("bunk" | "cot" | "king" | "queen" | "sofabed" | "twin")[];
+            id: string;
+            localizedTexts: components["schemas"]["LocalizedText"][];
             position: number | null;
             /** @enum {string} */
             type: "Bedroom";
@@ -1579,6 +1609,13 @@ export interface components {
             /** @enum {string} */
             type: "Den";
         };
+        RoomDenForHost: {
+            id: string;
+            localizedTexts: components["schemas"]["LocalizedText"][];
+            position: number | null;
+            /** @enum {string} */
+            type: "Den";
+        };
         RoomDenForVisitors: {
             displayType: string;
             id: string;
@@ -1599,6 +1636,14 @@ export interface components {
             /** @enum {string} */
             type: "Kitchen";
         };
+        RoomKitchenForHost: {
+            appliances: ("dishwasher" | "microwave" | "oven" | "stove")[];
+            id: string;
+            localizedTexts: components["schemas"]["LocalizedText"][];
+            position: number | null;
+            /** @enum {string} */
+            type: "Kitchen";
+        };
         RoomKitchenForVisitors: {
             appliances: components["schemas"]["Appliance"][];
             displayType: string;
@@ -1615,6 +1660,13 @@ export interface components {
         };
         RoomLivingRoom: {
             id: string;
+            position: number | null;
+            /** @enum {string} */
+            type: "LivingRoom";
+        };
+        RoomLivingRoomForHost: {
+            id: string;
+            localizedTexts: components["schemas"]["LocalizedText"][];
             position: number | null;
             /** @enum {string} */
             type: "LivingRoom";

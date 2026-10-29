@@ -9,6 +9,7 @@ export default class Den extends Room {
       default: 'Room/DenSerializer',
       summary: 'Room/DenSummarySerializer',
       forVisitors: 'Room/DenForVisitorsSerializer',
+      forHost: 'Room/DenForHostSerializer',
     }
   }
 }
