@@ -1,6 +1,7 @@
 import adminRoutes from '#conf/routes.admin.js'
 import internalRoutes from '#conf/routes.internal.js'
 import StatusController from '#controllers/StatusController.js'
+import VisitorV1MeController from '#controllers/Visitor/V1/MeController.js'
 import VisitorV1PlacesController from '#controllers/Visitor/V1/PlacesController.js'
 import { PsychicRouter } from '@rvoh/psychic'
 
@@ -8,6 +9,8 @@ export default function routes(r: PsychicRouter) {
   r.get('status', StatusController, 'show')
 
   r.namespace('v1', r => {
+    r.get('me', VisitorV1MeController, 'show')
+
     // Visitor/V1 controllers are maybe-authed, so they sit outside the authed V1/ controller tree
     // and are routed here with an explicit controller to keep "visitor" out of the URL
     r.resources('places', { only: ['index', 'show'], controller: VisitorV1PlacesController })

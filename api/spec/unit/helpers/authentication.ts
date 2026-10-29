@@ -20,19 +20,14 @@ export type RequestQuery<HttpMethod extends 'get' | 'post' | 'patch' | 'delete',
   Uri
 >
 
-// eslint-disable-next-line @typescript-eslint/require-await
 async function userBearerToken(user: User): Promise<string> {
-  /**
-   * The current authentication scheme is only for early development.
-   * Replace with a production grade authentication scheme.
-   */
-  return Encrypt.encrypt(
-    { userId: user.primaryKeyValue() },
-    {
-      algorithm: 'aes-256-gcm',
-      key: AppEnv.string('APP_ENCRYPTION_KEY'),
-    },
-  )
+  const firebaseUid = user.firebaseUid ?? user.id
+  if (!user.firebaseUid) await user.update({ firebaseUid })
+
+  return firebaseTestBearerToken({
+    uid: firebaseUid,
+    email: user.email,
+  })
 }
 
 // eslint-disable-next-line @typescript-eslint/require-await
@@ -63,6 +58,19 @@ async function internalUserBearerToken(internalUser: Dream): Promise<string> {
       key: AppEnv.string('APP_ENCRYPTION_KEY'),
     },
   )
+}
+
+export function firebaseTestBearerToken({
+  uid,
+  email,
+  emailVerified = true,
+}: {
+  uid: string
+  email: string
+  emailVerified?: boolean
+}) {
+  AppEnv.string('FIREBASE_PROJECT_ID')
+  return `test-firebase:${Buffer.from(JSON.stringify({ uid, email, emailVerified })).toString('base64url')}`
 }
 
 export async function session(user: Dream) {
