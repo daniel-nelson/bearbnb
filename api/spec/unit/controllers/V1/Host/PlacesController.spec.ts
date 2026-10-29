@@ -281,4 +281,41 @@ describe('V1/Host/PlacesController', () => {
       })
     })
   })
+
+  // The nested Host management controllers extend V1HostBaseController, whose
+  // loadCurrentHost BeforeAction forbids the request when the signed-in User has no
+  // Host. A User must complete Host setup before any Host Place endpoint is reachable.
+  context('before Host setup (the signed-in User has no Host)', () => {
+    let hostlessRequest: SpecRequestType
+
+    beforeEach(async () => {
+      const hostlessUser = await createUser()
+      hostlessRequest = await session(hostlessUser)
+    })
+
+    it('forbids every Host Place endpoint with a 403', async () => {
+      const place = await createPlace()
+
+      await hostlessRequest.get('/v1/host/places', 403)
+      await hostlessRequest.get('/v1/host/places/{id}', 403, { id: place.id })
+      await hostlessRequest.post('/v1/host/places', 403, {
+        data: {
+          name: 'The Place name',
+          style: 'cottage',
+          sleeps: 1,
+          localizedTexts: [{ locale: 'en-US', title: 'Cozy', markdown: 'Warm' }],
+        },
+      })
+      await hostlessRequest.patch('/v1/host/places/{id}', 403, {
+        id: place.id,
+        data: {
+          name: 'Updated',
+          style: 'dump',
+          sleeps: 2,
+          localizedTexts: [{ locale: 'en-US', title: 'Updated', markdown: 'Body' }],
+        },
+      })
+      await hostlessRequest.delete('/v1/host/places/{id}', 403, { id: place.id })
+    })
+  })
 })
