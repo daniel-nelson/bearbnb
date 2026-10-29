@@ -220,7 +220,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             cursor: string | null;
-                            results: components["schemas"]["RoomBathroomSummary"][];
+                            results: (components["schemas"]["RoomBathroomSummary"] | components["schemas"]["RoomBedroomSummary"])[];
                         };
                     };
                 };
@@ -260,7 +260,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["RoomBathroom"];
+                        "application/json": components["schemas"]["RoomBathroom"] | components["schemas"]["RoomBedroom"];
                     };
                 };
                 400: components["responses"]["BadRequest"];
@@ -306,7 +306,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["RoomBathroom"];
+                        "application/json": components["schemas"]["RoomBathroom"] | components["schemas"]["RoomBedroom"];
                     };
                 };
                 400: components["responses"]["BadRequest"];
@@ -415,6 +415,18 @@ export interface components {
             id: string;
             /** @enum {string} */
             type: "Bathroom";
+        };
+        RoomBedroom: {
+            bedTypes: ("bunk" | "cot" | "king" | "queen" | "sofabed" | "twin")[];
+            id: string;
+            position: number | null;
+            /** @enum {string} */
+            type: "Bedroom";
+        };
+        RoomBedroomSummary: {
+            id: string;
+            /** @enum {string} */
+            type: "Bedroom";
         };
         ValidationErrors: {
             /** @enum {string} */
