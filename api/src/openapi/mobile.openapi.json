@@ -384,10 +384,59 @@
               "schema": {
                 "type": "object",
                 "properties": {
+                  "appliances": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "dishwasher",
+                        "microwave",
+                        "oven",
+                        "stove"
+                      ]
+                    }
+                  },
+                  "bathOrShowerStyle": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "enum": [
+                      "bath",
+                      "bath_and_shower",
+                      "none",
+                      "shower",
+                      null
+                    ]
+                  },
+                  "bedTypes": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "bunk",
+                        "cot",
+                        "king",
+                        "queen",
+                        "sofabed",
+                        "twin"
+                      ]
+                    }
+                  },
                   "position": {
                     "type": [
                       "integer",
                       "null"
+                    ]
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "Bathroom",
+                      "Bedroom",
+                      "Den",
+                      "Kitchen",
+                      "LivingRoom"
                     ]
                   }
                 }
@@ -525,6 +574,45 @@
               "schema": {
                 "type": "object",
                 "properties": {
+                  "appliances": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "dishwasher",
+                        "microwave",
+                        "oven",
+                        "stove"
+                      ]
+                    }
+                  },
+                  "bathOrShowerStyle": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "enum": [
+                      "bath",
+                      "bath_and_shower",
+                      "none",
+                      "shower",
+                      null
+                    ]
+                  },
+                  "bedTypes": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "bunk",
+                        "cot",
+                        "king",
+                        "queen",
+                        "sofabed",
+                        "twin"
+                      ]
+                    }
+                  },
                   "position": {
                     "type": [
                       "integer",
