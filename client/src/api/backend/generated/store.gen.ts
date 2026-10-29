@@ -32,6 +32,10 @@ function createSdkStore<T extends SdkFn>(fn: T) {
 }
 
 export const useGetStatus = createSdkStore(sdk.getStatus)
+export const useGetV1GuestBookings = createSdkStore(sdk.getV1GuestBookings)
+export const usePostV1GuestBookings = createSdkStore(sdk.postV1GuestBookings)
+export const useDeleteV1GuestBookingsById = createSdkStore(sdk.deleteV1GuestBookingsById)
+export const usePatchV1GuestBookingsById = createSdkStore(sdk.patchV1GuestBookingsById)
 export const useGetV1GuestFavorites = createSdkStore(sdk.getV1GuestFavorites)
 export const usePostV1GuestFavorites = createSdkStore(sdk.postV1GuestFavorites)
 export const useDeleteV1GuestFavoritesById = createSdkStore(sdk.deleteV1GuestFavoritesById)
