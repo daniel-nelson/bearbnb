@@ -235,7 +235,7 @@ export const deleteV1HostPlacesById = <ThrowOnError extends boolean = false>(opt
 });
 
 /**
- * Fetch a Place
+ * Fetch a Place, with localized text rows and embedded Rooms
  */
 export const getV1HostPlacesById = <ThrowOnError extends boolean = false>(options: Options<GetV1HostPlacesByIdData, ThrowOnError>): RequestResult<GetV1HostPlacesByIdResponses, GetV1HostPlacesByIdErrors, ThrowOnError> => (options.client ?? client).get<GetV1HostPlacesByIdResponses, GetV1HostPlacesByIdErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
