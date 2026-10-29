@@ -1,6 +1,7 @@
-import { Decorators, SoftDelete } from '@rvoh/dream'
+import { Decorators, Dream, DreamTransaction, SoftDelete } from '@rvoh/dream'
 import { DreamColumn } from '@rvoh/dream/types'
 import ApplicationModel from '#models/ApplicationModel.js'
+import Guest from '#models/Guest.js'
 
 const deco = new Decorators<typeof User>()
 
@@ -18,4 +19,12 @@ export default class User extends ApplicationModel {
 
   @deco.Encrypted()
   public phone: DreamColumn<User, 'encryptedPhone'>
+
+  @deco.AfterCreate()
+  public async createGuest(this: User, txn: DreamTransaction<Dream> | null) {
+    this.guest = await this.txn(txn).createAssociation('guest')
+  }
+
+  @deco.HasOne('Guest')
+  public guest: Guest
 }
