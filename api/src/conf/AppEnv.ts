@@ -33,6 +33,8 @@ class AppEnvClass extends Env<{
     | 'DB_NAME'
     | 'DB_PASSWORD'
     | 'DB_USER'
+    | 'FIREBASE_AUTH_EMULATOR_HOST'
+    | 'FIREBASE_PROJECT_ID'
     | 'INTERNAL_APP_HOST'
     | 'REPLICA_DB_HOST'
     | 'SSL_CERT_PATH'

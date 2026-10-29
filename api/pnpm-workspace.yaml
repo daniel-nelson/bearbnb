@@ -22,8 +22,10 @@
 strictDepBuilds: false
 
 allowBuilds:
+  '@firebase/util': false
   esbuild: false
   msgpackr-extract: false
+  protobufjs: false
   puppeteer: false
 
 # Don't install dependency versions published in the last 3 days (4320 min). Most

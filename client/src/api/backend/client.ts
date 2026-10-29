@@ -1,3 +1,4 @@
+import { getBackendBearerToken } from '../../lib/backendAuth'
 import { client } from './generated/client.gen'
 
 function baseUrl() {
@@ -10,6 +11,7 @@ function baseUrl() {
 }
 
 client.setConfig({
+  auth: getBackendBearerToken,
   baseUrl: baseUrl(),
   credentials: 'omit',
 })
