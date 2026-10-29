@@ -30,4 +30,7 @@ export const RoomForVisitorsSerializer = <T extends Room>(
     .customAttribute('displayType', () => i18n(passthrough.locale, `rooms.type.${room.type}`), {
       openapi: 'string',
     })
-    .delegatedAttribute('currentLocalizedText', 'title')
+    // Render the always-present en-US fallback title first, then let the requested
+    // locale's title override it (skipped when that locale's LocalizedText is absent).
+    .delegatedAttribute('fallbackCurrentLocalizedText', 'title')
+    .delegatedAttribute('currentLocalizedText', 'title', { required: false })

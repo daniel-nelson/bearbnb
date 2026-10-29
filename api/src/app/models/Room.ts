@@ -48,4 +48,14 @@ export default class Room extends ApplicationModel {
     and: { locale: DreamConst.passthrough },
   })
   public currentLocalizedText: LocalizedText
+
+  // Visitor-facing fallback: the default-locale (en-US) row is always present (the
+  // AfterCreate hook creates it), so serializers can render it first and let the
+  // requested-locale `currentLocalizedText` override it when that locale exists.
+  @deco.HasOne('LocalizedText', {
+    polymorphic: true,
+    on: 'localizableId',
+    and: { locale: 'en-US' },
+  })
+  public fallbackCurrentLocalizedText: LocalizedText
 }
