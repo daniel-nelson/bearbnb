@@ -63,8 +63,10 @@ import {
   type ClockTimeTz,
 } from '@rvoh/dream'
 import {
+  type BathOrShowerStylesEnum,
   type PlaceStylesEnum,
   type RoomTypesEnum,
+  BathOrShowerStylesEnumValues,
   PlaceStylesEnumValues,
   RoomTypesEnumValues,
 } from './db.js'
@@ -419,10 +421,11 @@ export const schema = {
   rooms: {
     serializerKeys: ['default', 'summary'],
     scopes: {
-      default: ['dream:SoftDelete'],
+      default: ['dream:STI', 'dream:SoftDelete'],
       named: [],
     },
     nonJsonColumnNames: [
+      'bathOrShowerStyle',
       'createdAt',
       'deletedAt',
       'id',
@@ -432,6 +435,15 @@ export const schema = {
       'updatedAt',
     ],
     columns: {
+      bathOrShowerStyle: {
+        coercedType: {} as BathOrShowerStylesEnum | null,
+        enumType: {} as BathOrShowerStylesEnum,
+        enumArrayType: [] as BathOrShowerStylesEnum[],
+        enumValues: BathOrShowerStylesEnumValues,
+        dbType: 'bath_or_shower_styles_enum',
+        allowNull: true,
+        isArray: false,
+      },
       createdAt: {
         coercedType: {} as DateTime,
         enumType: null,
@@ -605,7 +617,7 @@ export const schema = {
 
 export const connectionTypeConfig = {
   passthroughColumns: [],
-  allDefaultScopeNames: ['dream:SoftDelete'],
+  allDefaultScopeNames: ['dream:STI', 'dream:SoftDelete'],
   globalNames: {
     models: {
       Guest: 'guests',
@@ -613,6 +625,7 @@ export const connectionTypeConfig = {
       HostPlace: 'host_places',
       Place: 'places',
       Room: 'rooms',
+      'Room/Bathroom': 'rooms',
       User: 'users',
     },
   },
