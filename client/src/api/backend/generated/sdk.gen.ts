@@ -213,7 +213,7 @@ export const getV1HostPlaces = <ThrowOnError extends boolean = false>(options?: 
 });
 
 /**
- * Create a Place
+ * Create a Place, with multi-locale localized text
  */
 export const postV1HostPlaces = <ThrowOnError extends boolean = false>(options?: Options<PostV1HostPlacesData, ThrowOnError>): RequestResult<PostV1HostPlacesResponses, PostV1HostPlacesErrors, ThrowOnError> => (options?.client ?? client).post<PostV1HostPlacesResponses, PostV1HostPlacesErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
