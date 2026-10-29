@@ -249,7 +249,13 @@ export interface paths {
             requestBody?: {
                 content: {
                     "application/json": {
+                        appliances?: ("dishwasher" | "microwave" | "oven" | "stove")[];
+                        /** @enum {string|null} */
+                        bathOrShowerStyle?: "bath" | "bath_and_shower" | "none" | "shower" | null;
+                        bedTypes?: ("bunk" | "cot" | "king" | "queen" | "sofabed" | "twin")[];
                         position?: number | null;
+                        /** @enum {string} */
+                        type?: "Bathroom" | "Bedroom" | "Den" | "Kitchen" | "LivingRoom";
                     };
                 };
             };
@@ -358,6 +364,10 @@ export interface paths {
             requestBody?: {
                 content: {
                     "application/json": {
+                        appliances?: ("dishwasher" | "microwave" | "oven" | "stove")[];
+                        /** @enum {string|null} */
+                        bathOrShowerStyle?: "bath" | "bath_and_shower" | "none" | "shower" | null;
+                        bedTypes?: ("bunk" | "cot" | "king" | "queen" | "sofabed" | "twin")[];
                         position?: number | null;
                     };
                 };
