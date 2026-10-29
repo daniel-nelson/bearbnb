@@ -838,7 +838,7 @@ export interface paths {
         };
         options?: never;
         head?: never;
-        /** @description Update a Place */
+        /** @description Update a Place, with multi-locale localized text */
         patch: {
             parameters: {
                 query?: never;
@@ -855,6 +855,12 @@ export interface paths {
                         sleeps?: number;
                         /** @enum {string} */
                         style?: "cabin" | "cave" | "cottage" | "dump" | "lean_to" | "tent" | "treehouse";
+                        localizedTexts?: {
+                            /** @enum {string} */
+                            locale: "en-US" | "es-ES";
+                            markdown: string | null;
+                            title: string | null;
+                        }[];
                     };
                 };
             };
@@ -866,6 +872,13 @@ export interface paths {
                 403: components["responses"]["Forbidden"];
                 404: components["responses"]["NotFound"];
                 409: components["responses"]["Conflict"];
+                /** @description Missing en-US title and description */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
                 500: components["responses"]["InternalServerError"];
             };
         };
