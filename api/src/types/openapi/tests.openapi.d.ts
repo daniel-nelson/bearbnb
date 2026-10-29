@@ -541,6 +541,8 @@ export interface paths {
     "/v1/places": {
         parameters: {
             query?: {
+                /** @description q */
+                q?: string;
                 /** @description Pagination cursor */
                 cursor?: string | null;
             };
@@ -552,6 +554,8 @@ export interface paths {
         get: {
             parameters: {
                 query?: {
+                    /** @description q */
+                    q?: string;
                     /** @description Pagination cursor */
                     cursor?: string | null;
                 };

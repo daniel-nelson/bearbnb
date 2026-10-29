@@ -855,6 +855,10 @@ export type GetV1PlacesData = {
     path?: never;
     query?: {
         /**
+         * q
+         */
+        q?: string;
+        /**
          * Pagination cursor
          */
         cursor?: string | null;
