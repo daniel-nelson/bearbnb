@@ -47,3 +47,4 @@ export const usePatchV1HostPlacesByPlaceIdRoomsById = createSdkStore(sdk.patchV1
 export const useGetV1Me = createSdkStore(sdk.getV1Me)
 export const useGetV1Places = createSdkStore(sdk.getV1Places)
 export const useGetV1PlacesById = createSdkStore(sdk.getV1PlacesById)
+export const usePostV1SignUp = createSdkStore(sdk.postV1SignUp)

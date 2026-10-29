@@ -2,7 +2,7 @@
 
 import { client } from './client.gen.js';
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client/index.js';
-import type { DeleteV1HostLocalizedTextsByIdData, DeleteV1HostLocalizedTextsByIdErrors, DeleteV1HostLocalizedTextsByIdResponses, DeleteV1HostPlacesByIdData, DeleteV1HostPlacesByIdErrors, DeleteV1HostPlacesByIdResponses, DeleteV1HostPlacesByPlaceIdRoomsByIdData, DeleteV1HostPlacesByPlaceIdRoomsByIdErrors, DeleteV1HostPlacesByPlaceIdRoomsByIdResponses, GetStatusData, GetStatusErrors, GetStatusResponses, GetV1HostPlacesByIdData, GetV1HostPlacesByIdErrors, GetV1HostPlacesByIdResponses, GetV1HostPlacesByPlaceIdRoomsByIdData, GetV1HostPlacesByPlaceIdRoomsByIdErrors, GetV1HostPlacesByPlaceIdRoomsByIdResponses, GetV1HostPlacesByPlaceIdRoomsData, GetV1HostPlacesByPlaceIdRoomsErrors, GetV1HostPlacesByPlaceIdRoomsResponses, GetV1HostPlacesData, GetV1HostPlacesErrors, GetV1HostPlacesResponses, GetV1MeData, GetV1MeErrors, GetV1MeResponses, GetV1PlacesByIdData, GetV1PlacesByIdErrors, GetV1PlacesByIdResponses, GetV1PlacesData, GetV1PlacesErrors, GetV1PlacesResponses, PatchV1HostLocalizedTextsByIdData, PatchV1HostLocalizedTextsByIdErrors, PatchV1HostLocalizedTextsByIdResponses, PatchV1HostPlacesByIdData, PatchV1HostPlacesByIdErrors, PatchV1HostPlacesByIdResponses, PatchV1HostPlacesByPlaceIdRoomsByIdData, PatchV1HostPlacesByPlaceIdRoomsByIdErrors, PatchV1HostPlacesByPlaceIdRoomsByIdResponses, PostV1HostPlacesByPlaceIdRoomsData, PostV1HostPlacesByPlaceIdRoomsErrors, PostV1HostPlacesByPlaceIdRoomsResponses, PostV1HostPlacesData, PostV1HostPlacesErrors, PostV1HostPlacesResponses } from './types.gen.js';
+import type { DeleteV1HostLocalizedTextsByIdData, DeleteV1HostLocalizedTextsByIdErrors, DeleteV1HostLocalizedTextsByIdResponses, DeleteV1HostPlacesByIdData, DeleteV1HostPlacesByIdErrors, DeleteV1HostPlacesByIdResponses, DeleteV1HostPlacesByPlaceIdRoomsByIdData, DeleteV1HostPlacesByPlaceIdRoomsByIdErrors, DeleteV1HostPlacesByPlaceIdRoomsByIdResponses, GetStatusData, GetStatusErrors, GetStatusResponses, GetV1HostPlacesByIdData, GetV1HostPlacesByIdErrors, GetV1HostPlacesByIdResponses, GetV1HostPlacesByPlaceIdRoomsByIdData, GetV1HostPlacesByPlaceIdRoomsByIdErrors, GetV1HostPlacesByPlaceIdRoomsByIdResponses, GetV1HostPlacesByPlaceIdRoomsData, GetV1HostPlacesByPlaceIdRoomsErrors, GetV1HostPlacesByPlaceIdRoomsResponses, GetV1HostPlacesData, GetV1HostPlacesErrors, GetV1HostPlacesResponses, GetV1MeData, GetV1MeErrors, GetV1MeResponses, GetV1PlacesByIdData, GetV1PlacesByIdErrors, GetV1PlacesByIdResponses, GetV1PlacesData, GetV1PlacesErrors, GetV1PlacesResponses, PatchV1HostLocalizedTextsByIdData, PatchV1HostLocalizedTextsByIdErrors, PatchV1HostLocalizedTextsByIdResponses, PatchV1HostPlacesByIdData, PatchV1HostPlacesByIdErrors, PatchV1HostPlacesByIdResponses, PatchV1HostPlacesByPlaceIdRoomsByIdData, PatchV1HostPlacesByPlaceIdRoomsByIdErrors, PatchV1HostPlacesByPlaceIdRoomsByIdResponses, PostV1HostPlacesByPlaceIdRoomsData, PostV1HostPlacesByPlaceIdRoomsErrors, PostV1HostPlacesByPlaceIdRoomsResponses, PostV1HostPlacesData, PostV1HostPlacesErrors, PostV1HostPlacesResponses, PostV1SignUpData, PostV1SignUpErrors, PostV1SignUpResponses } from './types.gen.js';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -179,5 +179,14 @@ export const getV1Places = <ThrowOnError extends boolean = false>(options?: Opti
 export const getV1PlacesById = <ThrowOnError extends boolean = false>(options: Options<GetV1PlacesByIdData, ThrowOnError>): RequestResult<GetV1PlacesByIdResponses, GetV1PlacesByIdErrors, ThrowOnError> => (options.client ?? client).get<GetV1PlacesByIdResponses, GetV1PlacesByIdErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/v1/places/{id}',
+    ...options
+});
+
+/**
+ * Provision the current Firebase-authenticated user and record terms-of-service consent
+ */
+export const postV1SignUp = <ThrowOnError extends boolean = false>(options?: Options<PostV1SignUpData, ThrowOnError>): RequestResult<PostV1SignUpResponses, PostV1SignUpErrors, ThrowOnError> => (options?.client ?? client).post<PostV1SignUpResponses, PostV1SignUpErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/sign-up',
     ...options
 });

@@ -10,12 +10,15 @@ export async function setup() {
   // use the in-process adapter, so it never receives a Ws.emit made in the spec
   // worker. The api server, and in an app with websockets the websocket server,
   // start in hooks.ts instead.
+  // The Firebase Auth emulator the client signs in against, and the api verifies tokens against
+  await PsychicDevtools.launchDevServer('firebaseAuthEmulator', { port: 9099, cmd: 'pnpm firebase:fspec' })
   await PsychicDevtools.launchDevServer('clientFspecApp', { port: 3050, cmd: 'pnpm client:fspec' })
   await PsychicDevtools.launchDevServer('adminFspecApp', { port: 3051, cmd: 'pnpm admin:fspec' })
   await PsychicDevtools.launchDevServer('internalFspecApp', { port: 3052, cmd: 'pnpm internal:fspec' })
 }
 
 export function teardown() {
+  PsychicDevtools.stopDevServer('firebaseAuthEmulator')
   PsychicDevtools.stopDevServer('clientFspecApp')
   PsychicDevtools.stopDevServer('adminFspecApp')
   PsychicDevtools.stopDevServer('internalFspecApp')
