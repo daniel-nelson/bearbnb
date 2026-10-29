@@ -932,7 +932,7 @@ export interface paths {
             };
         };
         put?: never;
-        /** @description Create a Room */
+        /** @description Create a Room, with multi-locale localized text */
         post: {
             parameters: {
                 query?: {
@@ -955,6 +955,12 @@ export interface paths {
                         position?: number | null;
                         /** @enum {string} */
                         type?: "Bathroom" | "Bedroom" | "Den" | "Kitchen" | "LivingRoom";
+                        localizedTexts?: {
+                            /** @enum {string} */
+                            locale: "en-US" | "es-ES";
+                            markdown: string | null;
+                            title: string | null;
+                        }[];
                     };
                 };
             };
@@ -973,6 +979,13 @@ export interface paths {
                 403: components["responses"]["Forbidden"];
                 404: components["responses"]["NotFound"];
                 409: components["responses"]["Conflict"];
+                /** @description Missing en-US title and description */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
                 500: components["responses"]["InternalServerError"];
             };
         };

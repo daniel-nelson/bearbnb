@@ -84,7 +84,7 @@ describe('V1/Host/Places/RoomsController', () => {
   })
 
   describe('POST create', () => {
-    const create = async <StatusCode extends 201 | 400 | 404>(
+    const create = async <StatusCode extends 201 | 400 | 404 | 422>(
       data: RequestBody<'post', '/v1/host/places/{placeId}/rooms'>,
       expectedStatus: StatusCode
     ) => {
@@ -94,15 +94,25 @@ describe('V1/Host/Places/RoomsController', () => {
       })
     }
 
-    it('creates a Room for this Place', async () => {
+    it('creates a typed Room for this Place with multi-locale localized text', async () => {
       const { body } = await create({
         type: 'Kitchen',
         appliances: ['oven', 'stove'],
+        localizedTexts: [
+          { locale: 'en-US', title: 'Chef kitchen', markdown: 'Fully equipped' },
+          { locale: 'es-ES', title: 'Cocina de chef', markdown: 'Totalmente equipada' },
+        ],
       }, 201)
 
       const room = await place.associationQuery('rooms').firstOrFail()
       expect(room.type).toEqual('Kitchen')
       expect((room as Kitchen).appliances).toEqual(['oven', 'stove'])
+
+      const localizedTexts = await room.associationQuery('localizedTexts').order('locale').all()
+      expect(localizedTexts.map(text => [text.locale, text.title, text.markdown])).toEqual([
+        ['en-US', 'Chef kitchen', 'Fully equipped'],
+        ['es-ES', 'Cocina de chef', 'Totalmente equipada'],
+      ])
 
       expect(body).toEqual(
         expect.objectContaining({
@@ -111,6 +121,28 @@ describe('V1/Host/Places/RoomsController', () => {
           appliances: ['oven', 'stove'],
         }),
       )
+    })
+
+    it('creates a Room with only the default locale', async () => {
+      await create({
+        type: 'Den',
+        localizedTexts: [{ locale: 'en-US', title: 'Cozy den', markdown: 'A warm space' }],
+      }, 201)
+
+      const room = await place.associationQuery('rooms').firstOrFail()
+      expect(room.type).toEqual('Den')
+
+      const localizedTexts = await room.associationQuery('localizedTexts').all()
+      expect(localizedTexts.map(text => text.locale)).toEqual(['en-US'])
+    })
+
+    it('returns 422 when the default-locale title and description are missing', async () => {
+      await create({
+        type: 'Kitchen',
+        localizedTexts: [{ locale: 'es-ES', title: 'Cocina', markdown: 'Equipada' }],
+      }, 422)
+
+      expect(await place.associationQuery('rooms').first()).toBeNull()
     })
   })
 

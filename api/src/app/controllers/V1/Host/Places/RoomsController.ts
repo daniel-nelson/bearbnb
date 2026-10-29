@@ -1,11 +1,15 @@
 import { OpenAPI } from '@rvoh/psychic'
 import { DreamParamSafeColumnNames } from '@rvoh/dream/types'
+import ApplicationModel from '#models/ApplicationModel.js'
+import LocalizedText from '#models/LocalizedText.js'
 import Bathroom from '#models/Room/Bathroom.js'
 import Bedroom from '#models/Room/Bedroom.js'
 import Den from '#models/Room/Den.js'
 import Kitchen from '#models/Room/Kitchen.js'
 import LivingRoom from '#models/Room/LivingRoom.js'
+import ReconcileLocalizedTexts from '#services/ReconcileLocalizedTexts.js'
 import { RoomTypesEnumValues } from '#src/types/db.js'
+import { DEFAULT_LOCALE } from '#src/utils/i18n.js'
 import V1HostPlacesBaseController from './BaseController.js'
 import Room from '#models/Room.js'
 
@@ -17,6 +21,8 @@ const paramSafeColumns: DreamParamSafeColumnNames<Room>[] = [
   'bedTypes',
   'position',
 ]
+
+const localizedTextParams: DreamParamSafeColumnNames<LocalizedText>[] = ['locale', 'title', 'markdown']
 
 export default class V1HostPlacesRoomsController extends V1HostPlacesBaseController {
   @OpenAPI(Room, {
@@ -49,41 +55,65 @@ export default class V1HostPlacesRoomsController extends V1HostPlacesBaseControl
   @OpenAPI(Room, {
     status: 201,
     tags: openApiTags,
-    description: 'Create a Room',
+    description: 'Create a Room, with multi-locale localized text',
     fastJsonStringify: true,
     requestBody: {
       params: paramSafeColumns,
       including: ['type'],
+      combining: {
+        localizedTexts: {
+          type: 'array',
+          items: OpenAPI.forDream(LocalizedText, {
+            params: localizedTextParams,
+            required: localizedTextParams,
+          }),
+        },
+      },
+    },
+    responses: {
+      422: { description: `Missing ${DEFAULT_LOCALE} title and description` },
     },
   })
   public async create() {
-    let room: Room
     const roomType = this.castParam('type', 'string', { enum: RoomTypesEnumValues })
     const roomParams = this.extractParams(Room, paramSafeColumns)
+    const localizedTexts = this.extractLocalizedTexts()
 
-    switch (roomType) {
-      case 'Bathroom':
-        room = await Bathroom.create({ place: this.currentPlace, ...roomParams })
-        break
-      case 'Bedroom':
-        room = await Bedroom.create({ place: this.currentPlace, ...roomParams })
-        break
-      case 'Den':
-        room = await Den.create({ place: this.currentPlace, ...roomParams })
-        break
-      case 'Kitchen':
-        room = await Kitchen.create({ place: this.currentPlace, ...roomParams })
-        break
-      case 'LivingRoom':
-        room = await LivingRoom.create({ place: this.currentPlace, ...roomParams })
-        break
-      default: {
-        const _never: never = roomType
-        throw new Error(`Unhandled RoomTypesEnum: ${String(_never)}`)
+    if (!ReconcileLocalizedTexts.hasDefaultText(localizedTexts))
+      return this.unprocessableContent({
+        errors: { localizedTexts: [`must include a ${DEFAULT_LOCALE} title and description`] },
+      })
+
+    let room = await ApplicationModel.transaction(async txn => {
+      let room: Room
+
+      switch (roomType) {
+        case 'Bathroom':
+          room = await Bathroom.txn(txn).create({ place: this.currentPlace, ...roomParams })
+          break
+        case 'Bedroom':
+          room = await Bedroom.txn(txn).create({ place: this.currentPlace, ...roomParams })
+          break
+        case 'Den':
+          room = await Den.txn(txn).create({ place: this.currentPlace, ...roomParams })
+          break
+        case 'Kitchen':
+          room = await Kitchen.txn(txn).create({ place: this.currentPlace, ...roomParams })
+          break
+        case 'LivingRoom':
+          room = await LivingRoom.txn(txn).create({ place: this.currentPlace, ...roomParams })
+          break
+        default: {
+          const _never: never = roomType
+          throw new Error(`Unhandled RoomTypesEnum: ${String(_never)}`)
+        }
       }
-    }
 
-    if (room.isPersisted) room = await room.loadFor('default').execute()
+      await ReconcileLocalizedTexts.call(room, localizedTexts, txn)
+      return room
+    })
+
+    room = await room.loadFor('default').execute()
     this.created(room)
   }
 
@@ -112,6 +142,13 @@ export default class V1HostPlacesRoomsController extends V1HostPlacesBaseControl
     const room = await this.room()
     await room.destroy()
     this.noContent()
+  }
+
+  private extractLocalizedTexts() {
+    return this.extractParams(LocalizedText, localizedTextParams, {
+      key: 'localizedTexts',
+      array: true,
+    })
   }
 
   private async room() {
