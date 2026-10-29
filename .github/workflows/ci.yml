@@ -74,8 +74,13 @@ jobs:
       COLUMN_ENCRYPTION_KEY: "4IMno7a5QDd1iqfqId/GcyGRbrSy4xusxBPeqonA57M="
       # Required for browser-based feature specs: Psychic's CORS middleware reads this
       # to allow requests from the Vite dev servers. Must match CLIENT_APP_HOST,
-      # ADMIN_APP_HOST, and INTERNAL_APP_HOST in .env.test.
+      # ADMIN_APP_HOST, and INTERNAL_APP_HOST below.
       CORS_HOSTS: '["http://localhost:3050", "http://localhost:3051", "http://localhost:3052"]'
+      CLIENT_APP_HOST: "http://localhost:3050"
+      ADMIN_APP_HOST: "http://localhost:3051"
+      INTERNAL_APP_HOST: "http://localhost:3052"
+      # Feature specs sign in against the Firebase Auth emulator (started by the feature specs' globalSetup)
+      FIREBASE_AUTH_EMULATOR_HOST: "127.0.0.1:9099"
     defaults:
       run:
         working-directory: ./api
@@ -144,8 +149,13 @@ jobs:
       COLUMN_ENCRYPTION_KEY: "4IMno7a5QDd1iqfqId/GcyGRbrSy4xusxBPeqonA57M="
       # Required for browser-based feature specs: Psychic's CORS middleware reads this
       # to allow requests from the Vite dev servers. Must match CLIENT_APP_HOST,
-      # ADMIN_APP_HOST, and INTERNAL_APP_HOST in .env.test.
+      # ADMIN_APP_HOST, and INTERNAL_APP_HOST below.
       CORS_HOSTS: '["http://localhost:3050", "http://localhost:3051", "http://localhost:3052"]'
+      CLIENT_APP_HOST: "http://localhost:3050"
+      ADMIN_APP_HOST: "http://localhost:3051"
+      INTERNAL_APP_HOST: "http://localhost:3052"
+      # Feature specs sign in against the Firebase Auth emulator (started by the feature specs' globalSetup)
+      FIREBASE_AUTH_EMULATOR_HOST: "127.0.0.1:9099"
     defaults:
       run:
         working-directory: ./api
@@ -229,8 +239,13 @@ jobs:
       COLUMN_ENCRYPTION_KEY: "4IMno7a5QDd1iqfqId/GcyGRbrSy4xusxBPeqonA57M="
       # Required for browser-based feature specs: Psychic's CORS middleware reads this
       # to allow requests from the Vite dev servers. Must match CLIENT_APP_HOST,
-      # ADMIN_APP_HOST, and INTERNAL_APP_HOST in .env.test.
+      # ADMIN_APP_HOST, and INTERNAL_APP_HOST below.
       CORS_HOSTS: '["http://localhost:3050", "http://localhost:3051", "http://localhost:3052"]'
+      CLIENT_APP_HOST: "http://localhost:3050"
+      ADMIN_APP_HOST: "http://localhost:3051"
+      INTERNAL_APP_HOST: "http://localhost:3052"
+      # Feature specs sign in against the Firebase Auth emulator (started by the feature specs' globalSetup)
+      FIREBASE_AUTH_EMULATOR_HOST: "127.0.0.1:9099"
     defaults:
       run:
         working-directory: ./api
