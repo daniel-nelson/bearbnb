@@ -647,6 +647,15 @@ export const schema = {
     },
     virtualColumns: [],
     associations: {
+      currentFavorite: {
+        type: 'HasOne',
+        foreignKey: 'placeId',
+        foreignKeyTypeColumn: null,
+        tables: ['favorites'],
+        optional: null,
+        requiredAndClauses: null,
+        passthroughAndClauses: ['guestId'],
+      },
       currentLocalizedText: {
         type: 'HasOne',
         foreignKey: 'localizableId',
@@ -969,7 +978,7 @@ export const schema = {
 } as const
 
 export const connectionTypeConfig = {
-  passthroughColumns: ['locale'],
+  passthroughColumns: ['guestId', 'locale'],
   allDefaultScopeNames: ['dream:STI', 'dream:SoftDelete'],
   globalNames: {
     models: {
