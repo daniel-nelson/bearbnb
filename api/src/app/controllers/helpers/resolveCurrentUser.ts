@@ -1,14 +1,10 @@
 import AppEnv from '#conf/AppEnv.js'
 import { DecryptionError, DecryptionRotationError } from '@rvoh/dream/errors'
+import User from '#models/User.js'
 import { Encrypt } from '@rvoh/dream/utils'
 import { PsychicController } from '@rvoh/psychic'
-/** uncomment after creating User model */
-// import User from '#models/User.js'
 
-// eslint-disable-next-line @typescript-eslint/require-await
-export default async function resolveCurrentUser(controller: PsychicController): Promise<string | null> {
-  /** replace previous line with uncommented next line after creating User model */
-  // export default async function resolveCurrentUser(controller: PsychicController): Promise<User | null> {
+export default async function resolveCurrentUser(controller: PsychicController): Promise<User | null> {
   if (!AppEnv.isTest)
     throw new Error(
       'The current authentication scheme is only for early development. Replace with a production grade authentication scheme.',
@@ -44,7 +40,5 @@ export default async function resolveCurrentUser(controller: PsychicController):
   const userId = payload.userId
   if (!userId) return null
 
-  /** uncomment after creating User model */
-  // return await User.find(userId)
-  return userId
+  return await User.find(userId)
 }
