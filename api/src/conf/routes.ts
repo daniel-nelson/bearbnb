@@ -4,6 +4,7 @@ import StatusController from '#controllers/StatusController.js'
 import VisitorV1MeController from '#controllers/Visitor/V1/MeController.js'
 import VisitorV1SignUpController from '#controllers/Visitor/V1/SignUpController.js'
 import VisitorV1PlacesController from '#controllers/Visitor/V1/PlacesController.js'
+import VisitorV1PlacesReviewsController from '#controllers/Visitor/V1/Places/ReviewsController.js'
 import { PsychicRouter } from '@rvoh/psychic'
 
 export default function routes(r: PsychicRouter) {
@@ -11,6 +12,8 @@ export default function routes(r: PsychicRouter) {
 
   r.namespace('v1', r => {
     r.namespace('guest', r => {
+      r.resources('reviews', { only: ['index', 'create', 'update', 'destroy'] })
+
       r.resources('bookings', { only: ['index', 'create', 'update', 'destroy'] })
 
       r.resources('favorites', { only: ['index', 'create', 'destroy'] })
@@ -23,6 +26,7 @@ export default function routes(r: PsychicRouter) {
     // and are routed here with an explicit controller to keep "visitor" out of the URL
     r.resources('places', { only: ['index', 'show'], controller: VisitorV1PlacesController }, r => {
       r.get('availability', VisitorV1PlacesController, 'availability')
+      r.resources('reviews', { only: ['index'], controller: VisitorV1PlacesReviewsController })
     })
 
     r.namespace('host', r => {

@@ -6,6 +6,7 @@ import Favorite from '#models/Favorite.js'
 import Host from '#models/Host.js'
 import HostPlace from '#models/HostPlace.js'
 import LocalizedText from '#models/LocalizedText.js'
+import Review from '#models/Review.js'
 import Room from '#models/Room.js'
 
 const deco = new Decorators<typeof Place>()
@@ -68,4 +69,7 @@ export default class Place extends ApplicationModel {
     and: { locale: DreamConst.passthrough },
   })
   public currentLocalizedText: LocalizedText
+
+  @deco.HasMany('Review', { through: 'bookings', source: 'review' })
+  public reviews: Review[]
 }
