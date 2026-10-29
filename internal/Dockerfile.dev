@@ -1,0 +1,10 @@
+# Node 24, since the Node 25 and later images ship no corepack for `corepack enable`, and
+# 24.14.1 or later, whose npm (11.10+) applies the `min-release-age` cooldown in .npmrc
+ARG NODE_IMAGE=node:24.22.1-alpine
+
+FROM $NODE_IMAGE AS dev
+RUN corepack enable
+# docker-compose.yml mounts a volume over node_modules, which Docker creates with this
+# directory's owner, so the image's user can install into it
+RUN mkdir -p /usr/src/app/node_modules && chown node:node /usr/src/app/node_modules
+USER node

@@ -1,0 +1,1432 @@
+# Psychic Controllers - Detailed Reference
+
+## Controller Hierarchy
+
+The controller directory structure **is** the authentication and authorization architecture. Each directory branch has its own `AuthedController` (and optionally `UnauthedController`, `MaybeAuthedController`) at its root, and every controller in that branch extends downward from it. By looking at the `@BeforeAction` methods in any directory's base controller, you can know exactly what rules are in force for the entire subtree.
+
+**The cardinal rule:** never introduce a looser authentication pattern deeper in a directory hierarchy. Authentication flows downhill — it gets stricter, never weaker.
+
+This tree is the *controller* auth architecture. Model namespacing is a separate, identity-based decision — don't mirror this controller tree into model names. See [models.md — Model Organization & Namespacing](models.md#model-organization--namespacing).
+
+### Directory Structure
+
+Each application surface — client (`V1/`), public browse + bootstrap (`Visitor/`), external webhooks (`Webhooks/`), partner API (`Api/`), admin, internal — gets its own top-level directory branch with its own auth base controllers. Any surface that loosens authentication is its own top-level namespace; versions nest inside it (see Key Principle #3):
+
+```
+controllers/
+├── ApplicationController.ts          (base — defines psychicTypes and universal methods such as extracting Accept-Language header; sets openapi namespaces)
+├── AuthedController.ts               (client auth — @BeforeAction, 401 if no user)
+├── MaybeAuthedController.ts          (client auth — currentUser null if absent)
+├── UnauthedController.ts             (no auth)
+│
+├── V1/                               (client API — AUTHED ONLY)
+│   ├── BaseController.ts             (extends AuthedController)
+│   ├── Guest/                        (authed Guest endpoints)
+│   │   ├── BaseController.ts         (extends V1/BaseController, loads currentGuest, 403 if current User has no Guest)
+│   │   ├── BookingsController.ts     (extends V1/Guest/BaseController)
+│   │   └── FavoritesController.ts    (extends V1/Guest/BaseController)
+│   └── Host/                         (authed Host endpoints)
+│       ├── BaseController.ts         (extends V1/BaseController, loads currentHost, 403 if current User has no Host)
+│       ├── PlacesController.ts       (extends V1/Host/BaseController)
+│       └── Places/
+│           ├── BaseController.ts     (extends V1/Host/BaseController, loads currentPlace)
+│           └── RoomsController.ts    (extends V1/Host/Places/BaseController)
+│
+├── Visitor/                          (MAYBE-AUTHED client surface — public browse + bootstrap)
+│   ├── BaseController.ts             (REPARENTED: extends MaybeAuthedController)
+│   └── V1/
+│       ├── BaseController.ts         (extends Visitor/BaseController)
+│       ├── SignUpController.ts       (records app user + ToS consent; self-guards on currentUser)
+│       ├── MeController.ts           (session probe; answers for a not-yet-cleared user)
+│       └── PlacesController.ts       (public browse; varies when logged in)
+│
+├── Webhooks/                         (external callbacks — UNAUTHED; each provider verifies its own signature)
+│   ├── BaseController.ts             (REPARENTED: extends UnauthedController — auth level only; no shared signature check)
+│   └── V1/
+│       ├── BaseController.ts         (extends Webhooks/BaseController)
+│       ├── ZoomController.ts         (verifies the Zoom signature in a @BeforeAction)
+│       └── TwilioController.ts       (verifies the Twilio signature in a @BeforeAction)
+│
+├── Api/                              (server-to-server partner API — UNAUTHED session, API-key auth)
+│   ├── BaseController.ts             (REPARENTED: extends UnauthedController; verifies the API key in a @BeforeAction)
+│   └── V1/
+│       ├── BaseController.ts         (extends Api/BaseController)
+│       └── ReservationsController.ts (extends Api/V1/BaseController)
+│
+├── Admin/                            (admin surface — separate auth chain, unversioned)
+│   ├── AuthedController.ts           (admin auth — validates AdminUser; overrides openapi namespaces to: 'admin', 'tests')
+│   ├── UnauthedController.ts         (admin unauthed; overrides openapi namespaces to: 'admin', 'tests')
+│   ├── CitiesController.ts           (extends Admin/AuthedController)
+│   ├── SignInController.ts           (extends Admin/UnauthedController)
+│   └── Cities/
+│       ├── BaseController.ts         (extends Admin/AuthedController, loads currentCity)
+│       └── TravelTimesController.ts  (extends Admin/Cities/BaseController)
+│
+└── Internal/                         (internal employee surface — separate auth chain, unversioned)
+    ├── AuthedController.ts           (internal auth — validates InternalUser; overrides openapi namespaces to: 'internal', 'tests')
+    ├── UnauthedController.ts         (internal unauthed; overrides openapi namespaces to: 'internal', 'tests')
+    ├── PlacesController.ts           (extends Internal/AuthedController)
+    └── SignInController.ts           (extends Internal/UnauthedController)
+```
+
+### Key Principles
+
+1. **Each surface has its own auth controllers.** `Admin/AuthedController` and `Internal/AuthedController` each extend `ApplicationController` directly — they do NOT extend the client `AuthedController`. Each authenticates its own user type (AdminUser, InternalUser, etc.).
+
+2. **Every controller extends the base controller in its own directory** (or the authed/unauthed controller if at the top of its branch). Controllers never reach across branches or skip levels.
+
+3. **Loosened auth lives in its own top-level namespace; versions nest inside it.** An authed surface may be versioned at the top (`V1/Guest/`, `V1/Host/` — all authed). Any surface that *loosens* auth — maybe-authed, unauthed, or server-to-server — is its own top-level namespace (`Visitor/`, `Webhooks/`, `Api/`) with the version nested inside (`Visitor/V1/`, `Webhooks/V1/`, `Api/V1/`), never `V1/Visitor/`, which would bury an auth change deep in the authed client branch. A separate auth surface (`Admin/`, `Internal/`) likewise gets its own top-level namespace and its own `AuthedController` / `UnauthedController`.
+
+4. **Use generators** to create controllers. `pnpm psy g:resource` and `pnpm psy g:controller` set up the correct inheritance chain automatically. See [generators.md](generators.md) for the full scaffolding workflow (and where reparenting fits).
+
+5. **Generate every surface; reparent the namespace base once when it loosens auth.** Always scaffold with the generators — they wire the inheritance chain and base controllers. The generator defaults each new namespace base to the client `AuthedController`, so an *authed* surface needs nothing extra:
+   - `pnpm psy g:resource v1/host/places Place` → chains `V1/Host/PlacesController` → `V1/Host/BaseController` → `V1/BaseController` → `AuthedController`. No reparenting.
+   - `pnpm psy g:resource admin/cities City` → extends `Admin/AuthedController` (the generator special-cases `Admin` / `Internal`, each authenticating its own user type). No reparenting.
+
+   A surface that *loosens* auth is reparented once, at its **top-level** namespace base (the nested version base inherits it — see #6):
+   - `pnpm psy g:resource api/v1/reservations Booking` (a partner channel-manager syncing reservations) → reparent `Api/BaseController` to `UnauthedController` and verify the API key in a `@BeforeAction` there. One API, one key scheme, so it lives on the shared base.
+   - `pnpm psy g:controller Webhooks/V1/Zoom create` → reparent `Webhooks/BaseController` to `UnauthedController` (auth level only). Verify the payload signature in a `@BeforeAction` on the *provider's* controller, not the shared base — a later `pnpm psy g:controller Webhooks/V1/Twilio create` reuses that base, and Twilio's signature scheme differs from Zoom's. Put on a shared base only what every endpoint under it shares.
+   - `pnpm psy g:controller Visitor/V1/Places index` → reparent `Visitor/BaseController` to `MaybeAuthedController` (public reads that vary when logged in; bootstrap endpoints like `SignUp` and `/me` self-guard on `currentUser`).
+
+   The same reparent-the-top-namespace-base move is how you exempt endpoints from a cross-cutting authorization gate — see [Cross-Cutting Authorization Gates](#cross-cutting-authorization-gates).
+
+6. **`g:controller` is structural, not just a file stub.** It creates a `BaseController.ts` for each namespace segment that doesn't already exist (reusing the existing namespace base otherwise), wires the leaf controller through that namespace base, and creates the unit spec. Because an existing base is reused, any re-parenting of a namespace base is a one-time edit — later controllers generated into that namespace inherit it with no further change. It does not add routes. Hand-writing a controller skips the namespace base chain, which is exactly where shared webhook/public/custom-token concerns should live.
+
+### Cross-Cutting Authorization Gates
+
+The auth base controller is also where a cross-cutting *authorization* precondition lives — a check that must hold for every authenticated request, not just "is there a user." Accepted-current-terms-of-service, completed-onboarding, an active subscription, a verified email: any condition that gates the entire authenticated surface belongs in ONE `@BeforeAction` on the `AuthedController` at the root of that authed surface — each surface has its own (the client `AuthedController`, `Admin/AuthedController`, `Internal/AuthedController`) — declared *after* `authenticate` so `currentUser` is populated when it runs. A precondition that must hold across surfaces is declared once on each surface's auth base.
+
+```typescript
+export default class AuthedController extends ApplicationController {
+  protected currentUser: User
+
+  @BeforeAction()
+  protected async authenticate() {
+    // ...resolves and sets this.currentUser, or this.unauthorized()
+  }
+
+  // Declared after authenticate, so currentUser is set. Inherited by every
+  // authed namespace (Guest/, Host/, and their nested bases) symmetrically.
+  @BeforeAction()
+  protected async requireCurrentTermsOfService() {
+    if (!this.currentUser.hasAcceptedCurrentTermsOfService) {
+      return this.forbidden('terms_of_service_required')
+    }
+  }
+}
+```
+
+Because hooks inherit ancestor-to-descendant and a descendant cannot un-register or re-scope an inherited `@BeforeAction` (see [`@BeforeAction` scoping](#beforeaction-scoping)), this one declaration is the single, authoritative place the precondition is registered for the whole subtree. That is what makes the line-5 promise true: reading the base controller's `@BeforeAction`s tells you which preconditions run across the subtree. This is the architecture working as designed, not a limitation to route around.
+
+**Exempt bootstrap endpoints structurally.** A few endpoints cannot be subject to the gate, because they are how a user *clears* it or *discovers* they have not: the endpoint that records consent / completes onboarding, and the not-yet-cleared probe (typically `GET /me`). A blocked user must still reach these, or they are locked out with no way forward. Do not weaken the gate for them — exempt them by ancestry, at the namespace's base controller:
+
+- Put these endpoints in their own namespace and re-parent that namespace's **base controller** to a looser base — `MaybeAuthedController` for a surface that still wants optional auth (the `/me` probe, the consent-recording action that self-guards on `currentUser`), or `UnauthedController` for a surface with no app-user auth at all (e.g. webhooks). There is one base controller per directory, so this is a single edit that exempts the whole namespace; every controller in it inherits the looser base. For example, after `pnpm psy g:controller Visitor/V1/Me show`, re-parent `Visitor/BaseController.ts` to extend `MaybeAuthedController`; for `pnpm psy g:controller Webhooks/V1/Zoom create`, re-parent `Webhooks/BaseController.ts` to extend `UnauthedController`. The change is visible in the directory tree, so the exemption is auditable, not hidden in a per-action skip. This is the same reparent-the-namespace-base move used for every loosen-auth surface (see [Key Principle #5](#key-principles)), and like all such reparenting it is one-time — later controllers in the namespace reuse the existing base.
+- Self-guard inside the action where the looser base allows a null user:
+
+  ```typescript
+  public async update() {
+    if (!this.currentUser) return this.unauthorized()
+    await this.currentUser.update({ acceptedTermsOfServiceVersion: CURRENT_TOS_VERSION })
+    this.noContent()
+  }
+  ```
+
+- Keep the URL clean by routing to the re-parented controller with an explicit `controller:` reference (the directory says `MaybeAuthed`, the URL should not) — see [Routing Controllers When Directory Names Don't Map to URLs](#routing-controllers-when-directory-names-dont-map-to-urls).
+
+The result: the gate is universal and knowable in one place, and the handful of endpoints that bootstrap out of it are exempt by their position in the tree, not by an override that erodes the guarantee.
+
+### `@BeforeAction` scoping
+
+`@BeforeAction({ only, except })` filters by action method **name**, not by controller. The hook still runs on every controller that inherits it; `only`/`except` only decide which action methods it fires for, matched by name. So `except: ['create']` suppresses the hook for *every* descendant action named `create`, not for one controller:
+
+```typescript
+export default class AuthedController extends ApplicationController {
+  // Skips the gate for any inherited action named `create`, in Guest/, Host/,
+  // and every nested base below — not just one controller's create.
+  @BeforeAction({ except: ['create'] })
+  protected async requireCurrentTermsOfService() {
+    if (!this.currentUser.hasAcceptedCurrentTermsOfService) {
+      return this.forbidden('terms_of_service_required')
+    }
+  }
+}
+```
+
+There is no `skipBeforeAction`, and a descendant cannot un-register or re-scope an inherited hook: redeclaring a `@BeforeAction` with the same method name in a descendant is a **no-op** for the *registration* — the ancestor's hook (including its `only`/`except`) is kept and the redeclaration is dropped. The one thing a subclass can still change is the hook's *behavior*, by overriding the method body itself (a same-named method runs in place of the ancestor's, since the hook is invoked by name). Don't do that — it changes what the gate does while leaving the registration intact, which is exactly the hidden override the directory model is meant to rule out. To vary auth for a subtree, re-parent it to a different base controller; the change is visible in the directory tree. This is what makes the base controller's `@BeforeAction`s authoritative for the whole subtree (see [Cross-Cutting Authorization Gates](#cross-cutting-authorization-gates)).
+
+### Verifying the Hierarchy
+
+```bash
+# Visually inspect the controller inheritance tree
+pnpm psy inspect:controller-hierarchy
+
+# CI check — exits with 1 if a controller extends too far up the tree
+# or crosses into another branch
+pnpm psy check:controller-hierarchy
+```
+
+### Routing Controllers When Directory Names Don't Map to URLs
+
+Controller directory names reflect the auth architecture, not URL structure. When the directory name shouldn't appear in the URL (e.g., `Visitor/` is the auth context, but `/visitor/v1/places` isn't a natural public URL), use an explicit `controller` reference instead of a namespace:
+
+```typescript
+// BAD — "visitor" leaks into the URL: /visitor/v1/places
+r.namespace('visitor', r => {
+  r.namespace('v1', r => {
+    r.resources('places', { only: ['index', 'show'] })
+  })
+})
+
+// GOOD — clean URL: /v1/places, controller explicitly specified
+import VisitorV1PlacesController from '#controllers/Visitor/V1/PlacesController.js'
+r.namespace('v1', r => {
+  r.resources('places', { only: ['index', 'show'], controller: VisitorV1PlacesController })
+})
+```
+
+The controller directory structure (`Visitor/V1/`) still enforces the auth inheritance chain, but the URL stays clean.
+
+Three concerns are independent and should not be collapsed into one tree: the **URL namespace** (an API-contract concern — e.g. version-first `/v1/...`), the **controller file namespace**, and the **auth inheritance chain**. A versioned URL does not require a matching controller ancestry: don't make `Visitor/V1/BaseController` extend `V1/BaseController` merely because the URL starts with `/v1`. Versioning is a contract concern; authentication inheritance is a controller-hierarchy concern. Express auth boundaries through ancestry (a `Visitor/BaseController` extending `MaybeAuthedController` for optionally-authenticated public reads; `Guest/` and `Host/` bases staying authenticated), and let the route file map a versioned URL onto whatever controller has the correct ancestry via an explicit `controller` reference. Because `pnpm psy g:controller` generates the controller and spec but does not add routes, you're free to wire the route however the URL contract requires.
+
+## Declaring Routes
+
+Routes live in `conf/routes.ts` (plus `routes.admin.ts` and `routes.internal.ts`). `r.namespace` groups
+routes and infers controller paths from the nesting, so the route file is where the directory tree above
+becomes URLs.
+
+```typescript
+import { PsychicRouter } from '@rvoh/psychic'
+
+export default function routes(r: PsychicRouter) {
+  // Authed client API — everything under v1/ is authenticated.
+  r.namespace('v1', r => {
+    r.namespace('host', r => {
+      // Full CRUD: index, show, create, update, destroy
+      r.resources('places', r => {
+        r.resources('rooms')  // Nested: /v1/host/places/:placeId/rooms
+      })
+      r.resources('localized-texts', { only: ['update', 'destroy'] })
+    })
+
+    r.namespace('guest', r => {
+      r.resources('places', { only: ['index', 'show'] })
+    })
+  })
+
+  // A surface that LOOSENS auth is its OWN top-level namespace, version nested inside —
+  // never under v1/. The directory tree is the auth architecture (see Controller Hierarchy).
+  r.namespace('webhooks', r => {     // unauthed external callbacks: /webhooks/v1/zoom
+    r.namespace('v1', r => {
+      r.post('zoom', WebhooksV1ZoomController, 'create')
+    })
+  })
+  r.namespace('api', r => {          // server-to-server partner API: /api/v1/reservations
+    r.namespace('v1', r => {
+      r.resources('reservations', { only: ['index', 'show', 'create'] })
+    })
+  })
+  // The maybe-authed Visitor surface lives top-level too (Visitor/V1); it can map to a
+  // clean /v1 URL via an explicit `controller:` reference — see above.
+
+  // Simple routes
+  r.get('status', StatusController, 'show')
+  r.post('login', AuthController, 'login')
+
+  // Singular resource (no index, no :id in path)
+  r.resource('profile', { only: ['show', 'update'] })
+
+  // Collection routes (no :id)
+  r.resources('rooms', r => {
+    r.collection(r => {
+      r.post('bulk-create', RoomsController, 'bulkCreate')
+    })
+  })
+
+  // Member route (custom action on a single record). A route declared directly in
+  // the resources callback — outside `collection` — is member-scoped: Psychic
+  // prepends `:id`. There is no `r.member`; use the existing verbs (r.get/r.post/…)
+  // and read the id in the action with `this.castParam('id', 'uuid')` (cast the id to
+  // its primary-key type — `uuid`, `bigint`, or `integer` — never `string`).
+  r.resources('bookings', r => {
+    r.post('cancel', BookingsController, 'cancel')   // member-scoped: POST /bookings/:id/cancel
+  })
+}
+```
+
+Run `pnpm psy routes` to list what the file actually produces, and `pnpm psy sync` after any route
+change so the OpenAPI specs and generated clients update.
+
+## ApplicationController
+
+```typescript
+import { PsychicController } from '@rvoh/psychic'
+import psychicTypes from '#src/types/psychic.js'
+
+export default class ApplicationController extends PsychicController {
+  public override get psychicTypes() {
+    return psychicTypes
+  }
+}
+```
+
+## Authentication Examples
+
+### Client AuthedController
+
+```typescript
+import ApplicationController from '#controllers/ApplicationController.js'
+import resolveCurrentUser from '#controllers/helpers/resolveCurrentUser.js'
+import User from '#models/User.js'
+import { BeforeAction } from '@rvoh/psychic'
+
+export default class AuthedController extends ApplicationController {
+  protected currentUser: User
+
+  @BeforeAction()
+  protected async authenticate() {
+    const user = await resolveCurrentUser(this)
+    if (!user) return this.unauthorized()
+    this.currentUser = user
+  }
+}
+```
+
+The token scheme lives in `resolveCurrentUser(controller)` (`controllers/helpers/resolveCurrentUser.ts`), shared with `MaybeAuthedController`. The scaffold's helper returns `null` for a missing token or one it can't decrypt, so a forged or stale token gets a 401 rather than a 500; keep that when you replace the scheme — see [Decrypting Cookies Outside a Controller](#decrypting-cookies-outside-a-controller) for the catch.
+
+### MaybeAuthedController
+
+Calls the same `resolveCurrentUser(this)` and assigns its result, `null` included, instead of responding 401. Use for public endpoints that behave differently when logged in (e.g., showing favorite indicators on public browse pages).
+
+### Surface-Specific Auth (Admin, Internal)
+
+Each surface authenticates its own user type independently and overrides `openapiNames` to route its endpoints into the correct OpenAPI spec:
+
+```typescript
+// Admin/AuthedController.ts — authenticates AdminUser
+export default class AdminAuthedController extends ApplicationController {
+  public static override get openapiNames(): PsychicOpenapiNames<ApplicationController> {
+    return ['admin', 'tests']
+  }
+
+  protected currentAdminUser: AdminUser
+
+  @BeforeAction()
+  protected async authenticate() {
+    // admin-specific auth logic (e.g., Firebase with domain restriction)
+    ...
+  }
+}
+
+// Internal/AuthedController.ts — authenticates InternalUser
+export default class InternalAuthedController extends ApplicationController {
+  public static override get openapiNames(): PsychicOpenapiNames<ApplicationController> {
+    return ['internal', 'tests']
+  }
+
+  protected currentInternalUser: InternalUser
+
+  @BeforeAction()
+  protected async authenticate() {
+    // internal-specific auth logic
+    ...
+  }
+}
+```
+
+### Opting Controllers into an OpenAPI Namespace
+
+Each surface's controllers are routed to one or more OpenAPI specs via the `openapiNames` getter, so endpoints land in the specs meant for their audience. A controller is documented into *every* spec it lists.
+
+A fresh app sets this up on the base controllers. `ApplicationController` (the client base) defaults to all three client-relevant specs, so client controllers are documented into the web and mobile specs at once, from the same code:
+
+```typescript
+// ApplicationController — client controllers serve web and mobile from one place
+public static override get openapiNames(): PsychicOpenapiNames<ApplicationController> {
+  return ['default', 'mobile', 'tests']
+}
+```
+
+The admin and internal surface bases (both `AuthedController` and `UnauthedController`) override it to their own surface plus `'tests'`, keeping their endpoints out of the client specs:
+
+```typescript
+// Admin/AuthedController and Admin/UnauthedController
+public static override get openapiNames(): PsychicOpenapiNames<ApplicationController> {
+  return ['admin', 'tests']
+}
+```
+
+All controllers inheriting from these base controllers automatically inherit the same `openapiNames`. Every base includes `'tests'`, which is what lets controller specs across all surfaces type-check against one aggregated spec. Run `pnpm psy sync` after adding a new namespace so the `openapiNames` types update.
+
+**Always keep `'tests'` in any `openapiNames` override you write.** A controller whose list omits `'tests'` is left out of the aggregated tests spec, so its endpoints get no generated types — the typed request helper won't recognize their paths and the controller spec can't type-check. When you add a new surface or namespace, the list is `['<surface>', 'tests']`, never `['<surface>']` alone.
+
+The named specs themselves — output files, the `mobile` enum-shaping, the `tests` spec, defaults, validation — are configured in `conf/app.ts`. See [openapi.md](openapi.md#outputfilepath-and-namespaces).
+
+## Nested Resource Base Controller Pattern
+
+```typescript
+// V1/Host/BaseController.ts
+export default class V1HostBaseController extends V1BaseController {
+  protected currentHost: Host
+
+  @BeforeAction()
+  protected async loadCurrentHost() {
+    const host = await this.currentUser.associationQuery('host').first()
+    if (!host) return this.forbidden()
+    this.currentHost = host
+  }
+}
+```
+
+```typescript
+// V1/Host/Places/BaseController.ts — for doubly-nested resources (e.g., /places/:placeId/rooms)
+import V1HostBaseController from '#controllers/V1/Host/BaseController.js'
+
+export default class V1HostPlacesBaseController extends V1HostBaseController {
+  protected currentPlace: Place
+
+  @BeforeAction()
+  protected async loadCurrentPlace() {
+    this.currentPlace = await this.currentHost
+      .associationQuery('places')
+      .findOrFail(this.castParam('placeId', 'uuid'))
+  }
+}
+```
+
+## CRUD Controller Pattern
+
+```typescript
+import { OpenAPI } from '@rvoh/psychic'
+
+export default class V1HostPlacesController extends V1HostBaseController {
+  // INDEX with cursor pagination
+  @OpenAPI(Place, {
+    status: 200,
+    tags: ['places'],
+    description: 'Paginated list of host places',
+    cursorPaginate: true,
+    serializerKey: 'summary',
+    fastJsonStringify: true,
+  })
+  public async index() {
+    const places = await this.currentHost
+      .associationQuery('places')
+      .preloadFor('summary')
+      .cursorPaginate({
+        cursor: this.castParam('cursor', 'string', { allowNull: true }),
+      })
+    this.ok(places)
+  }
+
+  // SHOW
+  @OpenAPI(Place, {
+    status: 200,
+    tags: ['places'],
+    fastJsonStringify: true,
+  })
+  public async show() {
+    this.ok(await this.place())
+  }
+
+  // CREATE
+  @OpenAPI(Place, {
+    status: 201,
+    tags: ['places'],
+    fastJsonStringify: true,
+    requestBody: { params: ['name', 'style', 'sleeps'] },
+  })
+  public async create() {
+    let place = await ApplicationModel.transaction(async txn => {
+      const place = await Place.txn(txn).create(this.extractParams(Place, ['name', 'style', 'sleeps']))
+      await HostPlace.txn(txn).create({ host: this.currentHost, place })
+      return place
+    })
+    if (place.isPersisted) place = await place.loadFor('default').execute()
+    this.created(place)
+  }
+
+  // UPDATE
+  @OpenAPI(Place, {
+    status: 204,
+    tags: ['places'],
+    requestBody: { params: ['name', 'style', 'sleeps'] },
+  })
+  public async update() {
+    const place = await this.place()
+    await place.update(this.extractParams(Place, ['name', 'style', 'sleeps']))
+    this.noContent()
+  }
+
+  // DESTROY
+  @OpenAPI({ status: 204, tags: ['places'] })
+  public async destroy() {
+    const place = await this.place()
+    await place.destroy()
+    this.noContent()
+  }
+
+  // Private helper to find and authorize resource
+  private async place() {
+    return await this.currentHost
+      .associationQuery('places')
+      .preloadFor('default')
+      .findOrFail(this.castParam('id', 'uuid'))
+  }
+}
+```
+
+## Index with Search/Filtering
+
+```typescript
+@OpenAPI(Place, {
+  status: 200,
+  cursorPaginate: true,
+  serializerKey: 'summary',
+  query: {
+    search: { required: false, schema: 'string' },
+    style: { required: false, schema: { type: 'string', enum: PlaceStylesEnumValues } },
+    minSleeps: { required: false, schema: 'integer' },
+  },
+})
+public async index() {
+  let query = this.currentHost
+    .associationQuery('places')
+    .preloadFor('summary')
+
+  const search = this.castParam('search', 'string', { allowNull: true })
+  const style = this.castParam('style', 'string', { enum: PlaceStylesEnumValues, allowNull: true })
+  const minSleeps = this.castParam('minSleeps', 'integer', { allowNull: true })
+
+  if (search) {
+    query = query.whereAny([
+      { name: ops.like(`${ops.like.escape(search)}%`) },
+    ])
+  }
+  if (style) query = query.where({ style })
+  if (minSleeps) query = query.where({ sleeps: ops.greaterThanOrEqualTo(minSleeps) })
+
+  const result = await query.cursorPaginate({
+    cursor: this.castParam('cursor', 'string', { allowNull: true }),
+  })
+  this.ok(result)
+}
+```
+
+## STI Creation in Controllers
+
+When creating STI child records, you MUST switch on the type:
+
+```typescript
+@OpenAPI(Room, {
+  status: 201,
+  tags: ['rooms'],
+  fastJsonStringify: true,
+  requestBody: { params: ['name', 'sleeps'], including: ['type'] },
+})
+public async create() {
+  const roomType = this.castParam('type', 'string', { enum: RoomTypesEnumValues })
+  const roomParams = this.extractParams(Room, ['name', 'sleeps'])
+  let room: Room
+
+  switch (roomType) {
+    case 'Bathroom':
+      room = await Bathroom.create({ place: this.currentPlace, ...roomParams })
+      break
+    case 'Bedroom':
+      room = await Bedroom.create({ place: this.currentPlace, ...roomParams })
+      break
+    case 'Kitchen':
+      room = await Kitchen.create({ place: this.currentPlace, ...roomParams })
+      break
+    case 'Den':
+      room = await Den.create({ place: this.currentPlace, ...roomParams })
+      break
+    case 'LivingRoom':
+      room = await LivingRoom.create({ place: this.currentPlace, ...roomParams })
+      break
+    default: {
+      // TypeScript exhaustiveness check
+      const _never: never = roomType
+      throw new Error(`Unhandled RoomTypesEnum: ${_never as string}`)
+    }
+  }
+
+  if (room.isPersisted) room = await room.loadFor('default').execute()
+  this.created(room)
+}
+```
+
+## Parameter Handling
+
+### Request body size limits
+
+`@koa/bodyparser` caps request bodies via `jsonLimit` and `formLimit`. A request over the limit rejects with a 413 before reaching the action. Override via `psy.set('json', { ... })` in `conf/app.ts`:
+
+```typescript
+psy.set('json', {
+  jsonLimit: '5mb',
+  formLimit: '500kb',
+})
+```
+
+See the [@koa/bodyparser README](https://github.com/koajs/bodyparser) for the full option surface. These limits are the app's own defense against oversized-payload memory DoS, whether or not an edge layer also caps bodies — set each to the largest legitimate payload your endpoints accept, and no higher.
+
+### castParam Types
+
+```typescript
+// Ids — cast to the column's primary-key type, never 'string'. Match your app's
+// configured primaryKeyType: uuid4/uuid7 → 'uuid', bigint → 'bigint',
+// integer → 'integer'.
+this.castParam('id', 'uuid')
+this.castParam('id', 'bigint')
+this.castParam('id', 'integer')
+
+// Other scalars
+this.castParam('name', 'string')
+this.castParam('count', 'integer')
+this.castParam('price', 'number')   // 'number' allows decimals — for values, not ids
+this.castParam('birthday', 'date')
+this.castParam('startAt', 'datetime')
+
+// Array types
+this.castParam('ids', 'uuid[]')
+this.castParam('tags', 'string[]')
+
+// With options
+this.castParam('cursor', 'string', { allowNull: true })
+this.castParam('style', 'string', { enum: PlaceStylesEnumValues })
+this.castParam('roomType', 'string', { enum: RoomTypesEnumValues, allowNull: true })
+```
+
+When restricting to a subset of a database enum, use `Extract` to maintain compile-time type safety:
+
+```typescript
+import { RoomTypesEnum, RoomTypesEnumValues } from '#src/types/db.js'
+
+// Subset — Extract makes a renamed or removed member a compile error
+const BOOKABLE_ROOM_TYPES: Extract<RoomTypesEnum, 'Bedroom' | 'Den' | 'LivingRoom'>[] =
+  ['Bedroom', 'Den', 'LivingRoom']
+
+this.castParam('roomType', 'string', { enum: BOOKABLE_ROOM_TYPES })
+```
+
+### Bounding length and range
+
+Beyond `enum`/`allowNull`/`match`, `castParam` enforces size bounds: `minLength`/`maxLength` on a `'string'`, and `minimum`/`maximum` on a `'number'`/`'integer'`/`'bigint'`. All four are inclusive and checked *after* type coercion; a violation throws `ParamValidationError`, which Psychic renders as a `400`. `extractParams` takes no bound options, so `castParam` each field that needs one. Bound untrusted request input at the boundary rather than validating it later in a model or service:
+
+```typescript
+this.castParam('title', 'string', { minLength: 1, maxLength: 200 })
+this.castParam('nightlyRateCents', 'integer', { minimum: 0, maximum: 100_000_000 })
+this.castParam('sleeps', 'integer', { minimum: 1, maximum: 20, allowNull: true })
+```
+
+For array casts (`'string[]'`, `'integer[]'`, …) the bounds apply **element-wise** — each element must satisfy them — and `bigint` range checks compare without precision loss.
+
+### String params are trimmed automatically
+
+Psychic strips leading and trailing whitespace from string params before validation and casting. Both `castParam` and `extractParams` resolve strings through the same `Params.cast` path, so `'  Cozy Cabin  '` arrives as `'Cozy Cabin'`. This applies to scalar `'string'` params, `enum` strings, Virtual string params, and the elements of string and enum arrays (`'string[]'`, array enum columns). Don't re-trim a value you read through `castParam` or `extractParams` — it's already done.
+
+### An absent key and an explicit `null` differ
+
+With `{ allowNull: true }`, `castParam` returns `undefined` for an absent key and `null` for an explicit `null`, including a key nested in a present object; a `null` parent in dot notation is a 400. That difference lets a [partial update](#worked-example--update-with-a-nullable-fk) tell "leave this column alone" apart from "clear it". Both values are falsy, so test `=== undefined` where the two must stay apart, and collapse them freely where they need not — an `index` action's optional filters.
+
+### extractParams
+
+`extractParams(Model, allowedParams, opts?)` validates an incoming request body against a Dream model's writable params and returns a typed, safe-to-write attributes object. The `allowedParams` array is an explicit positional allowlist, TS-checked at compile time against the model's safe params: real columns, Encrypted columns, and Virtual columns. Encrypted params are accepted as `string` or `string | null` based on the backing encrypted column's nullability, or as the shape `@deco.Encrypted({ openapi })` declares; Virtual params use the type declared in `@deco.Virtual(...)`. `extractParams` enforces those types in TypeScript; at runtime it checks the top-level type only, not an object shape's properties. The runtime intersects the allowlist with the model's `paramSafeColumns` (when declared) and the always-excluded set described below.
+
+The allowlist is required and lives at the call site so that every controller's accepted params are locally visible. Adding a new model param doesn't widen any controller's surface — each controller has to opt in to accept it.
+
+```typescript
+// Standard usage
+public async update() {
+  await (await this.place()).update(
+    this.extractParams(Place, ['name', 'style', 'sleeps']),
+  )
+  this.noContent()
+}
+```
+
+#### Other options
+
+`extractParams` takes exactly two options, `key` and `array`:
+
+```typescript
+// Extract from a nested key in the body
+this.extractParams(Place, ['name', 'style'], { key: 'place' })
+
+// Extract an array of nested objects from a key in the body
+// (e.g., body: { rooms: [{ type: 'Bedroom', ... }, { type: 'Kitchen', ... }] })
+// Each element is validated against the allowlist. The STI `type` discriminator is
+// always excluded, so pull it per item from the raw body — see
+// [STI bulk creation](sti.md#bulk-creation-from-a-request-body-array).
+const roomsParams = this.extractParams(Room, ['name', 'sleeps'], { key: 'rooms', array: true })
+```
+
+Nothing widens extraction past the model's safe set: the positional array is the entire allowlist, always intersected with the model's param-safe set (its declared `paramSafeColumns`, or the default safe set otherwise). An excluded column can't be extracted at all; to surface one in the spec instead, see [Always-excluded columns](#always-excluded-columns) below.
+
+Prefer `extractParams(Model, allowed, { key, array: true })` over `castParam('key', 'json[]')` for nested object arrays that correspond to a Dream model — it validates each item against the allowlist instead of accepting arbitrary JSON.
+
+#### Always-excluded columns
+
+Some columns are always stripped, regardless of `paramSafeColumns` or the positional allowlist:
+
+- The primary key (defaults to `id`)
+- `createdAt` / `updatedAt` / `deletedAt`
+- The `type` column of STI models
+- Foreign keys of BelongsTo associations
+- The polymorphic type column of polymorphic BelongsTo associations
+
+These same columns are excluded from a model-derived OpenAPI request body — listing one in `params` won't surface it. The exclusions exist to prevent mass-assignment on FK references and STI/polymorphic type discriminators. To re-add an excluded column to the spec, use `requestBody.including` ([`requestBody` shorthand](#requestbody-shorthand--what-each-option-is-for)) and pull its value with `castParam` inside the action.
+
+#### Declaring `paramSafeColumns` on the model
+
+`paramSafeColumns` is the model-level upper bound on what `extractParams` can return and on what a model-derived `@OpenAPI` `requestBody`'s `params` can list — both derive from the same param-safe set, so a column missing from the model's declaration is excluded from both, even if a controller's `params` names it. A `paramUnsafeColumns`-blocked column behaves like any auto-excluded column: it's dropped from both `params` and extraction, so re-add it to the spec with `requestBody.including` ([`requestBody` shorthand](#requestbody-shorthand--what-each-option-is-for)) and pull its value with `castParam`.
+
+Reach for this cap when a column must never be bulk-assignable no matter what any action's allowlist says — an admin/role flag, an internal payout-account ID, a hand-managed tenancy column not backed by a declared `@BelongsTo`. Use `paramUnsafeColumns` to block just that column (it layers on top of the always-excluded set above); use `paramSafeColumns` to enumerate the model's whole safe set instead. Neither is something to add reflexively to every model — only where a column genuinely must never be assignable no matter what a controller passes.
+
+```typescript
+// Canonical allowlist for the model — caps extractParams.
+public get paramSafeColumns(): DreamColumnNames<Place>[] {
+  return ['name', 'style', 'sleeps']
+}
+
+// Block specific columns (in addition to the always-excluded set above)
+public get paramUnsafeColumns(): DreamColumnNames<Host>[] {
+  return ['payoutAccountId']
+}
+```
+
+Since foreign keys are excluded, find the resource explicitly and pass it as an association:
+
+```typescript
+const place = await Place.findOrFail(this.castParam('placeId', 'uuid'))
+const booking = await this.currentGuest.createAssociation('bookings', {
+  ...this.extractParams(Booking, ['startsOn', 'endsOn']),
+  place,
+})
+```
+
+The FK exclusion is intentional. Advertise the FK in the spec with `requestBody: { including: ['placeId'] }` (for typed spec helpers and client SDKs), but extraction still strips it — always pull the FK with `castParam`, or look up the parent and pass it as an association (as above).
+
+Passing the loaded parent rather than the raw id is the general rule, not a controller quirk: [pass the association instance, not the foreign key](models.md#passing-associations-use-the-instance-not-the-foreign-key). It reads best here because the two steps are the same motion — a param id is untrusted, verifying it means loading the record (ideally through an association chain from `currentUser` that proves the current user may touch it), and the load hands you the instance to pass. Scope that lookup to the current user where you can (`this.currentHost.associationQuery('places').findOrFail(...)`) rather than a bare `Place.findOrFail(...)`, so the verification and the authorization are one query.
+
+#### Generator output
+
+`psy g:resource` (and related generators) emit a shared `paramSafeColumns` const at the top of the controller file and reference it from every `create` / `update` action — and from those actions' `@OpenAPI` `requestBody` — so the allowlist stays visible at the call site without duplicating the array per action:
+
+```typescript
+import { OpenAPI } from '@rvoh/psychic'
+import { DreamParamSafeColumnNames } from '@rvoh/dream/types'
+import Place from '#models/Place.js'
+
+const openApiTags = ['places']
+
+const paramSafeColumns: DreamParamSafeColumnNames<Place>[] = ['name', 'style']
+
+export default class PlacesController extends AuthedController {
+  @OpenAPI(Place, {
+    status: 201,
+    tags: openApiTags,
+    description: 'Create a Place',
+    fastJsonStringify: true,
+    requestBody: { params: paramSafeColumns },
+  })
+  public async create() {
+    const place = await Place.create(this.extractParams(Place, paramSafeColumns))
+    this.created(place)
+  }
+
+  @OpenAPI(Place, {
+    status: 204,
+    tags: openApiTags,
+    description: 'Update a Place',
+    fastJsonStringify: true,
+    requestBody: { params: paramSafeColumns },
+  })
+  public async update() {
+    await (await this.place()).update(this.extractParams(Place, paramSafeColumns))
+    this.noContent()
+  }
+}
+```
+
+The const is typed `DreamParamSafeColumnNames<Model>[]`, which gives autocomplete of valid columns and a compile error on any [always-excluded](#always-excluded-columns) column right at the assignment. It is emitted only when the controller has a `create` and/or `update` action and the model is known (index/show/destroy-only controllers don't get it), and when no columns survive the param-safe filter it is still emitted, typed and empty: `const paramSafeColumns: DreamParamSafeColumnNames<Place>[] = []`. The real scaffold emits the action bodies commented out, as hints; the bodies here are simplified. Admin and non-admin scaffolds emit the same shape.
+
+**Single edit point:** narrowing `paramSafeColumns` updates both the runtime `extractParams` allowlist *and* the documented `@OpenAPI` request body in one place — the documented request shape and the runtime extraction can't silently diverge. Note this is `requestBody`, not the response: `create`'s 201 still returns the full serializer and `update` is 204 (no body) — the allowlist constrains *input*. The `requestBody: { params }` here is the generator pre-wiring the request body for scaffolded CRUD; the [`requestBody.including`](#always-excluded-columns) escape hatch ("re-add what extraction excluded") still applies on top of it unchanged.
+
+## Response Methods
+
+```typescript
+// Success
+this.ok(data)              // 200 - serializes Dream models automatically
+this.created(data)         // 201
+this.accepted(data)        // 202
+this.noContent()           // 204
+
+// Redirects
+this.redirect(path)        // 302
+this.movedPermanently(path) // 301
+// A same-origin relative path (a single leading `/`) works. An absolute-URL
+// target is checked against `redirectAllowedHosts` — an empty allowlist by
+// default — and throws a 500 (not a silent no-op) if the host isn't listed.
+// Matching is host-only and case- and port-insensitive, and only `http:` and
+// `https:` URLs qualify — any other scheme is refused. Add external redirect
+// targets explicitly:
+//   psy.set('redirectAllowedHosts', ['oauth.example.com'])
+
+// Client errors
+this.badRequest()          // 400
+this.unauthorized()        // 401
+this.forbidden()           // 403
+this.notFound()            // 404
+this.conflict()            // 409
+this.unprocessableContent() // 422
+
+// Server errors
+this.internalServerError() // 500
+```
+
+### Error markers: distinguishing two same-status causes
+
+When one endpoint can return the same status for two different reasons, the message you pass to a response helper becomes a runtime discriminator the frontend can switch on.
+
+**Layer 1 — the marker (untyped, zero-config).** `this.forbidden(msg)` / `this.unauthorized(msg)` (and every other error helper except `internalServerError`) throw an `HttpError` whose argument is JSON-stringified as the response body. So `this.forbidden('not_your_place')` produces the body `"not_your_place"`. The default `Forbidden` / `Unauthorized` / etc. response components are description-only — no `content`, no schema — so the marker never appears in the generated spec or client. It is a runtime-only discriminator: two same-status causes on one endpoint, with no schema change and no regen. The frontend switches on it as an untyped string:
+
+```typescript
+// BearBnB: a Host editing a Place they don't own
+if (!place.hostedBy(this.currentUser)) this.forbidden('not_your_place')
+```
+
+```typescript
+// frontend
+if (err.response.status === 403 && err.response.data === 'not_your_place') { /* ... */ }
+```
+
+Two caveats. Pass the marker on every call — `forbidden()` with no argument sends no body, so the discriminator check fails. And the marker is always sent to the client verbatim at runtime (that is the point), independent of the spec, so keep it a coarse, stable cause code (`not_your_place`, `terms_of_service_required`) and never put sensitive detail in it.
+
+**Layer 2 — the typed-enum upgrade.** The body stays a string; attaching an `enum` makes the generated client type it as a literal union instead of bare `string`. Declare it as a runtime OpenAPI schema shorthand (not a TS type) in the action's `@OpenAPI` `responses`:
+
+```typescript
+@OpenAPI(Place, {
+  status: 204,
+  responses: {
+    403: { type: 'string', enum: ['not_your_place'] },
+  },
+})
+public async update() { /* ... this.forbidden('not_your_place') ... */ }
+```
+
+Caveat, stated plainly: declaring the response only changes the spec and the generated types. It does not change runtime behavior and does not enforce the enum. You still write the `forbidden('not_your_place')` throw yourself and keep the thrown value in sync with the declared `enum` by hand — Psychic will not flag drift between them. A declared status replaces the default `$ref` for that one operation; the other default responses remain.
+
+**Object-shaped error bodies.** When the body is an object rather than a marker string, give it an exported [ObjectSerializer](serializers.md#objectserializer-for-non-dream-objects), declare the status with `$serializer`, and pass the serializer to the helper. It is rendered the same way an `ok()` body is:
+
+```typescript
+// app/serializers/BookingConflictSerializer.ts
+export const BookingConflictSerializer = (
+  conflict: { overlappingBookingId: string; startsOn: CalendarDate; endsOn: CalendarDate },
+) =>
+  ObjectSerializer(conflict)
+    .attribute('overlappingBookingId', { openapi: 'string' })
+    .attribute('startsOn', { openapi: 'date' })
+    .attribute('endsOn', { openapi: 'date' })
+
+// BookingsController
+@OpenAPI(Booking, {
+  status: 201,
+  responses: {
+    409: { $serializer: BookingConflictSerializer },
+  },
+})
+public async create() {
+  // ...
+  if (overlapping) {
+    this.conflict(BookingConflictSerializer({ overlappingBookingId: overlapping.id, startsOn, endsOn }))
+  }
+}
+```
+
+**Scope rule — where the typed response lives depends on where the cause is raised:**
+
+- An *action-specific* cause (e.g. `not_your_place`, raised only inside that one Place action) → put the typed `responses` override on that action's `@OpenAPI`, as above. It applies to that operation alone, which is correct.
+- A *cross-cutting* cause raised on a shared base `@BeforeAction` (e.g. `terms_of_service_required` thrown by the `AuthedController` ToS gate, returnable by *every* authed endpoint) → do **not** repeat it per action. Document it once by redefining the shared response component at conf level (`defaults.components.responses.Forbidden`), so the default 403 `$ref` resolves to the typed body across the spec. See [openapi.md — Customizing default error responses](openapi.md#customizing-default-error-responses) for the mechanism. A per-action override here would falsely imply only that one operation returns the marker, and force the same declaration onto every gated endpoint.
+
+Honesty caveat for the cross-cutting case: conf `defaults` (including a redefined component) span the *whole* spec, not just the authed surface. If public endpoints also default a 403, they would advertise the marker body too. To scope the marker to authed controllers, give them their own named spec via `openapiNames` and redefine `Forbidden` only there (see [openapi.md](openapi.md#outputfilepath-and-namespaces)).
+
+## Serializer Passthrough
+
+Pass context data to serializers (e.g., locale, current user):
+
+```typescript
+// In base controller
+@BeforeAction()
+public configureSerializers() {
+  this.serializerPassthrough({ locale: this.locale })
+}
+```
+
+A query's `.passthrough()` is a separate channel: it scopes associations declared with `DreamConst.passthrough`, such as `currentLocalizedText`, and never reaches a serializer ([i18n.md](i18n.md#querying-with-locale-passthrough)).
+
+## @OpenAPI Decorator Options
+
+```typescript
+@OpenAPI(ModelClass, {
+  // Response configuration
+  status: 200,                          // HTTP status code
+  serializerKey: 'summary',             // Which serializer variant
+  many: true,                           // Response is array (without pagination)
+  fastJsonStringify: true,              // 2-5x faster JSON serialization
+
+  // Pagination (use ONE of these)
+  paginate: true,                       // Offset-based pagination
+  cursorPaginate: true,                 // Cursor-based pagination
+
+  // Documentation
+  tags: ['places'],                     // OpenAPI tags
+  description: 'List all places',       // Endpoint description
+
+  // Request parameters
+  query: {                              // Query string parameters
+    search: { required: false, schema: 'string', description: 'Search term' },
+    page: { required: false, schema: 'integer' },
+  },
+  pathParams: {                         // URL path parameters
+    id: { description: 'The place ID' },
+  },
+  requestBody: {                        // Request body shape — prefer structured options over hand-writing a full schema
+    params: ['name', 'style'],
+    including: ['hostId', 'type'],
+    combining: { acknowledgedTerms: { type: 'boolean' } },
+    required: ['name', 'type'],
+  },
+
+  // Headers and security
+  headers: {
+    'X-Custom': { required: false },
+  },
+
+  // Extra responses. Psychic already documents 400, 401, 403, 404, 409 and 500;
+  // naming one of those here replaces its default entry.
+  responses: {
+    429: { description: 'Too many booking requests' },
+  },
+})
+```
+
+### `requestBody` shorthand — what each option is for
+
+**Always declare `requestBody: { params: [...] }` on a model-derived create/update.** With no `params`, Psychic renders no request body at all, so the body is neither documented nor validated. List the model columns the action accepts, mirroring the `extractParams` allowlist, and layer the other options below onto that list.
+
+**`params` / `including` must be literal arrays — never compute them from the model.** Write the column names out (or share one hand-written `const paramSafeColumns: DreamParamSafeColumnNames<Place>[] = ['name', 'style']` between `extractParams` and `@OpenAPI`, as the generator does). **Never backfill them from the model's own `paramSafeColumns` or from `Model.columns()`** inside the decorator: the documented shape then widens every time the model gains a column, advertises fields the action's `extractParams` allowlist drops, and publishes the model's column set in the OpenAPI document — the leak Psychic's no-`params`, no-body default exists to prevent. The `params` list is a deliberate, per-action allowlist.
+
+**Derive before hand-writing.** If any body field is a Dream model column, use `params` / `including` / `combining` / `OpenAPI.forDream(...)` so types, nullability, and enum constraints come from the model. This still applies when the action cannot use `extractParams` directly, such as an STI create action that reads a `type` discriminator with `castParam` and then dispatches through an exhaustive `switch`. The runtime extraction can be custom; the OpenAPI request body should still be model-derived.
+
+| Use | When |
+|---|---|
+| `params: [...]` | List the model columns the body accepts — its real columns, Encrypted columns, and Virtual columns. The default form on every model-derived create/update. |
+| `including: [...]` | Re-add columns that ARE on the model but auto-excluded — FKs, STI `type`, polymorphic type. **Most common legitimate use.** Use this even when the FK is nullable; column nullability is inferred from the model. |
+| `combining: { … }` | Add fields that are NOT columns on the model — join-table arrays (`cityIds`), one-shot tokens, upload metadata, workflow flags. |
+| `required: [...]` | Mark fields required. **Typed to the model's column names**, so it cannot reference `combining` keys. |
+
+One important STI nuance: when `@OpenAPI(BaseModel, ...)` documents an STI-dispatched create action, its `including` and `required` are typed to the base model's **shared physical table**, not to the TypeScript properties declared on the base class. Because every STI child shares that table, a column declared (as a `DreamColumn` property) only on a child class is still a real column on the base table, so it is part of the base model's derived request-body surface — re-add an auto-excluded one (a FK or the `type` discriminator) with `including` exactly as you would any base-model column. This is the OpenAPI mirror of `extractParams(BaseModel, [...])`, which names child columns off the same table (see [STI controller pattern](sti.md#controller-pattern)). Before deciding a field is unavailable to `@OpenAPI(BaseModel, ...)`, check the generated table metadata (`src/types/db.ts` / `src/types/dream.ts`): a physical STI column is derivable there even when no base-class property declares it. Reserve `combining` for a field that genuinely is *not* a model column — a non-column input such as a one-shot token, upload metadata, or a join-table array. A model's declared columns and its own virtual attributes are both part of its model-derived surface (`params` / `including`), so neither belongs in `combining`. One STI exception: a `@deco.Virtual` declared on a *child* class does not filter up to the base, so naming it in the base model's `params` / `including` type-checks but renders nothing into the spec — document a child's virtual attribute on a child-specific `@OpenAPI(ChildModel, ...)` instead (see [sti.md — Virtual attributes don't filter up to the base class](sti.md#virtual-attributes-dont-filter-up-to-the-base-class)).
+
+#### Worked example — UPDATE with a nullable FK
+
+The most-mistaken case: an `update` action whose body needs to express "the FK can be set or cleared." Reach for `including`, not `combining` — the FK's nullability is read from the `cityId` column in the generated schema, so the derived shape already advertises it as nullable. The action side is the partial-update case from [An absent key and an explicit `null` differ](#an-absent-key-and-an-explicit-null-differ).
+
+```typescript
+// `including: ['cityId']` advertises the FK in the OpenAPI shape, taking its
+// nullability from the nullable cityId column.
+// Don't reach for `combining: { cityId: ['string', 'null'] }` — `combining` shadows the
+// model-derived shape with a hand-typed copy that drifts.
+@OpenAPI(Place, {
+  status: 204,
+  tags: ['places'],
+  requestBody: { params: ['name'], including: ['cityId'] },
+})
+public async update() {
+  const place = await this.currentHost
+    .associationQuery('places')
+    .findOrFail(this.castParam('id', 'uuid'))
+  const cityId = this.castParam('cityId', 'uuid', { allowNull: true })
+
+  await place.update({
+    ...this.extractParams(Place, ['name']),
+    // The conditional spread is what keeps an absent key ("leave cityId alone")
+    // distinct from an explicit null ("clear it") — `city: undefined` is a type
+    // error under exactOptionalPropertyTypes.
+    ...(cityId === undefined
+      ? {}
+      : {
+          // The default is to scope a param-id lookup through the current user, the way
+          // the currentHost query above does, so verification and authorization are one
+          // query. A City is shared reference data — every host may reference every city,
+          // so there is no per-user access question to answer. An unscoped findOrFail is
+          // the exception, and every one of them deserves scrutiny.
+          city: cityId === null ? null : await City.findOrFail(cityId),
+        }),
+  })
+  this.noContent()
+}
+```
+
+**One carve-out: `combining` is the *right* tool when the action's runtime contract is deliberately narrower than the column.** The anti-pattern above is *redundant* shadowing — re-typing a shape `params`/`including` already derives correctly. It is not *narrowing* shadowing. A `params`/`including` column always renders its nullability from the model, and `required: ['col']` only adds the field to the schema-level required array — it does **not** drop `null` from the property type. So a nullable column pulled with a non-null `castParam` (`castParam('timezone', 'string')`, no `allowNull`) has no sanctioned shorthand that documents the real contract: `params` + `required` still advertises `string | null`, and a generated client's explicit `null` is a guaranteed 400. Move that column out of `params` into `combining` + `required`, with a comment naming the deliberate narrowing:
+
+```typescript
+// timezone stays nullable on the column for legacy backfilled rows, but this action
+// requires a non-null value via castParam('timezone', 'string'). combining shadows the
+// column-derived `string | null` with the stricter runtime contract; revisit if the column type changes.
+@OpenAPI(City, {
+  status: 204,
+  tags: ['cities'],
+  requestBody: {
+    params: ['name'],
+    combining: { timezone: 'string' },
+    required: ['name', 'timezone'],
+  },
+})
+```
+
+#### Nested model-driven shapes — multi-resource creation
+
+When a request body bundles multiple Dream models — typically a parent plus a one-shot array of children — use the `for: Model` sentinel inside `combining` (or `combining.<key>.items` for arrays). It produces an inline object schema of the columns its `params` and `including` name, each typed from the model; with neither, it renders an empty object. Use `OpenAPI.forDream(Model, opts)` as the typed wrapper: `params` / `including` / `required` are constrained at compile time to that model's column names, so a misspelled column raises a TS error instead of silently dropping out of the OpenAPI shape.
+
+The nested `for:` sentinel is **request-only**; response shapes are modeled as a serializer and declared with `@OpenAPI(SerializerFn)`, not hand-written — see [Custom Response Envelopes](#custom-response-envelopes).
+
+**BearBnB worked example.** A single `POST /host/places` that creates a `Place` and an array of `Room`s atomically:
+
+```typescript
+import ApplicationModel from '#models/ApplicationModel.js'
+import Place from '#models/Place.js'
+import Room from '#models/Room.js'
+import Bathroom from '#models/Room/Bathroom.js'
+import Bedroom from '#models/Room/Bedroom.js'
+import Den from '#models/Room/Den.js'
+import Kitchen from '#models/Room/Kitchen.js'
+import LivingRoom from '#models/Room/LivingRoom.js'
+import { OpenAPI, Params } from '@rvoh/psychic'
+import { RoomTypesEnumValues } from '#src/types/db.js'
+
+@OpenAPI(Place, {
+  status: 201,
+  tags: ['places'],
+  fastJsonStringify: true,
+  requestBody: {
+    params: ['name', 'style', 'sleeps'],
+    combining: {
+      // Nested array of Room shapes, each derived from Room's columns. `including`
+      // re-adds the auto-excluded STI `type` discriminator to the spec.
+      // OpenAPI.forDream's generic narrows `params` / `including` / `required` to
+      // Room column names — a typo here is a compile error.
+      rooms: {
+        type: 'array',
+        items: OpenAPI.forDream(Room, {
+          params: ['name', 'sleeps'],
+          including: ['type'],
+          required: ['type', 'name'],
+        }),
+      },
+    },
+  },
+})
+public async create() {
+  const placeAttrs = this.extractParams(Place, ['name', 'style', 'sleeps'])
+  // Extraction always strips the STI `type` discriminator, so cast it per item from the
+  // raw body against the enum and dispatch to the child class — see
+  // [STI bulk creation](sti.md#bulk-creation-from-a-request-body-array).
+  const roomsAttrs = this.extractParams(Room, ['name', 'sleeps'], { key: 'rooms', array: true })
+  const rawRooms = (this.params as { rooms?: object[] }).rooms ?? []
+
+  const place = await ApplicationModel.transaction(async txn => {
+    const created = await Place.txn(txn).create({ ...placeAttrs, host: this.currentHost })
+
+    for (const [i, roomAttrs] of roomsAttrs.entries()) {
+      const roomType = Params.cast(rawRooms[i] ?? {}, 'type', 'string', { enum: RoomTypesEnumValues })
+      switch (roomType) {
+        case 'Bathroom':   await Bathroom.txn(txn).create({ place: created, ...roomAttrs }); break
+        case 'Bedroom':    await Bedroom.txn(txn).create({ place: created, ...roomAttrs }); break
+        case 'Kitchen':    await Kitchen.txn(txn).create({ place: created, ...roomAttrs }); break
+        case 'Den':        await Den.txn(txn).create({ place: created, ...roomAttrs }); break
+        case 'LivingRoom': await LivingRoom.txn(txn).create({ place: created, ...roomAttrs }); break
+        default: {
+          const _never: never = roomType
+          throw new Error(`Unhandled RoomTypesEnum: ${_never as string}`)
+        }
+      }
+    }
+
+    return created
+  })
+
+  this.created(await place.loadFor('default').execute())
+}
+```
+
+The OpenAPI shape and the `extractParams` calls stay aligned: the spec advertises `{ name, style, sleeps, rooms: [{ type, name, sleeps }, ...] }`, and the action extracts each model's params with its own allowlist, pulling the one advertised field extraction excludes — `type` — from the raw body and dispatching on it to the STI child class. Wrap the writes in `ApplicationModel.transaction` so a failed Room rolls back the Place — partial-creation is rarely the desired failure mode for bundled requests.
+
+#### Anti-patterns
+
+- **Don't list model columns inside `combining`.** `combining` adds fields that are *not* on the model. Listing real columns there either silently duplicates the model-derived shape or shadows it with a hand-typed copy that drifts (e.g., a `{ enum: [...] }` redeclaration that goes stale when the DB enum changes). Use `OpenAPI.forDream(Model, ...)` (or the nested `for:` sentinel) when the value is itself a Dream-model shape.
+- **Don't write `properties:` inside `requestBody` for model fields.** It is not one of the shorthand options, and it duplicates model-owned type information. Only use explicit `type: 'object'` / `properties` / `required` when the body has no model fields at all (next subsection).
+
+#### When the body has no model fields
+
+Some endpoints take only non-model inputs (one-shot tokens, redemption payloads, upload metadata). The shorthand's `required: [...]` is typed to the model's column names, so you cannot mark `combining` keys required through the shorthand. For these endpoints, write the explicit JSON-Schema form:
+
+```typescript
+requestBody: {
+  type: 'object',
+  required: ['token', 'firebaseUid'],
+  properties: { token: 'string', firebaseUid: 'string' },
+},
+```
+
+This is the correct tool when no model field participates in the body — not a fallback to be "simplified" later.
+
+### Custom Response Envelopes
+
+When an action returns a custom or compound shape — an envelope like `{ place, nearby }`, or a computed array alongside serialized models — model the whole shape as one composing `ObjectSerializer` and pass it to `@OpenAPI`; see [A compound response is still one serializer](serializers.md#a-compound-response-is-still-one-serializer) for how to build it. The action invokes that serializer and renders the result:
+
+```typescript
+@OpenAPI(PlaceWithNearbySerializer, { status: 200 })
+public async show() {
+  const place = await this.place()
+  const nearby = await Place.preloadFor('summary').where({ city: place.city }).limit(5).all()
+
+  this.ok(PlaceWithNearbySerializer(place, nearby))
+}
+```
+
+The serializer is the single source of truth for the response schema, so don't hand-write a `responses` block to shape a success response. Even a one-off envelope is a composing serializer — it stays derived and validated where a hand-written schema drifts.
+
+## Debugging Unexpected 400s (and OpenAPI-triggered 500s in Specs)
+
+When an endpoint returns an unexpected 400 (or a spec fails with a 500 thrown by OpenAPI response validation) and you can't tell whether OpenAPI validation or controller logic is the cause, temporarily disable validation to isolate it:
+
+```typescript
+@OpenAPI(Place, {
+  status: 200,
+  validate: { all: false },   // TEMPORARY — remove once debugged
+})
+```
+
+The `validate` option accepts `requestBody`, `responseBody`, `headers`, `query`, and `all` booleans. Setting `all: false` disables every validation segment, which is useful because:
+- For **400s on requests**, it reveals whether the failure was in OpenAPI request validation (problem stops) or in controller logic (problem persists).
+- For **500s in specs caused by response validation**, it lets the full response body reach the spec so you can inspect what actually came back — much more useful than the opaque validation error message. Comment out `fastJsonStringify: true` too: it serializes through the response schema, coercing the very mismatch you're hunting (`null` renders as `""` or `0`).
+
+### Workflow
+
+1. **Add `validate: { all: false }`** to the `@OpenAPI` decorator for the failing endpoint.
+2. **Run the request again.**
+   - **If the failure stops:** the problem was in the payload. Log the payload to see what the controller actually received:
+     ```typescript
+     console.dir(this.params, { depth: null })
+     ```
+     Check whether the shape matches what the endpoint expects. If a feature spec was the trigger and the payload looks correct, consider writing a controller spec — faster and more isolated than feature specs — and iterate from there.
+   - **If the failure persists:** OpenAPI validation wasn't the cause. A persistent 400 is a `castParam` / `extractParams` rejection, a model validation failing on save, or a not-null, check-constraint, overflow or type-mismatch error from the database on save; a persistent 500 is an unhandled error, a unique-constraint violation among them. Add logs around those calls to isolate.
+3. **Remove the `validate` line** (and restore `fastJsonStringify`) once the problem is identified. Leaving it disabled defeats the protection OpenAPI validation provides.
+
+`NODE_DEBUG=psychic` also surfaces validation info, but `validate: { all: false }` is usually more useful because it lets the real response body through for direct inspection.
+
+## Automatic Error Handling
+
+Psychic automatically converts certain errors to HTTP responses:
+
+| Error Source | HTTP Status | When |
+|---|---|---|
+| `castParam` fails | 400 | Invalid parameter type/value |
+| `extractParams` fails | 400 | Invalid model attributes |
+| Model validation fails | 400 | `isInvalid` with errors |
+| The database rejects a save | 400 | Not-null, check, overflow or type mismatch (`DataIncompatibleWithDatabaseField`) |
+| `findOrFail` no match | 404 | Record not found |
+| `firstOrFail` no match | 404 | Record not found |
+| `save` / `update` that writes changes to a loaded record | 404 | Row hard-deleted after it was loaded (`CannotSaveMissingDream`) |
+
+All validation-layer errors return 400 by design — this prevents attackers from distinguishing which layer rejected a request. Psychic's automatic conversions return a bare 400 with no body for param, requestBody, and model validation failures, so the response is opaque about which layer rejected.
+
+To deliberately surface field-level validation errors to the end user, return a 400 that carries the error shape — call `this.badRequest({ errors: { ... } })`. The natural source of that shape is a Dream model's `.errors` getter, which is keyed by field, each entry naming the validation that failed (`presence`, `contains`, …) or the message a custom `addError` supplied:
+
+```ts
+const place = Place.new(this.extractParams(Place, ['name', 'style', 'sleeps']))
+if (place.isInvalid) this.badRequest({ errors: place.errors })   // place.errors → { name: ['presence'], ... }
+await place.save()
+```
+
+Without the explicit check, an invalid `save()` / `create()` still returns 400, but with no body; the errors are logged only under `NODE_DEBUG=psychic`. Conveying the error shape to the client is therefore an explicit, deliberate act.
+
+### Two rationalizations for a catch-all, and why neither holds
+
+Because Psychic already maps these errors to responses, a `try/catch` around an action almost always
+converts a correct 4xx or a loud 500 into a wrong 200. Two arguments for adding one anyway come up
+repeatedly, and both are rejected:
+
+- **"I'm logging, not silently swallowing."** Logging is for humans reading logs after the fact, not
+  for machines deciding what to do next. A `console.error` line does not influence control flow: in an
+  HTTP handler the user gets a 200 instead of a 500, and in a BullMQ worker the job is marked
+  successful and never retried.
+- **"This is a small per-iteration catch, not a large block."** The size of the wrapped code is not the
+  test; the test is whether the failure needs to propagate. A 3-line per-iteration catch inside a loop
+  hides failures just as effectively as a 300-line function-wide catch.
+
+### 409 from a database constraint
+
+Some invariants live only in the database — a unique index, or an `ON DELETE` action that blocks a delete. Turning one into a status is the narrow, specific catch [Critical Rule 13](SKILL.md#critical-rules) allows: `pgErrorType` maps a `pg.DatabaseError` to a string literal, so the match is on a constant rather than message text.
+
+```typescript
+import { pgErrorType } from '@rvoh/dream/errors'
+
+try {
+  await city.destroy()
+} catch (error) {
+  switch (pgErrorType(error)) {
+    case 'RESTRICT_VIOLATION':
+    case 'FOREIGN_KEY_VIOLATION':
+      return this.conflict()   // Places still reference this City
+    default:
+      throw error
+  }
+}
+
+this.noContent()
+```
+
+**A delete guard must accept both literals.** A delete blocked by `.onDelete('restrict')` arrives as `'RESTRICT_VIOLATION'` or `'FOREIGN_KEY_VIOLATION'` depending on the Postgres version, and `no action` raises `'FOREIGN_KEY_VIOLATION'`. Since `restrict` is the recommended foreign key action (see [soft delete](soft-delete.md)), a guard written for one literal can miss and 500 — and only a spec that creates the referencing `Place` first reaches the branch. `'UNIQUE_VIOLATION'` on create is the same pattern.
+
+## Rate Limiting
+
+Psychic does not bundle rate-limiting. Neither does Koa nor socket.io. **Handle this at the edge** — WAF, CDN, reverse proxy, or API gateway. Connection-exhaustion attacks (SlowLoris, SYN floods, packet-level abuse) can only be solved at the edge; by the time traffic reaches the Node event loop the damage is done.
+
+Only fall back to a Koa-compatible middleware when you need fine-grained per-route or per-user limits the edge layer cannot express (e.g., "5 login attempts per IP+account per 15 minutes"). When you do, consult current best practices to pick a package — **don't hand-roll** a `Map`-based limiter; in-process counters don't coordinate across pods, and the failure modes are subtle.
+
+## Logging
+
+Use `PsychicApp.log` and `PsychicApp.logWithLevel` for all application logging. They write through the logger `conf/app.ts` sets with `psy.set('logger', ...)` (Winston in the scaffold), so output respects its level and transports.
+
+```typescript
+import { PsychicApp } from '@rvoh/psychic'
+
+PsychicApp.log('booking confirmed', { bookingId: booking.id, nights })
+PsychicApp.logWithLevel('warn', 'place nearly booked out', { placeId: place.id, openNights })
+PsychicApp.logWithLevel('error', 'payment provider error', { bookingId: booking.id, err })
+```
+
+Both are variadic and join their arguments into one message string — an object is rendered with `util.inspect`, not passed to the logger as structured fields. `logWithLevel` accepts `'debug' | 'info' | 'warn' | 'error'` (Dream's log levels).
+
+### Request logging
+
+`create-psychic` scaffolds a request logger (`conf/system/requestLogger.ts`) in `conf/app.ts`, mounted via the `server:init:after-middleware` hook. It writes one structured JSON line per request through its own Winston instance — the `transports` and `format` passed below, not the app logger:
+
+```typescript
+import requestLogger from '#conf/system/requestLogger.js'
+import winston from 'winston'
+
+psy.on('server:init:after-middleware', psychicServer => {
+  if (!AppEnv.isTest || AppEnv.boolean('REQUEST_LOGGING')) {
+    const SENSITIVE_FIELDS = ['password', 'token', 'authentication', 'authorization', 'secret']
+
+    psychicServer.koaApp.use(
+      requestLogger({
+        transports: [new winston.transports.Console()],
+        format: winston.format.combine(winston.format.json()),
+        headerBlocklist: [
+          'authorization', 'content-length', 'connection', 'cookie', 'referer',
+          'sec-ch-ua', 'sec-ch-ua-mobile', 'sec-ch-ua-platform',
+          'sec-fetch-dest', 'sec-fetch-mode', 'sec-fetch-site', 'user-agent',
+        ],
+        ignoredRoutes: ['/health_check'],
+        bodyBlocklist: SENSITIVE_FIELDS,
+      }),
+    )
+  }
+})
+```
+
+Three knobs to know:
+
+- **`headerBlocklist`** — request headers left out of the log line, matched on the whole name, ignoring case. Scaffold ships `authorization`, `cookie` and `referer`, plus a handful of low-signal browser-fingerprint headers.
+- **`bodyBlocklist`** — names whose values are logged as `[FILTERED]`, key kept: any body key at any depth (arrays included), query-string key, header name, or route param (the `:token` segment of `/password-resets/:token`) that *contains* a listed name, ignoring case. Scaffold ships `password`, `token`, `authentication`, `authorization`, `secret`, which already cover `accessToken` and `x-auth-token`. **Extend this when you add new sensitive fields** (`api_key`, `api-key` for an `x-api-key` header, `ssn`, `creditCard`, etc.) — otherwise they land in production logs. The path of a request no route matched is logged as sent, so put an emailed token in the fragment (`/reset-password#token=…`), which browsers never send, and have the page post it as `token` in the body, where `bodyBlocklist` masks it.
+- **`ignoredRoutes`** — request paths to skip entirely. Scaffold skips `/health_check`.
+
+### Reacting to unhandled errors
+
+Server errors fire the `server:error` hook: `this.internalServerError()`, and anything thrown that Psychic doesn't map to a status — another library's error that carries a `status` included. Psychic's other error helpers (`this.notFound()`, `this.serviceUnavailable()`, …) and Koa's `ctx.throw` with a 4xx or 501–510 status render their own status without it, from a controller action or from `psy.use` middleware. This is the right place to ship to Sentry, Datadog, structured alerting, or whatever your error pipeline is:
+
+```typescript
+psy.on('server:error', (err, ctx) => {
+  PsychicApp.logWithLevel('error', 'unhandled server error', {
+    err,
+    method: ctx.method,
+    path: ctx.path,
+  })
+  // ...ship to Sentry / Datadog / etc.
+
+  if (!ctx.headerSent) ctx.status = 500
+  else if (AppEnv.isDevelopmentOrTest) throw err
+})
+```
+
+The handler signature is `(err: Error, ctx: Koa.Context) => void | Promise<void>`. Before the hooks run, Psychic logs the error and sets a 500 with an empty body; a hook may reshape that response through `ctx`, and one that sets nothing leaves it. The scaffold's hook re-throws in development/test when headers were already sent, so a late failure surfaces loudly.
+
+`server:error` is the surface for every **shapeable** genuine server error — one the boundary catches while the response can still be formed. Psychic mounts an error boundary as its outermost middleware, so everything inside it — the body parser, CORS origin callbacks, custom `psy.use(...)` middleware, anything mounted via `server:init:after-routes` (e.g. Bull Board), and controller actions — escalates its uncaught genuine errors to this one hook. A deliberate HTTP error (above) and the body parser's own 4xx errors (malformed JSON, an oversized or undecompressable body) never reach it: those render as their own status. Another library's error does, even one carrying a 4xx `status` (an API client mirroring an upstream 401), and it is answered 500 — so don't branch on `err.status` inside the hook.
+
+One registration does **not**, however, give you every 5xx error. A residual class bypasses `server:error` and surfaces only on Koa's app-level `'error'` event: an error a middleware throws **after headers were already sent**, and a response-stream failure. Psychic registers its own `koaApp.on('error')` listener that **logs** this class through the configured logger but does not run your `server:error` hooks for it. If your error pipeline (Sentry, Datadog, alerting) — not just your logs — must capture those post-response failures too, register your own app-level `'error'` listener; reach `koaApp` from a `server:init` hook:
+
+```typescript
+psy.on('server:init:after-middleware', psychicServer => {
+  psychicServer.koaApp.on('error', err => {
+    // ship err to Sentry / Datadog / etc.
+  })
+})
+```
+
+This won't double-report the shapeable errors — those are handled inside the boundary and never reach this event.
+
+One integration caveat, independent of Psychic: an error-tracking SDK configured with `defaultIntegrations: false` (common, to keep the captured payload lean) does **not** auto-attach HTTP request context. The `server:error` hook receives `ctx`, so pull the fields you want — `ctx.method`, `ctx.path`, the authenticated principal — and attach them to the event yourself, exactly as the example above logs them. Nothing upstream will populate them for you when the default integrations are off.
+
+## Session & Cookie Management
+
+```typescript
+// Start session (sets encrypted cookie)
+this.startSession(user)
+
+// End session
+this.endSession()
+
+// Cookies
+this.getCookie<string>('theme')
+this.setCookie('theme', 'dark', { maxAge: { days: 365 } })
+```
+
+`startSession` creates no server-side session record — the encrypted cookie, whose payload is `{ id, modelKey }`, is the entire credential. `endSession` only clears the cookie on the client, and `maxAge` only tells the browser when to discard its copy: a cookie value captured elsewhere stays valid for as long as its encryption key is `current` or `legacy`. There is no per-session or per-user revocation — the only framework lever is replacing the cookie encryption key without keeping the old one as `legacy` (see [Cookie Encryption](#cookie-encryption) below), which invalidates every user's session, not just one. If you need to revoke a single compromised session or a single user's sessions, track that state yourself rather than assuming `endSession` accomplishes it server-side. `startSession` takes no options and uses the app's default `maxAge`, which the scaffold sets to 14 days in `conf/app.ts` (31 days when unset) — for a shorter-lived session, lower it there: `psy.set('cookie', { maxAge: { hours: 12 } })` (this changes the default for every cookie the app sets, not just sessions).
+
+Cookies Psychic sets default to `SameSite=Strict` — the browser never sends them on a cross-site request (including a link-click navigation from another site), which blocks classical CSRF without a CSRF token. A client on another origin of the same site (`app.bearbnb.com` → `api.bearbnb.com`) still sends them. `startSession` always uses Strict; `this.setCookie`'s options override it for a single cookie.
+
+### Cookie Encryption
+
+`this.setCookie()` **always encrypts** the cookie value — there is no option to disable this. This is the correct behavior for cookies the Psychic application both writes and reads (e.g., session data, user preferences), since `this.getCookie()` automatically decrypts.
+
+Cookie encryption requires an encryption key configured in `conf/app.ts`:
+
+```typescript
+psy.set('encryption', {
+  cookies: {
+    current: {
+      algorithm: 'aes-256-gcm',
+      key: AppEnv.string('APP_ENCRYPTION_KEY'),
+    },
+    legacy: {
+      algorithm: 'aes-256-gcm',
+      key: AppEnv.string('LEGACY_APP_ENCRYPTION_KEY'),
+    },
+  },
+})
+```
+
+The optional `legacy` key enables seamless key rotation: `getCookie()` first tries the `current` key, and if decryption fails, retries with the `legacy` key.
+
+To rotate the cookie encryption key:
+
+1. Generate a new key (`pnpm psy g:encryption-key` or `Encrypt.generateKey('aes-256-gcm')`).
+2. Set `current` to the new key, `legacy` to the previously-current key. Deploy.
+3. Wait for `maxAge` to elapse so all in-the-wild cookies have rolled.
+4. Drop `legacy`. Deploy.
+
+Two keys is sufficient for any sensible cookie TTL.
+
+#### Generating keys
+
+Two ways to produce a key for any of the encryption use cases (encrypted columns, cookie encryption, generalized `Encrypt` library use):
+
+```bash
+# CLI generator — primary; defaults to aes-256-gcm.
+# --algorithm accepts aes-256-gcm | aes-192-gcm | aes-128-gcm.
+pnpm psy g:encryption-key
+pnpm psy g:encryption-key --algorithm aes-128-gcm
+```
+
+```typescript
+// Programmatic equivalent — useful in specs, fixtures, or one-off scripts.
+import { Encrypt } from '@rvoh/dream/utils'
+
+const key = Encrypt.generateKey('aes-256-gcm')
+```
+
+Never hand-type encryption keys. Use one of these helpers and feed the result through your secrets manager (AWS Secrets Manager, SSM Parameter Store, Vault, etc.) into `AppEnv`.
+
+### Decrypting Cookies Outside a Controller
+
+Koa middleware that runs outside Psychic's controller layer (e.g., protecting a bull-board dashboard) has no `this.getCookie()`. Read the cookie through `PsychicSession`, the class `this.getCookie()` calls, which decrypts with the same keys:
+
+```typescript
+import { PsychicApp, PsychicSession } from '@rvoh/psychic'
+import type Koa from 'koa'
+
+// the session cookie's { id, modelKey }, or null for a logged-out request
+export default function readSessionCookie(ctx: Koa.Context): { id: string; modelKey: string } | null {
+  const payload = new PsychicSession(ctx).getCookie(PsychicApp.getOrFail().sessionCookieName) as string | null
+
+  // startSession stores the JSON string of { id, modelKey }
+  return payload ? (JSON.parse(payload) as { id: string; modelKey: string }) : null
+}
+```
+
+`getCookie` reads a cookie no configured key opens — forged, or from a retired key — as absent: it returns `null`, as for a missing cookie, and logs nothing. A bearer token the app decrypts itself in `resolveCurrentUser` gets the same answer, logged out rather than a 500: catch exactly the two errors that mean no configured key opens it, `DecryptionError` and `DecryptionRotationError` (neither extends the other), return `null`, and rethrow anything else.
+
+`Encrypt.decrypt` throws on failure rather than silently returning null, and the three errors export from `@rvoh/dream/errors` (not the `@rvoh/dream` root):
+
+- `decrypt` returns what was encrypted, `JSON.parse`d once.
+- `null` / `undefined` ciphertext returns `null` (no throw). A missing key throws `MissingEncryptionKey`.
+- **`DecryptionError`** — cipher op / auth-tag / payload-shape was invalid: the ciphertext was tampered with, corrupted, or encrypted with a different key. This is the untrusted-input signal — the legitimate "treat as unauthenticated" case for user-controlled ciphertext like a session cookie.
+- **`DecryptionParseError`** — the cipher and auth tag validated (correct key, untampered ciphertext) but `JSON.parse` of the decrypted plaintext threw. `Encrypt.decrypt` always `JSON.parse`s the plaintext — it cannot return a raw string — so this is strictly a **format/contract mismatch**, not tampering and not a wrong key. With ciphertext you produced via `Encrypt.encrypt`, it means a non-JSON value was encrypted (your bug). With a shared key from another service, it usually means that service's payload doesn't match the JSON-wrapped shape `Encrypt` expects (their encoder, or the cross-service contract). Either way it is **never** an auth failure: let it propagate to the error handler as a 500 so the mismatch surfaces; swallowing it as "auth failure" hides the defect.
+- **Three-argument form** `decrypt(ciphertext, currentOpts, legacyOpts)` tries the current key, and on `DecryptionError` only falls back to the legacy key. If both fail with `DecryptionError`, it throws **`DecryptionRotationError`** carrying `.currentKeyError` and `.legacyKeyError`. A `DecryptionParseError` from the current key is **not** retried against the legacy key and **not** wrapped — the cipher already matched (right key, intact ciphertext), so a non-JSON plaintext is a format/contract mismatch rather than a key problem, and it propagates as `DecryptionParseError` directly.
+- The `@Encrypted` model decorator propagates these errors up to the app's error handler — there's no try/catch inside the decorator. Keys *and* ciphertext for an encrypted column are both system-controlled, so any decryption error there is a corrupted column or a broken rotation, not untrusted input: it should fail loudly, never be caught and nulled.
+
+**User-controlled ciphertext** (a session cookie, a token from a header) is the only place where catching is correct, and only for the two errors that mean no configured key opens it. **System-controlled ciphertext** (`@Encrypted` columns, internal share tokens) propagates untouched, and `DecryptionParseError` is always a format/contract mismatch (your encoder or a cross-service one), never an auth outcome.
+
+### Setting Cookies for External Services (Bypassing Encryption)
+
+When setting cookies intended for a different service to consume — e.g., CloudFront signed cookies for private content access — `this.setCookie()` will not work because the consuming service cannot decrypt Psychic's encrypted values.
+
+Instead, use `ctx.append('Set-Cookie', ...)` directly on the Koa context:
+
+```typescript
+// In a controller action:
+this.ctx.append(
+  'Set-Cookie',
+  `CloudFront-Key-Pair-Id=${keyPairId}; Path=/; Domain=.example.com; SameSite=Lax; Secure`
+)
+this.ctx.append(
+  'Set-Cookie',
+  `CloudFront-Signature=${signature}; Path=/; Domain=.example.com; SameSite=Lax; Secure`
+)
+```
+
+Key points:
+- Use `ctx.append` (not `ctx.set`) to allow multiple `Set-Cookie` headers without overwriting each other
+- This bypasses both Psychic's encryption and Koa's cookie signing
+- The Koa context is accessible in any controller action via `this.ctx` and can be passed to service methods
+
+### Proxy Configuration for Secure Cookies
+
+Behind a reverse proxy that terminates TLS, Koa receives plain HTTP and rejects `secure: true` cookies with "Cannot send secure cookie over unencrypted connection". Prefer re-encrypting proxy→app traffic and configuring TLS on the application (see [deploying.md](deploying.md#tls-behind-a-reverse-proxy)) over enabling `app.proxy`, which trusts `X-Forwarded-Proto` from *any* upstream. Where `app.proxy` is genuinely the answer — a dev tunnel such as ngrok, or a proxy that forwards plain HTTP to a container only it can reach — a Psychic app sets it from `conf/app.ts`:
+
+```typescript
+psy.on('server:init:after-middleware', psychicServer => {
+  psychicServer.koaApp.proxy = true
+})
+```
+
+## Nested Resource Creation via Association
+
+```typescript
+// Create through association (automatically sets FK)
+let place = await this.currentCity.createAssociation('places', {
+  ...this.extractParams(Place, ['name', 'style', 'sleeps']),
+  additionalField: value,
+})
+
+// Load for serialization if persisted
+if (place.isPersisted) {
+  place = await place.loadFor('admin').execute()
+}
+this.created(place)
+```

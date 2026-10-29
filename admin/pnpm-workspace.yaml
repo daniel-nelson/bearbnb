@@ -1,0 +1,5 @@
+strictDepBuilds: false
+
+# SECURITY — don't install dependency versions published in the last 3 days
+# (4320 min), matching the api. See SECURITY.md in the api.
+minimumReleaseAge: 4320
