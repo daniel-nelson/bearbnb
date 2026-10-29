@@ -262,4 +262,45 @@ describe('V1/Host/Places/RoomsController', () => {
       })
     })
   })
+
+  // Nested Host Room endpoints extend V1HostBaseController, whose loadCurrentHost
+  // BeforeAction forbids the request when the signed-in User has no Host — so Rooms are
+  // unreachable until Host setup is complete, independent of Place ownership.
+  context('before Host setup (the signed-in User has no Host)', () => {
+    let hostlessRequest: SpecRequestType
+
+    beforeEach(async () => {
+      const hostlessUser = await createUser()
+      hostlessRequest = await session(hostlessUser)
+    })
+
+    it('forbids every nested Host Room endpoint with a 403', async () => {
+      const room = await createKitchen({ place })
+
+      await hostlessRequest.get('/v1/host/places/{placeId}/rooms', 403, { placeId: place.id })
+      await hostlessRequest.get('/v1/host/places/{placeId}/rooms/{id}', 403, {
+        placeId: place.id,
+        id: room.id,
+      })
+      await hostlessRequest.post('/v1/host/places/{placeId}/rooms', 403, {
+        placeId: place.id,
+        data: {
+          type: 'Kitchen',
+          appliances: ['oven'],
+          localizedTexts: [{ locale: 'en-US', title: 'Kitchen', markdown: 'Body' }],
+        },
+      })
+      await hostlessRequest.patch('/v1/host/places/{placeId}/rooms/{id}', 403, {
+        placeId: place.id,
+        id: room.id,
+        data: {
+          localizedTexts: [{ locale: 'en-US', title: 'Updated', markdown: 'Body' }],
+        },
+      })
+      await hostlessRequest.delete('/v1/host/places/{placeId}/rooms/{id}', 403, {
+        placeId: place.id,
+        id: room.id,
+      })
+    })
+  })
 })
