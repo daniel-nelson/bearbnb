@@ -244,7 +244,7 @@ export const getV1HostPlacesById = <ThrowOnError extends boolean = false>(option
 });
 
 /**
- * Update a Place
+ * Update a Place, with multi-locale localized text
  */
 export const patchV1HostPlacesById = <ThrowOnError extends boolean = false>(options: Options<PatchV1HostPlacesByIdData, ThrowOnError>): RequestResult<PatchV1HostPlacesByIdResponses, PatchV1HostPlacesByIdErrors, ThrowOnError> => (options.client ?? client).patch<PatchV1HostPlacesByIdResponses, PatchV1HostPlacesByIdErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
