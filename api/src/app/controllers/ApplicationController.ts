@@ -1,4 +1,4 @@
-import { PsychicController } from '@rvoh/psychic'
+import { BeforeAction, PsychicController } from '@rvoh/psychic'
 import { PsychicOpenapiNames } from '@rvoh/psychic/openapi'
 import psychicTypes from '#src/types/psychic.js'
 import { DEFAULT_LOCALE, supportedLocales } from '#src/utils/i18n.js'
@@ -10,6 +10,13 @@ export default class ApplicationController extends PsychicController {
 
   public static override get openapiNames(): PsychicOpenapiNames<ApplicationController> {
     return ['default', 'mobile', 'tests']
+  }
+
+  @BeforeAction()
+  public configureSerializers() {
+    this.serializerPassthrough({
+      locale: this.locale,
+    })
   }
 
   // The supported locale (src/utils/i18n.ts) the request's Accept-Language

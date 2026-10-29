@@ -1,11 +1,26 @@
 import { DreamSerializer } from '@rvoh/dream'
 import Room from '#models/Room.js'
+import { type LocalesEnum } from '#src/types/db.js'
+import i18n from '#src/utils/i18n.js'
 
 export const RoomSummarySerializer = <T extends Room>(StiChildClass: typeof Room, room: T) =>
   DreamSerializer(StiChildClass ?? Room, room)
     .attribute('id')
     .attribute('type', { openapi: { type: 'string', enum: [(StiChildClass ?? Room).sanitizedName] } })
+    .attribute('position')
 
 export const RoomSerializer = <T extends Room>(StiChildClass: typeof Room, room: T) =>
   RoomSummarySerializer(StiChildClass, room)
-    .attribute('position')
+
+export const RoomForVisitorsSerializer = <T extends Room>(
+  StiChildClass: typeof Room,
+  room: T,
+  passthrough: { locale: LocalesEnum }
+) =>
+  DreamSerializer(StiChildClass ?? Room, room)
+    .attribute('id')
+    .attribute('type', { openapi: { type: 'string', enum: [(StiChildClass ?? Room).sanitizedName] } })
+    .customAttribute('displayType', () => i18n(passthrough.locale, `rooms.type.${room.type}`), {
+      openapi: 'string',
+    })
+    .delegatedAttribute('currentLocalizedText', 'title')
