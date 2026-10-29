@@ -7,3 +7,6 @@ export const HostSummarySerializer = (host: Host) =>
 
 export const HostSerializer = (host: Host) =>
   HostSummarySerializer(host)
+    .attribute('legalName')
+    .attribute('signedHostAgreementAt')
+    .rendersMany('localizedTexts')

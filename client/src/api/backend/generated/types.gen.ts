@@ -48,6 +48,22 @@ export type FavoriteSummary = {
     placeId: string;
 };
 
+export type Host = {
+    id: string;
+    legalName: string;
+    localizedTexts: Array<LocalizedText>;
+    signedHostAgreementAt: string;
+};
+
+export type LocalizedText = {
+    id: string;
+    locale: 'en-US' | 'es-ES';
+    localizableId: string;
+    localizableType: 'Host' | 'Place' | 'Room';
+    markdown: string | null;
+    title: string | null;
+};
+
 export type OpenapiValidationErrors = {
     type: 'openapi';
     target: 'requestBody' | 'query' | 'headers' | 'responseBody';
@@ -818,6 +834,155 @@ export type PatchV1GuestReviewsByIdResponses = {
 };
 
 export type PatchV1GuestReviewsByIdResponse = PatchV1GuestReviewsByIdResponses[keyof PatchV1GuestReviewsByIdResponses];
+
+export type GetV1HostData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/v1/host';
+};
+
+export type GetV1HostErrors = {
+    /**
+     * The server would not process the request due to something the server considered to be a client error
+     */
+    400: unknown;
+    /**
+     * The request was not successful because it lacks valid authentication credentials for the requested resource
+     */
+    401: unknown;
+    /**
+     * Understood the request, but refused to process it
+     */
+    403: unknown;
+    /**
+     * The specified resource was not found
+     */
+    404: unknown;
+    /**
+     * The request failed because a conflict was detected with the given request params
+     */
+    409: unknown;
+    /**
+     * the server encountered an unexpected condition that prevented it from fulfilling the request
+     */
+    500: unknown;
+};
+
+export type GetV1HostResponses = {
+    /**
+     * Success
+     */
+    200: Host;
+};
+
+export type GetV1HostResponse = GetV1HostResponses[keyof GetV1HostResponses];
+
+export type PatchV1HostData = {
+    body?: {
+        legalName?: string;
+        signedHostAgreementAt?: string;
+        localizedTexts?: Array<{
+            locale: 'en-US' | 'es-ES';
+            markdown: string | null;
+            title: string | null;
+        }>;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/host';
+};
+
+export type PatchV1HostErrors = {
+    /**
+     * The server would not process the request due to something the server considered to be a client error
+     */
+    400: unknown;
+    /**
+     * The request was not successful because it lacks valid authentication credentials for the requested resource
+     */
+    401: unknown;
+    /**
+     * Understood the request, but refused to process it
+     */
+    403: unknown;
+    /**
+     * The specified resource was not found
+     */
+    404: unknown;
+    /**
+     * The request failed because a conflict was detected with the given request params
+     */
+    409: unknown;
+    /**
+     * the server encountered an unexpected condition that prevented it from fulfilling the request
+     */
+    500: unknown;
+};
+
+export type PatchV1HostResponses = {
+    /**
+     * The request has succeeded, but there is no content to render
+     */
+    204: void;
+};
+
+export type PatchV1HostResponse = PatchV1HostResponses[keyof PatchV1HostResponses];
+
+export type PostV1HostData = {
+    body?: {
+        legalName: string;
+        signedHostAgreementAt: string;
+        localizedTexts?: Array<{
+            locale: 'en-US' | 'es-ES';
+            markdown: string | null;
+            title: string | null;
+        }>;
+    };
+    path?: never;
+    query?: never;
+    url: '/v1/host';
+};
+
+export type PostV1HostErrors = {
+    /**
+     * The server would not process the request due to something the server considered to be a client error
+     */
+    400: unknown;
+    /**
+     * The request was not successful because it lacks valid authentication credentials for the requested resource
+     */
+    401: unknown;
+    /**
+     * Understood the request, but refused to process it
+     */
+    403: unknown;
+    /**
+     * The specified resource was not found
+     */
+    404: unknown;
+    /**
+     * The request failed because a conflict was detected with the given request params
+     */
+    409: unknown;
+    /**
+     * Missing en-US title and description
+     */
+    422: unknown;
+    /**
+     * the server encountered an unexpected condition that prevented it from fulfilling the request
+     */
+    500: unknown;
+};
+
+export type PostV1HostResponses = {
+    /**
+     * Created
+     */
+    201: Host;
+};
+
+export type PostV1HostResponse = PostV1HostResponses[keyof PostV1HostResponses];
 
 export type DeleteV1HostLocalizedTextsByIdData = {
     body?: never;

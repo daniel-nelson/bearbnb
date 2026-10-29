@@ -183,6 +183,8 @@ export interface Hosts {
   createdAt: Timestamp
   deletedAt: Timestamp | null
   id: Generated<string>
+  legalName: string
+  signedHostAgreementAt: Timestamp
   updatedAt: Timestamp
   userId: string
 }

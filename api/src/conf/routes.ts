@@ -29,6 +29,8 @@ export default function routes(r: PsychicRouter) {
       r.resources('reviews', { only: ['index'], controller: VisitorV1PlacesReviewsController })
     })
 
+    r.resource('host', { only: ['show', 'create', 'update'] })
+
     r.namespace('host', r => {
       r.resources('localized-texts', { only: ['update', 'destroy'] })
 
