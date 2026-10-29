@@ -11,4 +11,15 @@ describe('User', () => {
       expect(guest instanceof Guest).toBe(true)
     })
   })
+
+  context('upon destruction', () => {
+    it('frees the email address for a new User', async () => {
+      const user = await createUser({ email: 'baloo@example.com' })
+      await user.destroy()
+
+      const newUser = await createUser({ email: 'baloo@example.com' })
+
+      expect(newUser.email).toEqual('baloo@example.com')
+    })
+  })
 })
