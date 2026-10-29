@@ -79,6 +79,14 @@ export interface Guests {
   userId: string
 }
 
+export interface Hosts {
+  createdAt: Timestamp
+  deletedAt: Timestamp | null
+  id: Generated<string>
+  updatedAt: Timestamp
+  userId: string
+}
+
 export interface Users {
   createdAt: Timestamp
   deletedAt: Timestamp | null
@@ -90,10 +98,12 @@ export interface Users {
 
 export interface DB {
   guests: Guests
+  hosts: Hosts
   users: Users
 }
 
 export class DBClass {
   guests: Guests
+  hosts: Hosts
   users: Users
 }
