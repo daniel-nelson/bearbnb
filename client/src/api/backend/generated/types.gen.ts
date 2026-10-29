@@ -90,6 +90,15 @@ export type PlaceAvailability = {
     placeId: string;
 };
 
+export type PlaceForHost = {
+    id: string;
+    localizedTexts: Array<LocalizedText>;
+    name: string;
+    rooms: Array<RoomBathroom | RoomBedroom | RoomDen | RoomKitchen | RoomLivingRoom>;
+    sleeps: number;
+    style: 'cabin' | 'cave' | 'cottage' | 'dump' | 'lean_to' | 'tent' | 'treehouse';
+};
+
 export type PlaceForVisitors = {
     displayStyle: string;
     favorited: boolean;
@@ -1275,7 +1284,7 @@ export type GetV1HostPlacesByIdResponses = {
     /**
      * Success
      */
-    200: Place;
+    200: PlaceForHost;
 };
 
 export type GetV1HostPlacesByIdResponse = GetV1HostPlacesByIdResponses[keyof GetV1HostPlacesByIdResponses];

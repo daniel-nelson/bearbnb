@@ -23,6 +23,7 @@ export default class Place extends ApplicationModel {
       summary: 'PlaceSummarySerializer',
       summaryForVisitors: 'PlaceSummaryForVisitorsSerializer',
       forVisitors: 'PlaceForVisitorsSerializer',
+      forHost: 'PlaceForHostSerializer',
     }
   }
 
