@@ -21,7 +21,9 @@ export default function routes(r: PsychicRouter) {
 
     // Visitor/V1 controllers are maybe-authed, so they sit outside the authed V1/ controller tree
     // and are routed here with an explicit controller to keep "visitor" out of the URL
-    r.resources('places', { only: ['index', 'show'], controller: VisitorV1PlacesController })
+    r.resources('places', { only: ['index', 'show'], controller: VisitorV1PlacesController }, r => {
+      r.get('availability', VisitorV1PlacesController, 'availability')
+    })
 
     r.namespace('host', r => {
       r.resources('localized-texts', { only: ['update', 'destroy'] })
