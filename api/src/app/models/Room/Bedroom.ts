@@ -9,6 +9,7 @@ export default class Bedroom extends Room {
       default: 'Room/BedroomSerializer',
       summary: 'Room/BedroomSummarySerializer',
       forVisitors: 'Room/BedroomForVisitorsSerializer',
+      forHost: 'Room/BedroomForHostSerializer',
     }
   }
 

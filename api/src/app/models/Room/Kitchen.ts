@@ -9,6 +9,7 @@ export default class Kitchen extends Room {
       default: 'Room/KitchenSerializer',
       summary: 'Room/KitchenSummarySerializer',
       forVisitors: 'Room/KitchenForVisitorsSerializer',
+      forHost: 'Room/KitchenForHostSerializer',
     }
   }
 

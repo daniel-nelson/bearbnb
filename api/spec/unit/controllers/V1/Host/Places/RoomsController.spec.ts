@@ -60,18 +60,22 @@ describe('V1/Host/Places/RoomsController', () => {
       })
     }
 
-    it('returns the specified Room', async () => {
-      const room = await createKitchen({ place })
+    it('returns the specified Room with localized text rows and type-specific fields', async () => {
+      const room = await createKitchen({ place, appliances: ['oven'] })
 
       const { body } = await show(room, 200)
 
       expect(body).toEqual(
         expect.objectContaining({
           id: room.id,
-          type: room.type,
+          type: 'Kitchen',
           position: room.position,
+          appliances: ['oven'],
         }),
       )
+
+      // localized text rows for editing/display (the auto-created en-US row)
+      expect(body.localizedTexts).toEqual([expect.objectContaining({ locale: 'en-US' })])
     })
 
     context('Room created by another Place', () => {
@@ -147,7 +151,7 @@ describe('V1/Host/Places/RoomsController', () => {
   })
 
   describe('PATCH update', () => {
-    const update = async <StatusCode extends 204 | 400 | 404>(
+    const update = async <StatusCode extends 204 | 400 | 404 | 422>(
       room: Room,
       data: RequestBody<'patch', '/v1/host/places/{placeId}/rooms/{id}'>,
       expectedStatus: StatusCode
@@ -159,15 +163,62 @@ describe('V1/Host/Places/RoomsController', () => {
       })
     }
 
-    it('updates the Room', async () => {
+    it('updates the Room type-specific fields and default-locale text', async () => {
       const room = await createKitchen({ place, appliances: ['microwave'] })
 
       await update(room, {
         appliances: ['dishwasher'],
+        localizedTexts: [{ locale: 'en-US', title: 'Updated title', markdown: 'Updated body' }],
       }, 204)
 
       await room.reload()
       expect(room.appliances).toEqual(['dishwasher'])
+
+      const localizedTexts = await room.associationQuery('localizedTexts').order('locale').all()
+      expect(localizedTexts.map(text => [text.locale, text.title, text.markdown])).toEqual([
+        ['en-US', 'Updated title', 'Updated body'],
+      ])
+    })
+
+    it('adds a non-default locale row', async () => {
+      const room = await createKitchen({ place })
+
+      await update(room, {
+        localizedTexts: [
+          { locale: 'en-US', title: 'English title', markdown: 'English body' },
+          { locale: 'es-ES', title: 'Título', markdown: 'Cuerpo' },
+        ],
+      }, 204)
+
+      const localizedTexts = await room.associationQuery('localizedTexts').order('locale').all()
+      expect(localizedTexts.map(text => [text.locale, text.title, text.markdown])).toEqual([
+        ['en-US', 'English title', 'English body'],
+        ['es-ES', 'Título', 'Cuerpo'],
+      ])
+    })
+
+    it('removes a non-default locale row omitted from the payload', async () => {
+      const room = await createKitchen({ place })
+      await room.createAssociation('localizedTexts', { locale: 'es-ES', title: 'Título', markdown: 'Cuerpo' })
+
+      await update(room, {
+        localizedTexts: [{ locale: 'en-US', title: 'English title', markdown: 'English body' }],
+      }, 204)
+
+      const localizedTexts = await room.associationQuery('localizedTexts').order('locale').all()
+      expect(localizedTexts.map(text => text.locale)).toEqual(['en-US'])
+    })
+
+    it('returns 422 when the default-locale title and description are missing', async () => {
+      const room = await createKitchen({ place, appliances: ['microwave'] })
+
+      await update(room, {
+        appliances: ['dishwasher'],
+        localizedTexts: [{ locale: 'es-ES', title: 'Título', markdown: 'Cuerpo' }],
+      }, 422)
+
+      await room.reload()
+      expect(room.appliances).toEqual(['microwave'])
     })
 
     context('a Room created by another Place', () => {
@@ -176,6 +227,7 @@ describe('V1/Host/Places/RoomsController', () => {
 
         await update(room, {
           appliances: ['dishwasher'],
+          localizedTexts: [{ locale: 'en-US', title: 'Updated title', markdown: 'Updated body' }],
         }, 404)
 
         await room.reload()
