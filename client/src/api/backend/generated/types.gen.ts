@@ -19,6 +19,20 @@ export type BedType = {
     value: 'bunk' | 'cot' | 'king' | 'queen' | 'sofabed' | 'twin';
 };
 
+export type Booking = {
+    endsOn: string;
+    id: string;
+    placeId: string;
+    startsOn: string;
+};
+
+export type BookingSummary = {
+    endsOn: string;
+    id: string;
+    placeId: string;
+    startsOn: string;
+};
+
 export type CurrentUser = {
     email: string;
     id: string;
@@ -232,6 +246,203 @@ export type GetStatusResponses = {
 };
 
 export type GetStatusResponse = GetStatusResponses[keyof GetStatusResponses];
+
+export type GetV1GuestBookingsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Pagination cursor
+         */
+        cursor?: string | null;
+    };
+    url: '/v1/guest/bookings';
+};
+
+export type GetV1GuestBookingsErrors = {
+    /**
+     * The server would not process the request due to something the server considered to be a client error
+     */
+    400: unknown;
+    /**
+     * The request was not successful because it lacks valid authentication credentials for the requested resource
+     */
+    401: unknown;
+    /**
+     * Understood the request, but refused to process it
+     */
+    403: unknown;
+    /**
+     * The specified resource was not found
+     */
+    404: unknown;
+    /**
+     * The request failed because a conflict was detected with the given request params
+     */
+    409: unknown;
+    /**
+     * the server encountered an unexpected condition that prevented it from fulfilling the request
+     */
+    500: unknown;
+};
+
+export type GetV1GuestBookingsResponses = {
+    /**
+     * Success
+     */
+    200: {
+        cursor: string | null;
+        results: Array<BookingSummary>;
+    };
+};
+
+export type GetV1GuestBookingsResponse = GetV1GuestBookingsResponses[keyof GetV1GuestBookingsResponses];
+
+export type PostV1GuestBookingsData = {
+    body?: {
+        endsOn?: string;
+        startsOn?: string;
+        placeId?: string;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Pagination cursor
+         */
+        cursor?: string | null;
+    };
+    url: '/v1/guest/bookings';
+};
+
+export type PostV1GuestBookingsErrors = {
+    /**
+     * The server would not process the request due to something the server considered to be a client error
+     */
+    400: unknown;
+    /**
+     * The request was not successful because it lacks valid authentication credentials for the requested resource
+     */
+    401: unknown;
+    /**
+     * Understood the request, but refused to process it
+     */
+    403: unknown;
+    /**
+     * The specified resource was not found
+     */
+    404: unknown;
+    /**
+     * The request failed because a conflict was detected with the given request params
+     */
+    409: unknown;
+    /**
+     * the server encountered an unexpected condition that prevented it from fulfilling the request
+     */
+    500: unknown;
+};
+
+export type PostV1GuestBookingsResponses = {
+    /**
+     * Created
+     */
+    201: Booking;
+};
+
+export type PostV1GuestBookingsResponse = PostV1GuestBookingsResponses[keyof PostV1GuestBookingsResponses];
+
+export type DeleteV1GuestBookingsByIdData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/v1/guest/bookings/{id}';
+};
+
+export type DeleteV1GuestBookingsByIdErrors = {
+    /**
+     * The server would not process the request due to something the server considered to be a client error
+     */
+    400: unknown;
+    /**
+     * The request was not successful because it lacks valid authentication credentials for the requested resource
+     */
+    401: unknown;
+    /**
+     * Understood the request, but refused to process it
+     */
+    403: unknown;
+    /**
+     * The specified resource was not found
+     */
+    404: unknown;
+    /**
+     * The request failed because a conflict was detected with the given request params
+     */
+    409: unknown;
+    /**
+     * the server encountered an unexpected condition that prevented it from fulfilling the request
+     */
+    500: unknown;
+};
+
+export type DeleteV1GuestBookingsByIdResponses = {
+    /**
+     * The request has succeeded, but there is no content to render
+     */
+    204: void;
+};
+
+export type DeleteV1GuestBookingsByIdResponse = DeleteV1GuestBookingsByIdResponses[keyof DeleteV1GuestBookingsByIdResponses];
+
+export type PatchV1GuestBookingsByIdData = {
+    body?: {
+        endsOn?: string;
+        startsOn?: string;
+        placeId?: string;
+    };
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/v1/guest/bookings/{id}';
+};
+
+export type PatchV1GuestBookingsByIdErrors = {
+    /**
+     * The server would not process the request due to something the server considered to be a client error
+     */
+    400: unknown;
+    /**
+     * The request was not successful because it lacks valid authentication credentials for the requested resource
+     */
+    401: unknown;
+    /**
+     * Understood the request, but refused to process it
+     */
+    403: unknown;
+    /**
+     * The specified resource was not found
+     */
+    404: unknown;
+    /**
+     * The request failed because a conflict was detected with the given request params
+     */
+    409: unknown;
+    /**
+     * the server encountered an unexpected condition that prevented it from fulfilling the request
+     */
+    500: unknown;
+};
+
+export type PatchV1GuestBookingsByIdResponses = {
+    /**
+     * The request has succeeded, but there is no content to render
+     */
+    204: void;
+};
+
+export type PatchV1GuestBookingsByIdResponse = PatchV1GuestBookingsByIdResponses[keyof PatchV1GuestBookingsByIdResponses];
 
 export type GetV1GuestFavoritesData = {
     body?: never;
