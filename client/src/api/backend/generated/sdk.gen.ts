@@ -266,7 +266,7 @@ export const getV1HostPlacesByPlaceIdRooms = <ThrowOnError extends boolean = fal
 });
 
 /**
- * Create a Room
+ * Create a Room, with multi-locale localized text
  */
 export const postV1HostPlacesByPlaceIdRooms = <ThrowOnError extends boolean = false>(options: Options<PostV1HostPlacesByPlaceIdRoomsData, ThrowOnError>): RequestResult<PostV1HostPlacesByPlaceIdRoomsResponses, PostV1HostPlacesByPlaceIdRoomsErrors, ThrowOnError> => (options.client ?? client).post<PostV1HostPlacesByPlaceIdRoomsResponses, PostV1HostPlacesByPlaceIdRoomsErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
