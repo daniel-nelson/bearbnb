@@ -43,16 +43,21 @@ describe('FirebaseAuth', () => {
       expect(user?.phone).toBeNull()
     })
 
-    it('rejects Firebase decoded tokens without verified email', async () => {
+    it('creates a user from a Firebase decoded token whose email is not yet verified', async () => {
       const verifyIdToken = stubFirebaseVerifierSuccess({
         uid: 'unverified-firebase-user',
         email: 'unverified@example.com',
         email_verified: false,
       })
 
-      await expect(FirebaseAuth.userFromBearerToken('Bearer unverified-token')).resolves.toBeNull()
+      const user = await FirebaseAuth.userFromBearerToken('Bearer unverified-token')
+
+      const persistedUser = await User.findBy({ firebaseUid: 'unverified-firebase-user' })
+
       expect(verifyIdToken).toHaveBeenCalledWith('unverified-token', true)
-      expect(await User.where({ firebaseUid: 'unverified-firebase-user' }).exists()).toBe(false)
+      expect(persistedUser).not.toBeNull()
+      expect(user).toMatchDreamModel(persistedUser!)
+      expect(user?.email).toEqual('unverified@example.com')
     })
 
     it('rejects test bearer tokens with non-object JSON payloads', async () => {

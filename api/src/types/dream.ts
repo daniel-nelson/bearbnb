@@ -738,6 +738,8 @@ export const schema = {
       'encryptedPhone',
       'firebaseUid',
       'id',
+      'tosAcceptedAt',
+      'tosVersion',
       'updatedAt',
     ],
     columns: {
@@ -793,6 +795,24 @@ export const schema = {
         enumValues: null,
         dbType: 'uuid',
         allowNull: false,
+        isArray: false,
+      },
+      tosAcceptedAt: {
+        coercedType: {} as DateTime | null,
+        enumType: null,
+        enumArrayType: null,
+        enumValues: null,
+        dbType: 'timestamp without time zone',
+        allowNull: true,
+        isArray: false,
+      },
+      tosVersion: {
+        coercedType: {} as string | null,
+        enumType: null,
+        enumArrayType: null,
+        enumValues: null,
+        dbType: 'character varying',
+        allowNull: true,
         isArray: false,
       },
       updatedAt: {

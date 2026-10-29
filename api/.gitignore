@@ -5,6 +5,9 @@ node_modules
 .env*
 !.env*.example
 src/.psy/*
+
+# Firebase Auth emulator import/export data (created by `pnpm firebase:dev`)
+.firebase-emulator-data
 .vscode
 
 .pnp.*
