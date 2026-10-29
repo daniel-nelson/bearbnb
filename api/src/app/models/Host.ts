@@ -1,4 +1,4 @@
-import { Decorators, Dream, DreamTransaction, SoftDelete } from '@rvoh/dream'
+import { Decorators, Dream, DreamConst, DreamTransaction, SoftDelete } from '@rvoh/dream'
 import { DreamColumn, DreamSerializers } from '@rvoh/dream/types'
 import ApplicationModel from '#models/ApplicationModel.js'
 import HostPlace from '#models/HostPlace.js'
@@ -43,4 +43,11 @@ export default class Host extends ApplicationModel {
   public async createDefaultLocalizedText(this: Host, txn: DreamTransaction<Dream> | null) {
     await this.txn(txn).createAssociation('localizedTexts', { locale: 'en-US' })
   }
+
+  @deco.HasOne('LocalizedText', {
+    polymorphic: true,
+    on: 'localizableId',
+    and: { locale: DreamConst.passthrough },
+  })
+  public currentLocalizedText: LocalizedText
 }
