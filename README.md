@@ -21,32 +21,57 @@ This project ships with AI tooling for Dream and Psychic development.
 
 \* if this Psychic app was created without a front-end client, then these files are in the project root
 
-## Running specs locally
+## Fresh clone setup
 
-Copy `api/.env.test.example` to `api/.env.test`, then fill in your PostgreSQL username and encryption keys (`pnpm psy g:encryption-key` generates them):
-
-```bash
-cd api
-cp .env.test.example .env.test
-```
-
-Then:
+BearBnB requires Node 26 or newer, pnpm, PostgreSQL, and Redis. The repository has no root `package.json`, so install each package separately from the repository root:
 
 ```bash
-cd api
-pnpm psy db:create
-pnpm psy db:migrate
-pnpm uspec
+pnpm --dir api install
+pnpm --dir client install
+pnpm --dir admin install
+pnpm --dir internal install
 ```
 
-## Running the app locally
+Copy the complete local-development and test environment templates:
 
-Copy `api/.env.example` to `api/.env` and fill it in like `api/.env.test` above, then:
+```bash
+cp api/.env.example api/.env
+cp api/.env.test.example api/.env.test
+```
+
+In both copied files:
+
+1. Replace `<db-user>` and `<db-password>` with your local PostgreSQL credentials. Leave `DB_PASSWORD` empty if your local PostgreSQL connection does not require one.
+2. Replace `APP_ENCRYPTION_KEY` and `COLUMN_ENCRYPTION_KEY` with separate keys. Generate them by running `pnpm --dir api psy g:encryption-key` twice from the repository root.
+
+The copied files already contain the local Firebase Auth emulator configuration and the distinct development/test database names. They are ignored by Git and must not be committed.
+
+Create and migrate both databases from `api/`:
 
 ```bash
 cd api
 NODE_ENV=development pnpm psy db:create
 NODE_ENV=development pnpm psy db:migrate
+pnpm psy db:create
+pnpm psy db:migrate
+```
+
+## Running specs locally
+
+Run commands from `api/`:
+
+```bash
+pnpm uspec
+pnpm fspec
+```
+
+`pnpm fspec` starts and stops the Firebase Auth emulator and front-end test servers automatically.
+
+## Running the app locally
+
+With PostgreSQL and Redis running, start the full development stack from `api/`:
+
+```bash
 pnpm dev
 ```
 
@@ -54,7 +79,7 @@ pnpm dev
 
 ## State of the repo
 
-The guest client app is a working front end: browse places, sign in with Firebase email/password at `/auth`, then book stays, review, and favorite places. The admin and internal apps remain the default create-psychic scaffolds. End-to-end feature specs cover the guest flows; running `pnpm fspec` starts the Firebase Auth emulator along with the client apps.
+The client app is a working front end: browse places, sign in with Firebase email/password at `/auth`, then book stays, review, and favorite places as a guest, or become a host and manage places and rooms in English and Spanish. The admin and internal apps remain the default create-psychic scaffolds. End-to-end feature specs cover the guest and host flows and self-manage the Firebase Auth emulator when you run `pnpm fspec`.
 
 ## Entity Relationship Diagram (ERD) of the BearBnB model domain
 
@@ -63,23 +88,30 @@ erDiagram
   User {
     uuid id PK
     citext email
-    string first_name
-    string last_name
+    text encrypted_phone
+    string firebase_uid
+    datetime tos_accepted_at
+    string tos_version
+    datetime deleted_at
   }
 
   Guest {
     uuid id PK
     uuid user_id FK
+    datetime deleted_at
   }
 
   Host {
     uuid id PK
     uuid user_id FK
+    citext legal_name
+    datetime signed_host_agreement_at
+    datetime deleted_at
   }
 
   Place {
     uuid id PK
-    string name
+    citext name
     enum style
     integer sleeps
     datetime deleted_at
@@ -99,7 +131,7 @@ erDiagram
     integer position
     datetime deleted_at
 
-    enum bath_or_shower_type
+    enum bath_or_shower_style
     enum bed_types
     enum appliances
   }
@@ -114,25 +146,43 @@ erDiagram
     datetime deleted_at
   }
 
-  Booking__pending__ {
+  Favorite {
     uuid id PK
-    date arrive_on
-    date depart_on
-    integer adults
-    integer cubs
+    uuid guest_id FK
+    uuid place_id FK
+    datetime deleted_at
+  }
+
+  Booking {
+    uuid id PK
+    uuid guest_id FK
+    uuid place_id FK
+    date starts_on
+    date ends_on
+    datetime deleted_at
+  }
+
+  Review {
+    uuid id PK
+    uuid booking_id FK
+    integer rating
+    text body
     datetime deleted_at
   }
 
   User ||--|| Guest : ""
   User ||--o| Host : ""
-  Guest ||--o{ Booking__pending__ : ""
+  Guest ||--o{ Favorite : ""
+  Guest ||--o{ Booking : ""
+  Booking ||--o| Review : ""
+  Place ||--o{ Favorite : ""
+  Place ||--o{ Booking : ""
   Host ||--o{ HostPlace : ""
   HostPlace }|--|| Place : ""
   Place ||--o{ Room__STI_base_model__ : ""
   Host ||--|{ LocalizedText : ""
   Place ||--|{ LocalizedText : ""
   Room__STI_base_model__ ||--|{ LocalizedText : ""
-  Stay__pending__ }o--|| Place : ""
 ```
 
 ## Generator commands used to create BearBnB
@@ -154,14 +204,24 @@ pnpm psy g:sti-child --model-name=LivingRoom Room/LivingRoom extends Room
 pnpm psy g:resource --only=update,destroy v1/host/localized-texts LocalizedText localizable_type:enum:localized_types:Host,Place,Room localizable_id:uuid locale:enum:locales:en-US,es-ES title:string markdown:text
 pnpm psy g:controller Visitor/V1/Places index show
 
-pnpm psy g:migration add-deleted-at-to-rooms deleted_at:datetime:optional
-pnpm psy g:migration add-deferrable-unique-constraint-to-rooms
+pnpm psy g:migration add-deferrable-unique-constraint-on-rooms
+pnpm psy g:migration make-natural-key-unique-indexes-partial
 
+pnpm psy g:controller Status show
+pnpm psy setup:sync:openapi-zustand --schema-file=./src/openapi/openapi.json --output-dir=../client/src/api/backend/generated --client-config-file=../client/src/api/backend/client.ts --export-name=backendApi
 pnpm psy g:migration add-firebase-uid-to-users firebase_uid:string:optional
 pnpm psy g:migration allow-null-phone-on-users
+pnpm psy g:controller Visitor/V1/Me show
+pnpm psy g:migration add-tos-consent-to-users tos_accepted_at:datetime:optional tos_version:string:optional
+pnpm psy g:controller Visitor/V1/SignUp create
 
 pnpm psy g:resource --only=index,create,destroy --owning-model=Guest v1/guest/favorites Favorite Guest:belongs_to Place:belongs_to
 pnpm psy g:resource --only=index,create,update,destroy --owning-model=Guest v1/guest/bookings Booking Guest:belongs_to Place:belongs_to starts_on:date ends_on:date
 pnpm psy g:resource --only=index,create,update,destroy --owning-model=Guest v1/guest/reviews Review Booking:belongs_to rating:integer body:text
 pnpm psy g:controller Visitor/V1/Places/Reviews index
+
+pnpm psy g:migration add-legal-fields-to-hosts legal_name:citext signed_host_agreement_at:datetime
+pnpm psy g:controller V1/Host show create update
 ```
+
+The `v1/host/localized-texts` controller and route generated above were later removed: LocalizedTexts are written through their owning Host, Place, and Room endpoints.
