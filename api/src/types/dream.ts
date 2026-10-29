@@ -63,10 +63,12 @@ import {
   type ClockTimeTz,
 } from '@rvoh/dream'
 import {
+  type ApplianceTypesEnum,
   type BathOrShowerStylesEnum,
   type BedTypesEnum,
   type PlaceStylesEnum,
   type RoomTypesEnum,
+  ApplianceTypesEnumValues,
   BathOrShowerStylesEnumValues,
   BedTypesEnumValues,
   PlaceStylesEnumValues,
@@ -427,6 +429,7 @@ export const schema = {
       named: [],
     },
     nonJsonColumnNames: [
+      'appliances',
       'bathOrShowerStyle',
       'bedTypes',
       'createdAt',
@@ -438,6 +441,15 @@ export const schema = {
       'updatedAt',
     ],
     columns: {
+      appliances: {
+        coercedType: {} as ApplianceTypesEnum[],
+        enumType: {} as ApplianceTypesEnum,
+        enumArrayType: [] as ApplianceTypesEnum[],
+        enumValues: ApplianceTypesEnumValues,
+        dbType: 'appliance_types_enum[]',
+        allowNull: false,
+        isArray: true,
+      },
       bathOrShowerStyle: {
         coercedType: {} as BathOrShowerStylesEnum | null,
         enumType: {} as BathOrShowerStylesEnum,
@@ -639,6 +651,7 @@ export const connectionTypeConfig = {
       Room: 'rooms',
       'Room/Bathroom': 'rooms',
       'Room/Bedroom': 'rooms',
+      'Room/Kitchen': 'rooms',
       User: 'users',
     },
   },
