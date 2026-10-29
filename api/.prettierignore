@@ -24,3 +24,9 @@ package-lock.json
 # The cloned psychic-skill keeps its upstream formatting, which its updater restores
 .agents/skills/psychic-skill/**/*
 .claude/skills/psychic-skill/**/*
+
+# only adding so that diffs are clearer for demo app
+src/app/serializers/**/*.ts
+src/db/migrations/*.ts
+spec/unit/controllers/V1/Host/PlacesController.spec.ts
+spec/unit/controllers/V1/Host/Places/RoomsController.spec.ts
