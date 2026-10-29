@@ -3,6 +3,12 @@ import internalRoutes from '#conf/routes.internal.js'
 import { PsychicRouter } from '@rvoh/psychic'
 
 export default function routes(r: PsychicRouter) {
+  r.namespace('v1', r => {
+    r.namespace('host', r => {
+      r.resources('places')
+    })
+  })
+
   // Health check for the web server. Orchestrators / load balancers probe this
   // for liveness. It is already excluded from request logging via
   // `ignoredRoutes: ['/health_check']` in conf/app.ts. Uncomment and adjust the
