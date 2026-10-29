@@ -1,4 +1,4 @@
-import { Kysely, sql } from 'kysely'
+import { Kysely, sql, type SqlBool } from 'kysely'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function up(db: Kysely<any>): Promise<void> {
@@ -29,11 +29,19 @@ export async function up(db: Kysely<any>): Promise<void> {
     .addColumn('localizable_type', sql`localized_types_enum`, col => col.notNull())
     .addColumn('localizable_id', 'uuid', col => col.notNull())
     .addColumn('locale', sql`locales_enum`, col => col.notNull())
-    .addColumn('title', 'varchar(255)', col => col.notNull())
-    .addColumn('markdown', 'text', col => col.notNull())
+    .addColumn('title', 'varchar(255)')
+    .addColumn('markdown', 'text')
     .addColumn('created_at', 'timestamp', col => col.notNull())
     .addColumn('updated_at', 'timestamp', col => col.notNull())
     .addColumn('deleted_at', 'timestamp')
+    .execute()
+
+  await db.schema
+    .createIndex('localized_texts_localizable_for_locale')
+    .on('localized_texts')
+    .columns(['localizable_type', 'localizable_id', 'locale'])
+    .unique()
+    .where(sql<SqlBool>`deleted_at IS NULL`)
     .execute()
 }
 
