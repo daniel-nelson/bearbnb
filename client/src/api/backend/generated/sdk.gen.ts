@@ -171,13 +171,13 @@ export const patchV1Host = <ThrowOnError extends boolean = false>(options?: Opti
 /**
  * Create the Host for the current User, with multi-locale profile text
  */
-export const postV1Host = <ThrowOnError extends boolean = false>(options?: Options<PostV1HostData, ThrowOnError>): RequestResult<PostV1HostResponses, PostV1HostErrors, ThrowOnError> => (options?.client ?? client).post<PostV1HostResponses, PostV1HostErrors, ThrowOnError>({
+export const postV1Host = <ThrowOnError extends boolean = false>(options: Options<PostV1HostData, ThrowOnError>): RequestResult<PostV1HostResponses, PostV1HostErrors, ThrowOnError> => (options.client ?? client).post<PostV1HostResponses, PostV1HostErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/v1/host',
     ...options,
     headers: {
         'Content-Type': 'application/json',
-        ...options?.headers
+        ...options.headers
     }
 });
 

@@ -977,7 +977,7 @@ export type PatchV1HostResponses = {
 export type PatchV1HostResponse = PatchV1HostResponses[keyof PatchV1HostResponses];
 
 export type PostV1HostData = {
-    body?: {
+    body: {
         legalName: string;
         signedHostAgreementAt: string;
         localizedTexts?: Array<{
